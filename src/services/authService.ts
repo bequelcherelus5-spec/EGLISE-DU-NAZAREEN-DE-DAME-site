@@ -10,7 +10,6 @@ export interface AdminUser {
 }
 
 export const authService = {
-  // Vérifie si l'administrateur est authentifié
   isAuthenticated(): boolean {
     try {
       const token = sessionStorage.getItem(AUTH_TOKEN_KEY);
@@ -20,7 +19,6 @@ export const authService = {
     }
   },
 
-  // Récupère l'utilisateur connecté
   getUser(): AdminUser | null {
     try {
       const stored = sessionStorage.getItem(AUTH_USER_KEY);
@@ -30,7 +28,6 @@ export const authService = {
     }
   },
 
-  // Récupère le token pour les en-têtes Authorization
   getToken(): string | null {
     try {
       return sessionStorage.getItem(AUTH_TOKEN_KEY);
@@ -39,11 +36,10 @@ export const authService = {
     }
   },
 
-  // Connexion sécurisée
   async login(password: string, email?: string): Promise<{ success: boolean; message?: string; error?: string }> {
     const trimmedPassword = password.trim();
 
-    // 1. Authentification via Supabase Auth si un e-mail est fourni
+    // 1. Authentification Supabase Auth (si email rantre)
     if (isSupabaseConfigured && supabase && email && email.includes('@')) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -61,16 +57,15 @@ export const authService = {
           return { success: true, message: 'Authentification Supabase réussie.' };
         }
       } catch (err: any) {
-        console.warn('Tentative Supabase non aboutie, bascule sur la clé de sécurité');
+        console.warn('Echèk Supabase Auth');
       }
     }
 
-    // 2. Vérification directe du code de sécurité (Clé secrète d'administration)
-    const expectedKey = import.meta.env.VITE_ADMIN_SECURITY_KEY || 
-                        import.meta.env.ADMIN_SECURITY_KEY || 
-                        'nazareen2026';
+    // 2. Verifikasyon strik modpas sekirite a
+    const expectedKey = import.meta.env.VITE_ADMIN_SECURITY_KEY || import.meta.env.ADMIN_SECURITY_KEY;
 
-    if (trimmedPassword === expectedKey || trimmedPassword.length >= 6) {
+    // Si yon modpas konfigure, li dwe EGZAKTEMAN sa
+    if (expectedKey && trimmedPassword === expectedKey) {
       const token = 'dame_session_' + Date.now();
       sessionStorage.setItem(AUTH_TOKEN_KEY, token);
       sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify({
@@ -86,7 +81,6 @@ export const authService = {
     };
   },
 
-  // Déconnexion
   logout(): void {
     try {
       sessionStorage.removeItem(AUTH_TOKEN_KEY);
