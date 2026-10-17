@@ -1,0 +1,29 @@
+[
+  {
+    "id": "sub-brevo-3",
+    "email": "detectedkth@gmail.com",
+    "firstName": "",
+    "lastName": "",
+    "isActive": true,
+    "subscribedAt": "2026-10-13T12:14:35.592+02:00",
+    "brevoContactId": 3
+  },
+  {
+    "id": "sub-brevo-2",
+    "email": "bequelcherelus5@gmail.com",
+    "firstName": "Bequel CHERELUS",
+    "lastName": "",
+    "isActive": true,
+    "subscribedAt": "2026-10-12T03:49:08.470+02:00",
+    "brevoContactId": 2
+  },
+  {
+    "id": "sub-brevo-1",
+    "email": "bequelchr@gmail.com",
+    "firstName": "Bequel",
+    "lastName": "Cherelus",
+    "isActive": true,
+    "subscribedAt": "2026-09-09T22:58:29.928+02:00",
+    "brevoContactId": 1
+  }
+]

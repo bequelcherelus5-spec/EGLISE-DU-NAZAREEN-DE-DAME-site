@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400" fill="none">
+  <rect width="600" height="400" fill="#0b1b33"/>
+  <rect x="15" y="15" width="570" height="370" stroke="#d4af37" stroke-width="2" rx="10"/>
+  <circle cx="300" cy="170" r="50" fill="#162e4f" stroke="#d4af37" stroke-width="2"/>
+  <!-- Calendar icon -->
+  <rect x="280" y="150" width="40" height="40" rx="4" stroke="#d4af37" stroke-width="3" fill="none"/>
+  <line x1="280" y1="162" x2="320" y2="162" stroke="#d4af37" stroke-width="3"/>
+  <circle cx="292" cy="174" r="2" fill="#d4af37"/>
+  <circle cx="308" cy="174" r="2" fill="#d4af37"/>
+  <text x="300" y="260" font-family="'Cinzel', serif" font-size="22" font-weight="700" fill="#fef3c7" text-anchor="middle">
+    ÉVÉNEMENT DU ROYAUME
+  </text>
+  <text x="300" y="295" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" fill="#94a3b8" text-anchor="middle">
+    Cultes &amp; Conférences • Damé, Haïti
+  </text>
+</svg>

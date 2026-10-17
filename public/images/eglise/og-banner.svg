@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#071322"/>
+      <stop offset="60%" stop-color="#0b1b33"/>
+      <stop offset="100%" stop-color="#142c52"/>
+    </linearGradient>
+    <radialGradient id="goldGlow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#d4af37" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0b1b33" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#goldGlow)"/>
+
+  <!-- Border ornament -->
+  <rect x="30" y="30" width="1140" height="570" stroke="#d4af37" stroke-width="2" rx="12" fill="none" opacity="0.6"/>
+  <rect x="42" y="42" width="1116" height="546" stroke="#d4af37" stroke-width="1" stroke-dasharray="4,6" rx="8" fill="none" opacity="0.4"/>
+
+  <!-- Decorative cross in background -->
+  <path d="M600 120 V500 M450 240 H750" stroke="#d4af37" stroke-width="14" stroke-linecap="round" opacity="0.2"/>
+
+  <!-- Subtitle / Motto -->
+  <text x="600" y="180" font-family="'Cinzel', serif" font-size="24" font-weight="600" fill="#d4af37" text-anchor="middle" letter-spacing="6">
+    « SAINTETÉ À L'ÉTERNEL »
+  </text>
+
+  <!-- Church Title -->
+  <text x="600" y="270" font-family="'Cinzel', serif" font-size="52" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="2">
+    ÉGLISE DU NAZARÉEN DE DAMÉ
+  </text>
+
+  <text x="600" y="340" font-family="'Plus Jakarta Sans', sans-serif" font-size="26" font-weight="400" fill="#cbd5e1" text-anchor="middle">
+    3ème Section Damé, Commune de Môle-Saint-Nicolas, Haïti • Fondée en 1979
+  </text>
+
+  <text x="600" y="420" font-family="'Plus Jakarta Sans', sans-serif" font-size="22" font-weight="500" fill="#fef3c7" text-anchor="middle">
+    Direction pastorale : Pasteur Bequel CHERELUS • Projet CDEJ HA 0926 Compassion International
+  </text>
+
+  <!-- Website badge -->
+  <rect x="430" y="470" width="340" height="54" rx="27" fill="#d4af37" />
+  <text x="600" y="504" font-family="'Plus Jakarta Sans', sans-serif" font-size="20" font-weight="700" fill="#0b1b33" text-anchor="middle">
+    www.eglisedunazareendedame.org
+  </text>
+</svg>

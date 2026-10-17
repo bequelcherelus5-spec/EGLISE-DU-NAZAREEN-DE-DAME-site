@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600" fill="none">
+  <defs>
+    <!-- Radiant gold gradients matching the official church seal -->
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff8db"/>
+      <stop offset="25%" stop-color="#f6cc58"/>
+      <stop offset="50%" stop-color="#d4af37"/>
+      <stop offset="75%" stop-color="#aa7c11"/>
+      <stop offset="100%" stop-color="#fde047"/>
+    </linearGradient>
+
+    <linearGradient id="goldLight" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c69214"/>
+      <stop offset="45%" stop-color="#fef08a"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+
+    <radialGradient id="navySealBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0e2344"/>
+      <stop offset="65%" stop-color="#09182f"/>
+      <stop offset="100%" stop-color="#040b17"/>
+    </radialGradient>
+
+    <radialGradient id="goldGlow" cx="50%" cy="45%" r="45%">
+      <stop offset="0%" stop-color="#fde047" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#d4af37" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#040b17" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="sealShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+
+    <!-- Upper circular arc for Church Name -->
+    <path id="upperArcPath" d="M 72 300 A 228 228 0 1 1 528 300" fill="none"/>
+    <!-- Lower circular arc for Location and Date -->
+    <path id="lowerArcPath" d="M 520 310 A 220 220 0 0 1 80 310" fill="none"/>
+  </defs>
+
+  <!-- 1. SEAL BASE CIRCLE -->
+  <circle cx="300" cy="300" r="294" fill="url(#navySealBg)"/>
+  <circle cx="300" cy="300" r="294" fill="url(#goldGlow)"/>
+
+  <!-- 2. CONCENTRIC GOLD RINGS (DOUBLE OUTER EMBLEM) -->
+  <circle cx="300" cy="300" r="286" stroke="url(#goldGradient)" stroke-width="6" fill="none"/>
+  <circle cx="300" cy="300" r="276" stroke="url(#goldGradient)" stroke-width="1.8" fill="none" stroke-dasharray="4,4"/>
+  <circle cx="300" cy="300" r="200" stroke="url(#goldGradient)" stroke-width="3" fill="none"/>
+  <circle cx="300" cy="300" r="192" stroke="url(#goldGradient)" stroke-width="1" fill="none"/>
+
+  <!-- 3. TOP CURVED TEXT: ÉGLISE DU NAZARÉEN DE DAMÉ -->
+  <text font-family="'Cinzel', 'Playfair Display', 'Georgia', serif" font-size="28" font-weight="900" fill="url(#goldGradient)" letter-spacing="4.5" filter="url(#sealShadow)">
+    <textPath href="#upperArcPath" startOffset="50%" text-anchor="middle">
+      ÉGLISE DU NAZARÉEN DE DAMÉ
+    </textPath>
+  </text>
+
+  <!-- Side Star Ornaments -->
+  <g fill="url(#goldGradient)">
+    <!-- Left Star -->
+    <polygon points="76,290 80,298 88,300 80,304 76,312 72,304 64,300 72,298"/>
+    <!-- Right Star -->
+    <polygon points="524,290 528,298 536,300 528,304 524,312 520,304 512,300 520,298"/>
+  </g>
+
+  <!-- 4. BOTTOM CURVED TEXT: DAMÉ • HAÏTI • FONDÉE EN 1979 -->
+  <text font-family="'Cinzel', 'Playfair Display', 'Georgia', serif" font-size="20" font-weight="700" fill="url(#goldGradient)" letter-spacing="3.5" filter="url(#sealShadow)">
+    <textPath href="#lowerArcPath" startOffset="50%" text-anchor="middle">
+      DAMÉ • HAÏTI • FONDÉE EN 1979
+    </textPath>
+  </text>
+
+  <!-- 5. CENTRAL SACRED EMBLEM: CROSS, FLAME, DOVE, AND BIBLE -->
+  <g filter="url(#sealShadow)">
+    <!-- Radiant Halo / Glory Rays -->
+    <circle cx="300" cy="245" r="75" fill="none" stroke="url(#goldGradient)" stroke-width="1" stroke-dasharray="2,6" opacity="0.6"/>
+    <circle cx="300" cy="245" r="95" fill="none" stroke="url(#goldGradient)" stroke-width="1" stroke-dasharray="3,8" opacity="0.4"/>
+
+    <!-- THE CROSS OF CHRIST (Standing Glorious at Center-Right) -->
+    <g fill="url(#goldGradient)">
+      <!-- Vertical beam -->
+      <rect x="292" y="130" width="16" height="180" rx="3"/>
+      <!-- Horizontal beam -->
+      <rect x="250" y="172" width="100" height="16" rx="3"/>
+    </g>
+
+    <!-- THE HOLY SPIRIT FLAME & DOVE (Left of Cross) -->
+    <!-- Pentecost Flame ascending -->
+    <path d="M 275 250 
+             C 255 235 240 215 230 185 
+             C 215 145 220 110 240 85 
+             C 246 110 256 128 270 140 
+             C 265 118 272 98 288 80 
+             C 292 105 300 125 312 142 
+             C 316 120 328 105 342 90 
+             C 338 120 342 145 348 168 
+             C 345 185 338 198 328 205 
+             C 334 190 330 178 320 170 
+             C 318 190 310 208 300 220 
+             C 295 210 288 202 280 198 
+             C 282 216 280 234 275 250 Z" 
+          fill="url(#goldLight)" 
+          opacity="0.95"/>
+
+    <!-- Dove of Peace descending into the world -->
+    <g fill="url(#goldGradient)">
+      <path d="M 235 205 
+               C 220 195 205 190 185 195 
+               C 198 205 210 215 220 228 
+               C 210 230 195 238 185 248 
+               C 202 248 218 245 232 238 
+               C 236 248 245 256 255 260 
+               C 258 248 254 235 246 226 
+               C 252 220 255 212 252 205 
+               Z"/>
+    </g>
+
+    <!-- MOTTO SCRIPTURE BANNER: « SAINTETÉ À L'ÉTERNEL » -->
+    <rect x="180" y="278" width="240" height="30" rx="15" fill="#040b17" stroke="url(#goldGradient)" stroke-width="1.8"/>
+    <text x="300" y="299" font-family="'Cinzel', 'Playfair Display', 'Georgia', serif" font-size="14" font-weight="900" fill="url(#goldGradient)" text-anchor="middle" letter-spacing="2">
+      « SAINTETÉ À L'ÉTERNEL »
+    </text>
+
+    <!-- THE OPEN HOLY BIBLE (La Sainte Parole au Centre) -->
+    <!-- Bible Base & Cover Outline -->
+    <g stroke="url(#goldGradient)" stroke-width="2">
+      <!-- Left Page -->
+      <path d="M 300 348 C 270 342 235 344 210 354 L 210 404 C 235 394 270 392 300 398 Z" fill="#0a1930"/>
+      <!-- Right Page -->
+      <path d="M 300 348 C 330 342 365 344 390 354 L 390 404 C 365 394 330 392 300 398 Z" fill="#0a1930"/>
+      <!-- Centerfold Spine -->
+      <line x1="300" y1="346" x2="300" y2="406" stroke="url(#goldGradient)" stroke-width="2.5"/>
+    </g>
+
+    <!-- Scripture Lines on Left Page -->
+    <g stroke="url(#goldGradient)" stroke-width="1.2" opacity="0.8" stroke-linecap="round">
+      <line x1="225" y1="365" x2="285" y2="359"/>
+      <line x1="225" y1="373" x2="285" y2="367"/>
+      <line x1="225" y1="381" x2="285" y2="375"/>
+      <line x1="225" y1="389" x2="285" y2="383"/>
+    </g>
+
+    <!-- Scripture Lines on Right Page -->
+    <g stroke="url(#goldGradient)" stroke-width="1.2" opacity="0.8" stroke-linecap="round">
+      <line x1="315" y1="359" x2="375" y2="365"/>
+      <line x1="315" y1="367" x2="375" y2="373"/>
+      <line x1="315" y1="375" x2="375" y2="381"/>
+      <line x1="315" y1="383" x2="375" y2="389"/>
+    </g>
+
+    <!-- Gilded Silk Bookmark Ribbon draping from the Bible -->
+    <polygon points="296,400 304,400 308,426 300,420 292,426" fill="url(#goldGradient)"/>
+  </g>
+</svg>

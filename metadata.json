@@ -1,0 +1,6 @@
+{
+  "name": "Eglise du Nazareen de Dame Officiel",
+  "description": "Site officiel de l'Église du Nazaréen de Damé, Haïti. Histoire, ministères, cultes, CDEJ HA 0926 Compassion International, médias et secrétariat.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

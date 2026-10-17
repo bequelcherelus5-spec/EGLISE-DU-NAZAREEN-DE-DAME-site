@@ -1,0 +1,9 @@
+# Robots.txt pour Église du Nazaréen de Damé (Haïti)
+# https://www.eglisedunazareendedame.org
+
+User-agent: *
+Allow: /
+Disallow: /secretariat
+Disallow: /api/
+
+Sitemap: https://www.eglisedunazareendedame.org/sitemap.xml

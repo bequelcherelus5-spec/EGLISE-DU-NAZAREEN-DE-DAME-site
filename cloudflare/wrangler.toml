@@ -1,0 +1,13 @@
+name = "eglise-nazareen-dame"
+compatibility_date = "2024-09-23"
+
+[site]
+bucket = "./dist"
+
+[vars]
+BREVO_SENDER_EMAIL = "eglisedunazareendedame@gmail.com"
+BREVO_SENDER_NAME = "Église du Nazaréen de Damé"
+BREVO_LIST_ID = "2"
+
+# Pour la clé secrète en production, exécuter :
+# npx wrangler secret put BREVO_API_KEY

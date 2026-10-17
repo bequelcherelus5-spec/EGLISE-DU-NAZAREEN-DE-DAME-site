@@ -1,0 +1,24 @@
+[
+  {
+    "id": "test-1",
+    "authorName": "Sœur Mirlande V.",
+    "location": "3ème Section Damé",
+    "title": "Bondye geri pitit mwen nan lafyèv grav apre lapriyè",
+    "content": "Mwen rann Bondye glwa! Pitit gason m nan te malad anpil, nou te pase legliz la nan reyinyon madi a, Pasteur ak legliz la priye pou li. Nan denmen maten li te leve fre san okenn lafyèv. Bondye Nazaréen an vivan!",
+    "category": "guerison",
+    "status": "approved",
+    "createdAt": "2026-10-14T07:17:27.451Z",
+    "likesCount": 14
+  },
+  {
+    "id": "test-2",
+    "authorName": "Frè Jean-Baptiste D.",
+    "location": "Môle-Saint-Nicolas",
+    "title": "Pwovizyon mirakile pou peye lekòl timoun yo",
+    "content": "Pandan moman difisil sa a, mwen pa t konnen kote pou m jwenn kòb la. Mwen te mete demann mwen an nan espas lapriyè legliz la. 48 èdtan apre, yon frè nan dyaspora a voye asistans egzak sa m te bezwen an.",
+    "category": "provision",
+    "status": "approved",
+    "createdAt": "2026-10-10T07:17:27.451Z",
+    "likesCount": 21
+  }
+]

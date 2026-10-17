@@ -1,0 +1,12 @@
+[
+  {
+    "id": "camp-1792006032075",
+    "title": "Test Campagne",
+    "subject": "Sujet Test",
+    "contentHtml": "<p>Contenu test</p>",
+    "status": "sent",
+    "sentBy": "Pasteur Bequel CHERELUS",
+    "sentCount": 3,
+    "sentAt": "2026-10-14T19:27:19.528Z"
+  }
+]
