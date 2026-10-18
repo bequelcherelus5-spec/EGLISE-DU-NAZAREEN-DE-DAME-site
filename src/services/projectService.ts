@@ -3,78 +3,78 @@ import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 const STORAGE_KEY = 'dame_managed_projects';
 
-// Initial default projects to show when database/storage is empty
-const DEFAULT_INITIAL_PROJECTS: ManagedProject[] = [
-  {
-    id: 'proj-cdej-0926',
-    code: 'HA-0926',
-    title: 'Centre de Développement de l’Enfant et du Jeune (CDEJ HA 0926)',
-    partner: 'Compassion International Haïti',
-    category: 'Enfance & Éducation',
-    description: 'Programme holistique de parrainage et de prise en charge pour plus de 250 enfants et jeunes de Damé : scolarisation, nutrition, soins médicaux et formation spirituelle.',
-    htmlContent: '<p>Le CDEJ HA 0926 est une œuvre majeure de compassion en partenariat avec Compassion International Haïti, implanté au cœur de la 3ème section Damé.</p><p>Les enfants bénéficient d’un suivi régulier sur les plans cognitif, physique, socio-émotionnel et spirituel.</p>',
-    images: ['/images/eglise/sceau-officiel.svg'],
-    author: 'Direction Pastorale & Comité CDEJ',
-    status: 'published',
-    targetAmount: '250 enfants parrainés',
-    currentAmount: '265 bénéficiaires actifs',
-    beneficiariesCount: 265,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'proj-ecole-epnd',
-    code: 'EPND-PRO',
-    title: 'École Professionnelle du Nazaréen de Damé (EPND)',
-    partner: 'Ministère de l’Éducation & Partenaires Locaux',
-    category: 'Formation Professionnelle',
-    description: 'Ateliers et formations techniques pour les jeunes et adultes : informatique, couture, électricité de base et entrepreneuriat communautaire.',
-    htmlContent: '<p>Offrir des compétences pratiques et certifiées pour permettre aux jeunes de Damé et des environs de trouver un emploi ou de créer leur propre activité économique.</p>',
-    images: ['/images/eglise/sceau-officiel.svg'],
-    author: 'Direction EPND',
-    status: 'published',
-    beneficiariesCount: 120,
-    createdAt: new Date().toISOString()
-  }
-];
+// Helper pour mapper une ligne Supabase vers ManagedProject
+function mapSupabaseRowToProject(row: any): ManagedProject {
+  const isDraft = row.status === 'planning' || row.status === 'draft';
+  return {
+    id: String(row.id),
+    title: row.title || 'Projet sans titre',
+    code: row.code || undefined,
+    partner: row.partner || 'Église du Nazaréen de Damé',
+    category: row.category || 'Enfance & Éducation',
+    description: row.summary || row.description || '',
+    htmlContent: row.full_description || row.html_content || undefined,
+    images: row.banner_url ? [row.banner_url] : Array.isArray(row.images) ? row.images : [],
+    author: row.author || 'Direction Pastorale',
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || undefined,
+    status: isDraft ? 'draft' : 'published',
+    beneficiariesCount: row.beneficiaries_reached || row.beneficiaries_target || 0,
+  };
+}
 
 export const projectService = {
-  // Récupérer la liste des projets
+  // Récupérer la liste des projets (Supabase direct en priorité absolue)
   async getProjects(status?: 'published' | 'draft'): Promise<ManagedProject[]> {
-    // 1. Si Supabase konfigure, chèche nan baz done Supabase
+    // 1. Priorité Supabase en direct
     if (isSupabaseConfigured && supabase) {
       try {
-        let query = supabase.from('projects').select('*').order('created_at', { ascending: false });
-        if (status) {
-          query = query.eq('status', status);
+        let query = supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (status === 'published') {
+          // Un projet est publié si son statut est 'active', 'completed' ou 'published' (pas 'planning' ni 'draft')
+          query = query.neq('status', 'planning');
+        } else if (status === 'draft') {
+          query = query.in('status', ['planning', 'draft']);
         }
+
         const { data, error } = await query;
-        if (!error && data && data.length > 0) {
-          const projects: ManagedProject[] = data.map((item: any) => ({
-            id: String(item.id),
-            title: item.title || '',
-            code: item.code || undefined,
-            partner: item.partner || undefined,
-            category: item.category || 'Communautaire',
-            description: item.description || '',
-            htmlContent: item.html_content || item.htmlContent || undefined,
-            images: Array.isArray(item.images) ? item.images : (item.image ? [item.image] : []),
-            author: item.author || 'Direction Pastorale',
-            status: (item.status === 'published' ? 'published' : 'draft') as 'published' | 'draft',
-            targetAmount: item.target_amount || item.targetAmount || undefined,
-            currentAmount: item.current_amount || item.currentAmount || undefined,
-            beneficiariesCount: item.beneficiaries_count !== undefined ? Number(item.beneficiaries_count) : undefined,
-            createdAt: item.created_at || item.createdAt || new Date().toISOString(),
-            updatedAt: item.updated_at || item.updatedAt || undefined
-          }));
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-          return projects;
+        if (!error && Array.isArray(data)) {
+          const mapped = data.map(mapSupabaseRowToProject);
+          // Mettre en cache pour consultation hors-ligne
+          if (!status) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+          }
+          return mapped;
+        } else if (error) {
+          console.warn('[ProjectService] Erreur de lecture Supabase:', error.message, error.hint);
         }
       } catch (err) {
-        console.warn('Erreurs Supabase getProjects, bascule localStorage', err);
+        console.warn('[ProjectService] Exception requête Supabase:', err);
       }
     }
 
-    // 2. Fallback local storage si Supabase pa disponib
+    // 2. Fallback API serveur (/api/projects) si exécuté avec backend Node.js
+    try {
+      const url = status ? `/api/projects?status=${status}` : '/api/projects';
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          if (!status) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          }
+          return data;
+        }
+      }
+    } catch {
+      // Ignorer
+    }
+
+    // 3. Fallback stockage local
     try {
       const cached = localStorage.getItem(STORAGE_KEY);
       if (cached) {
@@ -83,133 +83,145 @@ export const projectService = {
           return parsed.filter(p => p.status === status);
         }
         return parsed;
-      } else {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_INITIAL_PROJECTS));
-        if (status) {
-          return DEFAULT_INITIAL_PROJECTS.filter(p => p.status === status);
-        }
-        return DEFAULT_INITIAL_PROJECTS;
       }
     } catch {
       // Ignorer
     }
 
-    return status ? DEFAULT_INITIAL_PROJECTS.filter(p => p.status === status) : DEFAULT_INITIAL_PROJECTS;
+    return [];
   },
 
-  // Créer un projet
+  // Créer un projet (Directement dans Supabase table 'projects')
   async createProject(project: Omit<ManagedProject, 'id' | 'createdAt'>): Promise<ManagedProject | null> {
-    const newProjData = {
-      title: project.title,
-      code: project.code,
-      partner: project.partner,
-      category: project.category || 'Communautaire',
-      description: project.description,
-      html_content: project.htmlContent,
-      images: project.images || [],
-      author: project.author || 'Direction Pastorale',
-      target_amount: project.targetAmount,
-      current_amount: project.currentAmount,
-      beneficiaries_count: project.beneficiariesCount,
-      status: project.status || 'draft',
-      created_at: new Date().toISOString()
-    };
+    const bannerUrl = project.images && project.images.length > 0 ? project.images[0] : null;
+    const dbStatus = project.status === 'draft' ? 'planning' : 'active';
+    const projCode = project.code?.trim() || ('HA-0926-' + Math.floor(100 + Math.random() * 900));
 
+    // 1. Insertion directe dans Supabase table 'projects'
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error } = await supabase.from('projects').insert([newProjData]).select().single();
+        const row = {
+          code: projCode,
+          title: project.title.trim(),
+          partner: project.partner?.trim() || 'Église du Nazaréen de Damé',
+          category: project.category || 'Enfance & Éducation',
+          summary: project.description.trim(),
+          full_description: (project.htmlContent || project.description).trim(),
+          status: dbStatus,
+          beneficiaries_target: project.beneficiariesCount || 0,
+          beneficiaries_reached: project.beneficiariesCount || 0,
+          banner_url: bannerUrl,
+        };
+
+        const { data, error } = await supabase
+          .from('projects')
+          .insert([row])
+          .select()
+          .single();
+
         if (!error && data) {
-          const created: ManagedProject = {
-            id: String(data.id),
-            title: data.title,
-            code: data.code,
-            partner: data.partner,
-            category: data.category || project.category || 'Communautaire',
-            description: data.description,
-            htmlContent: data.html_content || data.htmlContent || project.htmlContent,
-            images: Array.isArray(data.images) ? data.images : (project.images || []),
-            author: data.author || project.author || 'Direction Pastorale',
-            status: data.status,
-            targetAmount: data.target_amount || data.targetAmount || project.targetAmount,
-            currentAmount: data.current_amount || data.currentAmount,
-            beneficiariesCount: data.beneficiaries_count || project.beneficiariesCount,
-            createdAt: data.created_at || data.createdAt,
-            updatedAt: data.updated_at
-          };
-          const localList = await this.getProjects();
-          localStorage.setItem(STORAGE_KEY, JSON.stringify([created, ...localList]));
+          const created = mapSupabaseRowToProject(data);
+          // Mettre à jour le cache local immédiatement
+          const current = await this.getProjects();
+          const filtered = current.filter(p => p.id !== created.id);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify([created, ...filtered]));
           return created;
         } else if (error) {
-          console.error('Erreur Supabase insert project:', error.message);
+          console.error('[ProjectService] Erreur insertion Supabase:', error.message, error.details, error.hint);
         }
       } catch (err) {
-        console.warn('Echèk anrejistreman Supabase, anrejistre lokalman', err);
+        console.error('[ProjectService] Exception insertion Supabase:', err);
       }
     }
 
-    // Fallback local
+    // 2. Fallback API serveur local
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(project),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.project) return data.project;
+      }
+    } catch {
+      // Ignorer
+    }
+
+    // 3. Fallback Local Storage
     const localList = await this.getProjects();
     const newProj: ManagedProject = {
       ...project,
-      id: 'proj-' + Date.now(),
-      createdAt: new Date().toISOString()
+      id: 'local-' + Date.now(),
+      createdAt: new Date().toISOString(),
     };
     const updated = [newProj, ...localList];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     return newProj;
   },
 
-  // Modifier un projet
+  // Modifier un projet (Directement dans Supabase table 'projects')
   async updateProject(id: string, updates: Partial<ManagedProject>): Promise<ManagedProject | null> {
+    // 1. Mise à jour Supabase directe
     if (isSupabaseConfigured && supabase) {
       try {
-        const updatePayload: any = {};
-        if (updates.title !== undefined) updatePayload.title = updates.title;
-        if (updates.code !== undefined) updatePayload.code = updates.code;
-        if (updates.partner !== undefined) updatePayload.partner = updates.partner;
-        if (updates.category !== undefined) updatePayload.category = updates.category;
-        if (updates.description !== undefined) updatePayload.description = updates.description;
-        if (updates.htmlContent !== undefined) updatePayload.html_content = updates.htmlContent;
-        if (updates.images !== undefined) updatePayload.images = updates.images;
-        if (updates.author !== undefined) updatePayload.author = updates.author;
-        if (updates.status !== undefined) updatePayload.status = updates.status;
-        if (updates.targetAmount !== undefined) updatePayload.target_amount = updates.targetAmount;
-        if (updates.currentAmount !== undefined) updatePayload.current_amount = updates.currentAmount;
-        if (updates.beneficiariesCount !== undefined) updatePayload.beneficiaries_count = updates.beneficiariesCount;
-        updatePayload.updated_at = new Date().toISOString();
+        const patch: Record<string, any> = {};
+        if (updates.title !== undefined) patch.title = updates.title.trim();
+        if (updates.code !== undefined) patch.code = updates.code.trim();
+        if (updates.partner !== undefined) patch.partner = updates.partner.trim();
+        if (updates.category !== undefined) patch.category = updates.category;
+        if (updates.description !== undefined) patch.summary = updates.description.trim();
+        if (updates.htmlContent !== undefined) patch.full_description = updates.htmlContent.trim();
+        if (updates.status !== undefined) {
+          patch.status = updates.status === 'draft' ? 'planning' : 'active';
+        }
+        if (updates.beneficiariesCount !== undefined) {
+          patch.beneficiaries_reached = updates.beneficiariesCount;
+          patch.beneficiaries_target = updates.beneficiariesCount;
+        }
+        if (updates.images !== undefined) {
+          patch.banner_url = updates.images.length > 0 ? updates.images[0] : null;
+        }
 
-        const { data, error } = await supabase.from('projects').update(updatePayload).eq('id', id).select().single();
+        const { data, error } = await supabase
+          .from('projects')
+          .update(patch)
+          .eq('id', id)
+          .select()
+          .single();
+
         if (!error && data) {
-          const updated: ManagedProject = {
-            id: String(data.id),
-            title: data.title,
-            code: data.code,
-            partner: data.partner,
-            category: data.category || updates.category || 'Communautaire',
-            description: data.description,
-            htmlContent: data.html_content || data.htmlContent || updates.htmlContent,
-            images: Array.isArray(data.images) ? data.images : (updates.images || []),
-            author: data.author || updates.author || 'Direction Pastorale',
-            status: data.status,
-            targetAmount: data.target_amount || data.targetAmount || updates.targetAmount,
-            currentAmount: data.current_amount || data.currentAmount || updates.currentAmount,
-            beneficiariesCount: data.beneficiaries_count || updates.beneficiariesCount,
-            createdAt: data.created_at || data.createdAt,
-            updatedAt: data.updated_at
-          };
-          const localList = await this.getProjects();
-          const idx = localList.findIndex(p => p.id === id);
-          if (idx !== -1) {
-            localList[idx] = updated;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(localList));
-          }
-          return updated;
+          const updatedProj = mapSupabaseRowToProject(data);
+          const current = await this.getProjects();
+          const idx = current.findIndex(p => p.id === id);
+          if (idx !== -1) current[idx] = updatedProj;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+          return updatedProj;
+        } else if (error) {
+          console.error('[ProjectService] Erreur mise à jour Supabase:', error.message, error.hint);
         }
       } catch (err) {
-        console.warn('Echèk mizajou Supabase', err);
+        console.error('[ProjectService] Exception update Supabase:', err);
       }
     }
 
+    // 2. Fallback API
+    try {
+      const res = await fetch(`/api/projects/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.project) return data.project;
+      }
+    } catch {
+      // Ignorer
+    }
+
+    // 3. Fallback Local
     const localList = await this.getProjects();
     const idx = localList.findIndex(p => p.id === id);
     if (idx !== -1) {
@@ -220,8 +232,9 @@ export const projectService = {
     return null;
   },
 
-  // Supprimer un projet
+  // Supprimer un projet (Directement dans Supabase table 'projects')
   async deleteProject(id: string): Promise<boolean> {
+    // 1. Suppression Supabase
     if (isSupabaseConfigured && supabase) {
       try {
         const { error } = await supabase.from('projects').delete().eq('id', id);
@@ -229,12 +242,27 @@ export const projectService = {
           const current = await this.getProjects();
           localStorage.setItem(STORAGE_KEY, JSON.stringify(current.filter(p => p.id !== id)));
           return true;
+        } else {
+          console.error('[ProjectService] Erreur suppression Supabase:', error.message);
         }
       } catch (err) {
-        console.warn('Echèk sipresyon Supabase', err);
+        console.error('[ProjectService] Exception suppression Supabase:', err);
       }
     }
 
+    // 2. Fallback API
+    try {
+      const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        const current = await this.getProjects();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(current.filter(p => p.id !== id)));
+        return true;
+      }
+    } catch {
+      // Ignorer
+    }
+
+    // 3. Fallback Local
     const localList = await this.getProjects();
     const filtered = localList.filter(p => p.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
@@ -243,12 +271,80 @@ export const projectService = {
 
   // Basculer statut publié / brouillon
   async toggleStatus(id: string): Promise<ManagedProject | null> {
-    const localList = await this.getProjects();
-    const target = localList.find(p => p.id === id);
-    if (target) {
-      const newStatus = target.status === 'published' ? 'draft' : 'published';
-      return await this.updateProject(id, { status: newStatus });
+    const list = await this.getProjects();
+    const target = list.find(p => p.id === id);
+    if (!target) return null;
+
+    const nextStatus = target.status === 'published' ? 'draft' : 'published';
+    return this.updateProject(id, { status: nextStatus });
+  },
+
+  // Migration / Synchronisation des projets locaux vers Supabase
+  // Permet de pousser vers Supabase les projets créés en local ou sur environnement de test
+  async syncLocalProjectsToSupabase(): Promise<{ uploaded: number; failed: number; message: string }> {
+    if (!isSupabaseConfigured || !supabase) {
+      return { uploaded: 0, failed: 0, message: 'Supabase n’est pas configuré.' };
     }
-    return null;
-  }
+
+    let localProjects: ManagedProject[] = [];
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY);
+      if (cached) localProjects = JSON.parse(cached);
+    } catch {
+      return { uploaded: 0, failed: 0, message: 'Aucun projet local trouvé.' };
+    }
+
+    if (!localProjects || localProjects.length === 0) {
+      return { uploaded: 0, failed: 0, message: 'Aucun projet en cache local à synchroniser.' };
+    }
+
+    // Récupérer les projets déjà présents sur Supabase pour éviter les doublons
+    const { data: remoteData } = await supabase.from('projects').select('id, code, title');
+    const existingTitles = new Set((remoteData || []).map((r: any) => (r.title || '').trim().toLowerCase()));
+    const existingCodes = new Set((remoteData || []).map((r: any) => (r.code || '').trim()));
+
+    let uploaded = 0;
+    let failed = 0;
+
+    for (const proj of localProjects) {
+      const titleLower = proj.title.trim().toLowerCase();
+      if (existingTitles.has(titleLower) || (proj.code && existingCodes.has(proj.code))) {
+        continue; // Déjà présent dans Supabase
+      }
+
+      try {
+        const row = {
+          code: proj.code?.trim() || ('HA-0926-' + Math.floor(100 + Math.random() * 900)),
+          title: proj.title.trim(),
+          partner: proj.partner?.trim() || 'Église du Nazaréen de Damé',
+          category: proj.category || 'Enfance & Éducation',
+          summary: proj.description.trim(),
+          full_description: (proj.htmlContent || proj.description).trim(),
+          status: proj.status === 'draft' ? 'planning' : 'active',
+          beneficiaries_target: proj.beneficiariesCount || 0,
+          beneficiaries_reached: proj.beneficiariesCount || 0,
+          banner_url: proj.images && proj.images.length > 0 ? proj.images[0] : null,
+        };
+
+        const { error } = await supabase.from('projects').insert([row]);
+        if (!error) {
+          uploaded++;
+        } else {
+          failed++;
+        }
+      } catch {
+        failed++;
+      }
+    }
+
+    // Rafraîchir le cache avec la liste officielle Supabase
+    await this.getProjects();
+
+    return {
+      uploaded,
+      failed,
+      message: `${uploaded} projet(s) téléversé(s) avec succès vers Supabase (${failed} échec(s)).`,
+    };
+  },
 };
+

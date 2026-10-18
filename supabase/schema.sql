@@ -210,7 +210,9 @@ CREATE POLICY "Inscription publique newsletter" ON public.newsletter_subscribers
 CREATE POLICY "Accès complet profils admin" ON public.profiles FOR ALL USING (auth.uid() = id);
 CREATE POLICY "Gestion ministères admin" ON public.ministries FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Gestion événements admin" ON public.events FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Gestion projets admin" ON public.projects FOR ALL USING (auth.role() = 'authenticated');
+-- Gestion complète des projets pour le Secrétariat et l'Administration
+DROP POLICY IF EXISTS "Gestion projets admin" ON public.projects;
+CREATE POLICY "Gestion projets admin et secretariat" ON public.projects FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Gestion statistiques admin" ON public.project_statistics FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Gestion médias admin" ON public.media FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Gestion publications admin" ON public.posts FOR ALL USING (auth.role() = 'authenticated');

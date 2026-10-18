@@ -372,7 +372,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   const translateDOM = (lang: LanguageCode) => {
     if (typeof window === 'undefined') return;
     const rules = DOM_PHRASE_DICTIONARY[lang];
-    if (!rules || rules.length === 0) return;
+    if (lang !== 'fr' && (!rules || rules.length === 0)) return;
 
     const root = document.getElementById('root');
     if (!root) return;
@@ -401,14 +401,25 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
         (currentNode as any).__origText = originalText;
       }
 
+      // Si la langue sélectionnée est le français (langue native du site), restaurer le texte original
+      if (lang === 'fr') {
+        if ((currentNode as any).__origText && currentNode.nodeValue !== (currentNode as any).__origText) {
+          currentNode.nodeValue = (currentNode as any).__origText;
+        }
+        currentNode = walker.nextNode();
+        continue;
+      }
+
       let translated = (currentNode as any).__origText || originalText || '';
-      for (const [from, to] of rules) {
-        if (typeof from === 'string') {
-          if (translated.includes(from)) {
-            translated = translated.split(from).join(to);
+      if (rules) {
+        for (const [from, to] of rules) {
+          if (typeof from === 'string') {
+            if (translated.includes(from)) {
+              translated = translated.split(from).join(to);
+            }
+          } else {
+            translated = translated.replace(from, to);
           }
-        } else {
-          translated = translated.replace(from, to);
         }
       }
 
@@ -419,6 +430,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
       currentNode = walker.nextNode();
     }
   };
+
 
   const setLanguage = (lang: LanguageCode) => {
     setCurrentLangState(lang);

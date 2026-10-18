@@ -114,6 +114,15 @@ const DOC_REQUESTS_FILE = path.join(__dirname, 'data', 'doc_requests.json');
 const ALERT_FILE = path.join(__dirname, 'data', 'alert.json');
 const RADIO_FILE = path.join(__dirname, 'data', 'radio.json');
 const TESTIMONIES_FILE = path.join(__dirname, 'data', 'testimonies.json');
+const FAQ_FILE = path.join(__dirname, 'data', 'faq.json');
+
+export interface StoredFAQ {
+  id: string;
+  category: 'doctrinal' | 'membership' | 'sacraments' | 'social' | 'general';
+  question: string;
+  answer: string;
+  createdAt?: string;
+}
 
 export interface StoredTestimony {
   id: string;
@@ -515,6 +524,62 @@ function saveStoredTestimonies(list: StoredTestimony[]) {
     console.error('Erreur écriture testimonies.json:', err);
   }
 }
+
+const DEFAULT_FAQS: StoredFAQ[] = [
+  {
+    id: 'faq-1',
+    category: 'membership',
+    question: 'Comment devenir membre officiel de l’Église du Nazaréen de Damé ?',
+    answer: 'Pour devenir membre officiel : 1) Confession de foi personnelle en Jésus-Christ comme Seigneur et Sauveur ; 2) Baptême biblique par immersion ; 3) Suivi des cours de discipulat et doctrine nazaréenne ; 4) Vote d’accueil de l’assemblée devant le Pasteur Bequel CHERELUS et le conseil officiel.',
+    createdAt: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'faq-2',
+    category: 'doctrinal',
+    question: 'Que signifie la devise « Sainteté à l’Éternel » ?',
+    answer: 'Inspirée d’Exode 28:36 et 1 Thessaloniciens 5:23, cette devise incarne la doctrine de l’Entière Sanctification. C’est l’action purificatrice du Saint-Esprit délivrant le croyant du péché originel et le remplissant d’un amour parfait pour Dieu et son prochain.',
+    createdAt: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'faq-3',
+    category: 'sacraments',
+    question: 'Comment faire la dédicace d’un enfant ou demander le baptême ?',
+    answer: 'Dédicace d’enfant : contactez le secrétariat pastoral pour planifier la cérémonie lors d’un culte du dimanche (en particulier le 4ème dimanche dédié à l’Enfance). Baptême : inscription auprès du pasteur pour suivre la formation préparatoire.',
+    createdAt: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'faq-4',
+    category: 'social',
+    question: 'Quel est l’impact du projet CDEJ HA 0926 Compassion International à Damé ?',
+    answer: 'Le CDEJ HA 0926 est la branche de développement holistique de l’église en partenariat avec Compassion International. Il soutient des centaines d’enfants de la 3ème Section Damé sur les plans éducatif, nutritionnel, médical et spirituel.',
+    createdAt: '2026-01-01T00:00:00Z'
+  }
+];
+
+function loadStoredFAQ(): StoredFAQ[] {
+  try {
+    ensureDataDir();
+    if (fs.existsSync(FAQ_FILE)) {
+      const content = fs.readFileSync(FAQ_FILE, 'utf-8');
+      return JSON.parse(content);
+    }
+    saveStoredFAQ(DEFAULT_FAQS);
+    return DEFAULT_FAQS;
+  } catch (err) {
+    console.warn('Erreur lecture faq.json:', err);
+  }
+  return DEFAULT_FAQS;
+}
+
+function saveStoredFAQ(list: StoredFAQ[]) {
+  try {
+    ensureDataDir();
+    fs.writeFileSync(FAQ_FILE, JSON.stringify(list, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Erreur écriture faq.json:', err);
+  }
+}
+
 
 
 let brevoConfig: BrevoConfig = {
@@ -1795,6 +1860,64 @@ app.delete('/api/testimonies/:id', (req: Request, res: Response) => {
   }
 });
 
+// ==========================================
+// 16. FAQ MANAGEMENT API
+// ==========================================
+app.get('/api/faq', (req: Request, res: Response) => {
+  const list = loadStoredFAQ();
+  res.json(list);
+});
+
+app.post('/api/faq', (req: Request, res: Response) => {
+  try {
+    const { question, answer, category } = req.body;
+    if (!question?.trim() || !answer?.trim()) {
+      return res.status(400).json({ error: 'La question et la réponse sont obligatoires.' });
+    }
+    const list = loadStoredFAQ();
+    const newItem: StoredFAQ = {
+      id: 'faq-' + Date.now(),
+      question: question.trim(),
+      answer: answer.trim(),
+      category: category || 'general',
+      createdAt: new Date().toISOString()
+    };
+    list.push(newItem);
+    saveStoredFAQ(list);
+    res.status(201).json({ success: true, item: newItem });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/faq/:id', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { question, answer, category } = req.body;
+    const list = loadStoredFAQ();
+    const item = list.find(f => f.id === id);
+    if (!item) return res.status(404).json({ error: 'Question FAQ non trouvée.' });
+    if (question) item.question = question.trim();
+    if (answer) item.answer = answer.trim();
+    if (category) item.category = category;
+    saveStoredFAQ(list);
+    res.json({ success: true, item });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/faq/:id', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    let list = loadStoredFAQ();
+    list = list.filter(f => f.id !== id);
+    saveStoredFAQ(list);
+    res.json({ success: true, message: 'Question FAQ supprimée.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ==========================================
 // 9. DYNAMIC SEO: SITEMAP.XML & ROBOTS.TXT

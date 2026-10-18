@@ -32,7 +32,8 @@ import {
   UserCheck,
   Scroll,
   Radio,
-  Megaphone
+  Megaphone,
+  HelpCircle
 } from 'lucide-react';
 import { SEOHead } from '../components/SEOHead';
 import { OFFICIAL_CHURCH_INFO, INITIAL_MEMBERS, OFFICIAL_SERVICES } from '../data/churchData';
@@ -48,6 +49,7 @@ import { TestimoniesManager } from '../components/secretariat/TestimoniesManager
 import { DiscipleshipManager } from '../components/secretariat/DiscipleshipManager';
 import { DocRequestsManager } from '../components/secretariat/DocRequestsManager';
 import { RadioAlertManager } from '../components/secretariat/RadioAlertManager';
+import { FAQManager } from '../components/secretariat/FAQManager';
 
 interface SecretariatProps {
   onNavigate: (path: string) => void;
@@ -75,6 +77,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate }) => {
     | 'brevo_config' 
     | 'newsletter_manager' 
     | 'projects' 
+    | 'faqs' 
     | 'content' 
     | 'events' 
     | 'members' 
@@ -575,6 +578,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate }) => {
               { id: 'brevo_config', label: 'Configuration Brevo', icon: Key },
               { id: 'newsletter_manager', label: 'Newsletter Manager', icon: Mail },
               { id: 'projects', label: 'Gestion des Projets', icon: HeartHandshake },
+              { id: 'faqs', label: 'Gestion FAQ', icon: HelpCircle },
               { id: 'content', label: 'Gestion Contenu', icon: Globe },
               { id: 'events', label: 'Événements & Cultes', icon: Calendar },
               { id: 'members', label: 'Registre des Membres', icon: Users },
@@ -1169,6 +1173,14 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate }) => {
         {activeTab === 'projects' && (
           <ProjectManager />
         )}
+
+        {/* ========================================================================= */}
+        {/* TAB: GESTION FAQ (FOIRE AUX QUESTIONS) */}
+        {/* ========================================================================= */}
+        {activeTab === 'faqs' && (
+          <FAQManager onNavigate={onNavigate} />
+        )}
+
 
         {/* ========================================================================= */}
         {/* TAB 6: GESTION CONTENU (PAGES PERSONNALISÉES) */}

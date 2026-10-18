@@ -38,8 +38,10 @@ export const LanguageSelector: React.FC<{ compact?: boolean }> = ({ compact = fa
         }`}
         title="Changer de langue / Chwazi lang"
       >
-        <span className="text-sm leading-none">{activeOption.flag}</span>
-        <span className="font-bold text-[11px] tracking-wide uppercase">{activeOption.nativeLabel}</span>
+        <span className="text-xs sm:text-sm leading-none">{activeOption.flag}</span>
+        <span className="font-bold text-[10px] sm:text-[11px] tracking-wide uppercase">
+          {compact ? activeOption.code.toUpperCase() : activeOption.nativeLabel}
+        </span>
         <ChevronDown className={`w-3 h-3 text-amber-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 

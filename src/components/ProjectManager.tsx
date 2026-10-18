@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ManagedProject } from '../types';
 import { projectService } from '../services/projectService';
+import { getSupabaseStatus, testSupabaseConnection } from '../services/supabaseClient';
 import { 
   FolderPlus, 
   Edit3, 
@@ -16,7 +17,12 @@ import {
   HeartHandshake, 
   Sparkles,
   Search,
-  Globe
+  Globe,
+  Upload,
+  Camera,
+  Database,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 
 interface ProjectManagerProps {
@@ -53,8 +59,14 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
   // Notifications
   const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Supabase Status & Sync
+  const [supabaseStatus, setSupabaseStatus] = useState(() => getSupabaseStatus());
+  const [syncingSupabase, setSyncingSupabase] = useState(false);
+  const [supabaseDiag, setSupabaseDiag] = useState<string | null>(null);
+
   useEffect(() => {
     loadProjects();
+    setSupabaseStatus(getSupabaseStatus());
   }, []);
 
   const loadProjects = async () => {
@@ -62,6 +74,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
     try {
       const data = await projectService.getProjects();
       setProjects(data);
+      setSupabaseStatus(getSupabaseStatus());
       if (onProjectsUpdated) onProjectsUpdated();
     } catch {
       // Ignorer
@@ -74,6 +87,35 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
     setActionNotice({ type, message });
     setTimeout(() => setActionNotice(null), 4000);
   };
+
+  const handleTestSupabase = async () => {
+    setSyncingSupabase(true);
+    try {
+      const res = await testSupabaseConnection();
+      setSupabaseDiag(res.message);
+      if (res.success) {
+        showNotice('success', res.message);
+      } else {
+        showNotice('error', res.message);
+      }
+    } finally {
+      setSyncingSupabase(false);
+    }
+  };
+
+  const handleSyncSupabase = async () => {
+    setSyncingSupabase(true);
+    try {
+      const res = await projectService.syncLocalProjectsToSupabase();
+      showNotice(res.failed === 0 ? 'success' : 'error', res.message);
+      await loadProjects();
+    } catch (err: any) {
+      showNotice('error', 'Erreur de synchronisation: ' + (err?.message || 'Inconnue'));
+    } finally {
+      setSyncingSupabase(false);
+    }
+  };
+
 
   const openCreateModal = () => {
     setEditingProject(null);
@@ -114,6 +156,51 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
     if (!newImageUrl.trim()) return;
     setFormImages([...formImages, newImageUrl.trim()]);
     setNewImageUrl('');
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawDataUrl = event.target?.result as string;
+        if (!rawDataUrl) return;
+
+        // Compression automatique pour mobile et web (max 1200px)
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
+            setFormImages((prev) => [...prev, compressedUrl]);
+          } else {
+            setFormImages((prev) => [...prev, rawDataUrl]);
+          }
+        };
+        img.src = rawDataUrl;
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
   };
 
   const handleRemoveImage = (index: number) => {
@@ -269,7 +356,61 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
             <span className="text-2xl font-bold text-slate-300 font-mono">{draftCount}</span>
           </div>
         </div>
+
+        {/* Supabase Cloud Connection & Sync Bar */}
+        <div className="mt-6 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
+          <div className="flex items-center space-x-3">
+            <div className={`p-2 rounded-xl ${supabaseStatus.isConfigured ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-300'}`}>
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-bold text-white">Base de données Supabase Cloud :</span>
+                {supabaseStatus.isConfigured ? (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Connecté ({supabaseStatus.projectUrl})
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> Mode Local / En attente
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Les projets enregistrés ici montent en direct sur <span className="text-amber-300 font-medium">www.eglisedunazareendedame.org</span> via la table <code className="text-slate-300">projects</code>.
+              </p>
+              {supabaseDiag && (
+                <p className="text-[11px] text-amber-300 mt-1 font-mono">
+                  {supabaseDiag}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleTestSupabase}
+              disabled={syncingSupabase}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center space-x-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncingSupabase ? 'animate-spin' : ''}`} />
+              <span>Tester Supabase</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSyncSupabase}
+              disabled={syncingSupabase}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition shadow flex items-center space-x-1.5"
+              title="Pousser les projets locaux vers la base Supabase"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Pousser vers Supabase</span>
+            </button>
+          </div>
+        </div>
       </div>
+
 
       {/* Notice Message */}
       {actionNotice && (
@@ -596,22 +737,45 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
                   </span>
                 </div>
 
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    placeholder="https://... ou /images/projets/photo.jpg"
-                    value={newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
-                    className="flex-grow px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddImage}
-                    className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition flex items-center space-x-1"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Ajouter image</span>
-                  </button>
+                <div className="space-y-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <label
+                      htmlFor="project-phone-image-upload"
+                      className="cursor-pointer px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition flex items-center justify-center space-x-2 shadow-sm"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>📸 Chwazi Foto nan Telefòn / Òdinatè</span>
+                    </label>
+                    <input
+                      id="project-phone-image-upload"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+
+                    <div className="flex-grow flex gap-2">
+                      <input
+                        type="url"
+                        placeholder="Oswa kole yon lyen imaj (https://...)"
+                        value={newImageUrl}
+                        onChange={(e) => setNewImageUrl(e.target.value)}
+                        className="flex-grow px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddImage}
+                        className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition flex items-center space-x-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Kole Lyen</span>
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    💡 Ou ka chwazi nenpòt foto ki nan galri telefòn ou oswa pran yon foto dirèk ak kamera w. Foto a konprese otomatikman pou l pa ralanti sit la.
+                  </p>
                 </div>
 
                 {formImages.length > 0 && (
