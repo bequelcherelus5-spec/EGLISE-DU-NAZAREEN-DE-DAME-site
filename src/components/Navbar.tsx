@@ -26,6 +26,7 @@ import { CustomPage } from '../types';
 import { pageService } from '../services/pageService';
 import { LanguageSelector } from './LanguageSelector';
 import { useLanguage } from '../context/LanguageContext';
+import { isSecretariatSubdomain } from '../utils/subdomain';
 import churchSealImg from '../assets/images/regenerated_image_1792011564270.x-icon';
 
 interface NavbarProps {
@@ -35,6 +36,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
   const { t } = useLanguage();
+  const isSubdomain = isSecretariatSubdomain();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [customPages, setCustomPages] = useState<CustomPage[]>([]);
   const [pagesDropdownOpen, setPagesDropdownOpen] = useState(false);
@@ -345,18 +347,20 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 <span>Faire un Don</span>
               </button>
 
-              {/* Bouton Espace Secrétariat */}
-              <button
-                onClick={() => handleNav('/secretariat')}
-                className={`ml-2 inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition shadow-sm ${
-                  currentPath.startsWith('/secretariat')
-                    ? 'bg-amber-500 text-slate-950 font-bold'
-                    : 'bg-gradient-to-r from-amber-500/20 to-amber-600/30 text-amber-300 border border-amber-500/40 hover:bg-amber-500 hover:text-slate-950'
-                }`}
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Secrétariat</span>
-              </button>
+              {/* Bouton Espace Secrétariat - Visible UNIQUEMENT sur le sous-domaine officiel */}
+              {isSubdomain && (
+                <button
+                  onClick={() => handleNav('/secretariat')}
+                  className={`ml-2 inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition shadow-sm ${
+                    currentPath.startsWith('/secretariat')
+                      ? 'bg-amber-500 text-slate-950 font-bold'
+                      : 'bg-gradient-to-r from-amber-500/20 to-amber-600/30 text-amber-300 border border-amber-500/40 hover:bg-amber-500 hover:text-slate-950'
+                  }`}
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Secrétariat</span>
+                </button>
+              )}
             </nav>
 
             {/* Contrôles Mobiles : Sélecteur de langue compact + Bouton Hamburger (Épuré pour Android) */}
@@ -473,18 +477,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               <HeartHandshake className="w-4 h-4 text-emerald-200" />
               <span>Dîmes &amp; Faire un Don (PayPal / Mobile)</span>
             </button>
-
-            <button
-              onClick={() => handleNav('/secretariat')}
-              className={`w-full flex items-center justify-center space-x-2 py-3 rounded-xl text-sm font-bold transition shadow-md ${
-                currentPath.startsWith('/secretariat')
-                  ? 'bg-amber-500 text-slate-950'
-                  : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:bg-amber-400 active:scale-[0.99]'
-              }`}
-            >
-              <Lock className="w-4 h-4" />
-              <span>Espace Secrétariat &amp; Administration</span>
-            </button>
+          </div>
 
             {/* Liens de contact et réseaux dans le menu */}
             <div className="pt-2 text-center text-xs text-slate-400 space-y-2">
@@ -520,7 +513,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               </p>
             </div>
           </div>
-        </div>
       )}
     </header>
   );

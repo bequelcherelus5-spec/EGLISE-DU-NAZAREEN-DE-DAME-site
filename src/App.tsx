@@ -28,7 +28,7 @@ import { DailyBibleReading } from './pages/DailyBibleReading';
 import { Testimonies } from './pages/Testimonies';
 import { Donations } from './pages/Donations';
 import { isSecretariatSubdomain } from './utils/subdomain';
-import { ArrowUp, ShieldCheck, ExternalLink } from 'lucide-react';
+import { ArrowUp, ShieldCheck, ExternalLink, Lock } from 'lucide-react';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState<string>(() => {
@@ -127,7 +127,43 @@ export default function App() {
       case '/jeux-bibliques':
         return <BibleGames onNavigate={navigateTo} />;
       case '/secretariat':
-        return <Secretariat onNavigate={navigateTo} isSubdomain={isSubdomain} />;
+        if (isSubdomain) {
+          return <Secretariat onNavigate={navigateTo} isSubdomain={true} />;
+        }
+        // Accès exclusif par sous-domaine :
+        // Sur le domaine public (www.eglisedunazareendedame.org), rediriger vers le sous-domaine officiel
+        if (typeof window !== 'undefined') {
+          const host = window.location.hostname.toLowerCase();
+          if (host.includes('eglisedunazareendedame.org') && !host.startsWith('secretariat.') && !host.startsWith('secretaria.')) {
+            window.location.href = 'https://secretariat.eglisedunazareendedame.org';
+            return null;
+          }
+        }
+        return (
+          <div className="min-h-[60vh] flex items-center justify-center px-4 py-16">
+            <div className="max-w-md w-full bg-slate-900 border border-amber-500/30 rounded-3xl p-8 text-center space-y-4 text-white shadow-2xl">
+              <div className="w-14 h-14 mx-auto rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+                <Lock className="w-7 h-7 text-amber-400" />
+              </div>
+              <h2 className="font-serif text-xl font-bold text-white">
+                Accès Exclusif par Sous-Domaine
+              </h2>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Le portail administratif et pastoral n'est plus accessible depuis le site public. L'accès se fait exclusivement via l'adresse officielle :
+              </p>
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-amber-400 font-mono text-xs font-bold select-all">
+                secretariat.eglisedunazareendedame.org
+              </div>
+              <a
+                href="https://secretariat.eglisedunazareendedame.org"
+                className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-lg"
+              >
+                <span>Accéder au Portail Administratif</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        );
       case '/':
       default:
         if (isSubdomain) {
