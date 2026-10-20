@@ -428,7 +428,8 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
                   <div className="pt-2">
                     <PayPalDonationButton 
                       buttonId="J6F3GVMK9T27Y"
-                      containerId="paypal-container-proj-J6F3GVMK9T27Y"
+                      containerId={`paypal-container-proj-${selectedProject?.id || 'direct'}`}
+                      initialCategory={`Projet: ${selectedProject?.title || 'Soutien aux Projets'}`}
                     />
                   </div>
                 </div>

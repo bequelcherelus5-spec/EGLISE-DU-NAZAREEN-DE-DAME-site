@@ -157,27 +157,27 @@ export const DonationSection: React.FC<DonationSectionProps> = ({
             </button>
           </div>
 
-          {/* ONGLET 1: PAYPAL BOUTON OFFICIEL HÉBERGÉ (J6F3GVMK9T27Y) */}
+          {/* ONGLET 1: PAYPAL SMART PAYMENT BUTTONS & CARTES BANCAIRES */}
           {activeTab === 'paypal' && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <div className="text-center space-y-1.5">
                 <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-amber-400">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>Module Officiel PayPal Hosted Buttons (ID : J6F3GVMK9T27Y)</span>
+                  <span>Passerelle Sécurisée PayPal Smart Payment Buttons &amp; Cartes</span>
                 </div>
-                <h4 className="font-serif text-lg font-bold text-white">
-                  Paiement sécurisé par PayPal ou Carte Internationale
+                <h4 className="font-serif text-lg sm:text-xl font-bold text-white">
+                  Paiement sécurisé par Carte de Crédit/Débit ou PayPal (USD)
                 </h4>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
-                  Entrez librement le montant en USD que vous souhaitez verser pour les dîmes, offrandes ou le projet CDEJ HA 0926.
+                <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+                  Choisissez une affectation, sélectionnez ou entrez votre montant personnalisé en USD. Tout se passe de manière instantanée et sécurisée sans rechargement de page.
                 </p>
               </div>
 
-              {/* Bouton officiel PayPal intégré */}
-              <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-inner max-w-md mx-auto">
+              {/* Module interactif Smart Buttons */}
+              <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-inner max-w-xl mx-auto">
                 <PayPalDonationButton 
                   buttonId="J6F3GVMK9T27Y"
-                  containerId="paypal-container-J6F3GVMK9T27Y"
+                  containerId="paypal-smart-container-main"
                 />
               </div>
 
