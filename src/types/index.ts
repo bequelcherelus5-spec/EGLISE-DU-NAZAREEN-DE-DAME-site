@@ -185,6 +185,8 @@ export interface ManagedProject {
   targetAmount?: string;
   currentAmount?: string;
   beneficiariesCount?: number;
+  _syncWarning?: string;
+  _source?: 'supabase' | 'local';
 }
 
 export interface CustomPage {

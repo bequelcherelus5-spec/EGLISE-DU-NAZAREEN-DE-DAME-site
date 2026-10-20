@@ -1,0 +1,5 @@
+# Cloudflare Pages SPA Client-Side Routing
+# Ensures all subdomains and paths (including secretariat.eglisedunazareendedame.org and /faire-un-don)
+# are routed to index.html with HTTP 200
+
+/*    /index.html   200

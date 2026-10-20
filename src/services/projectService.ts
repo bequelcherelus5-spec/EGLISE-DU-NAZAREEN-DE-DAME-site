@@ -20,6 +20,7 @@ function mapSupabaseRowToProject(row: any): ManagedProject {
     updatedAt: row.updated_at || undefined,
     status: isDraft ? 'draft' : 'published',
     beneficiariesCount: row.beneficiaries_reached || row.beneficiaries_target || 0,
+    _source: 'supabase',
   };
 }
 
@@ -74,15 +75,19 @@ export const projectService = {
       // Ignorer
     }
 
-    // 3. Fallback stockage local
+    // 3. Fallback stockage local (marqué avec _source: 'local')
     try {
       const cached = localStorage.getItem(STORAGE_KEY);
       if (cached) {
         const parsed: ManagedProject[] = JSON.parse(cached);
+        const marked = parsed.map(p => ({
+          ...p,
+          _source: p.id.startsWith('local-') ? ('local' as const) : (p._source || 'supabase'),
+        }));
         if (status) {
-          return parsed.filter(p => p.status === status);
+          return marked.filter(p => p.status === status);
         }
-        return parsed;
+        return marked;
       }
     } catch {
       // Ignorer
@@ -95,7 +100,7 @@ export const projectService = {
   async createProject(project: Omit<ManagedProject, 'id' | 'createdAt'>): Promise<ManagedProject | null> {
     const bannerUrl = project.images && project.images.length > 0 ? project.images[0] : null;
     const dbStatus = project.status === 'draft' ? 'planning' : 'active';
-    const projCode = project.code?.trim() || ('HA-0926-' + Math.floor(100 + Math.random() * 900));
+    let projCode = project.code?.trim() || ('HA-0926-' + Date.now().toString().slice(-6));
 
     // 1. Insertion directe dans Supabase table 'projects'
     if (isSupabaseConfigured && supabase) {
@@ -113,11 +118,20 @@ export const projectService = {
           banner_url: bannerUrl,
         };
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('projects')
           .insert([row])
           .select()
           .single();
+
+        // Si le code existe déjà, retenter avec un code horodaté unique
+        if (error && (error.message.includes('unique') || error.message.includes('code'))) {
+          projCode = 'PROJ-' + Date.now();
+          row.code = projCode;
+          const retry = await supabase.from('projects').insert([row]).select().single();
+          data = retry.data;
+          error = retry.error;
+        }
 
         if (!error && data) {
           const created = mapSupabaseRowToProject(data);
@@ -128,8 +142,20 @@ export const projectService = {
           return created;
         } else if (error) {
           console.error('[ProjectService] Erreur insertion Supabase:', error.message, error.details, error.hint);
+          // Enregistrer en local avec un avertissement explicite de synchronisation
+          const localList = await this.getProjects();
+          const newProj: ManagedProject = {
+            ...project,
+            id: 'local-' + Date.now(),
+            createdAt: new Date().toISOString(),
+            _source: 'local',
+            _syncWarning: `Erè Supabase: ${error.message}. Pwojè a anrejistre lokalman sèlman.`,
+          };
+          const updated = [newProj, ...localList];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          return newProj;
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('[ProjectService] Exception insertion Supabase:', err);
       }
     }
@@ -155,6 +181,10 @@ export const projectService = {
       ...project,
       id: 'local-' + Date.now(),
       createdAt: new Date().toISOString(),
+      _source: 'local',
+      _syncWarning: isSupabaseConfigured
+        ? 'Pa rive konekte ak Supabase. Anrejistre lokalman sèlman.'
+        : 'Supabase pa konfigire. Pwojè a sove nan navigatè a sèlman.',
     };
     const updated = [newProj, ...localList];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -163,8 +193,40 @@ export const projectService = {
 
   // Modifier un projet (Directement dans Supabase table 'projects')
   async updateProject(id: string, updates: Partial<ManagedProject>): Promise<ManagedProject | null> {
-    // 1. Mise à jour Supabase directe
-    if (isSupabaseConfigured && supabase) {
+    const isLocalId = id.startsWith('local-');
+
+    // 1. Si le projet était uniquement en local, tenter de le migrer vers Supabase lors de la modification
+    if (isLocalId && isSupabaseConfigured && supabase) {
+      const localList = await this.getProjects();
+      const existing = localList.find(p => p.id === id);
+      if (existing) {
+        const merged = { ...existing, ...updates };
+        const createdOnSupabase = await this.createProject({
+          title: merged.title,
+          code: merged.code,
+          partner: merged.partner,
+          category: merged.category,
+          description: merged.description,
+          htmlContent: merged.htmlContent,
+          images: merged.images,
+          author: merged.author,
+          status: merged.status,
+          targetAmount: merged.targetAmount,
+          currentAmount: merged.currentAmount,
+          beneficiariesCount: merged.beneficiariesCount,
+        });
+
+        if (createdOnSupabase && !createdOnSupabase.id.startsWith('local-')) {
+          // Supprimer l'ancienne version locale
+          const filtered = localList.filter(p => p.id !== id);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify([createdOnSupabase, ...filtered]));
+          return createdOnSupabase;
+        }
+      }
+    }
+
+    // 2. Mise à jour Supabase directe pour les IDs valides
+    if (!isLocalId && isSupabaseConfigured && supabase) {
       try {
         const patch: Record<string, any> = {};
         if (updates.title !== undefined) patch.title = updates.title.trim();
@@ -206,21 +268,6 @@ export const projectService = {
       }
     }
 
-    // 2. Fallback API
-    try {
-      const res = await fetch(`/api/projects/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.project) return data.project;
-      }
-    } catch {
-      // Ignorer
-    }
-
     // 3. Fallback Local
     const localList = await this.getProjects();
     const idx = localList.findIndex(p => p.id === id);
@@ -234,8 +281,10 @@ export const projectService = {
 
   // Supprimer un projet (Directement dans Supabase table 'projects')
   async deleteProject(id: string): Promise<boolean> {
-    // 1. Suppression Supabase
-    if (isSupabaseConfigured && supabase) {
+    const isLocalId = id.startsWith('local-');
+
+    // 1. Suppression Supabase (si l'ID est un UUID Supabase)
+    if (!isLocalId && isSupabaseConfigured && supabase) {
       try {
         const { error } = await supabase.from('projects').delete().eq('id', id);
         if (!error) {
@@ -250,19 +299,7 @@ export const projectService = {
       }
     }
 
-    // 2. Fallback API
-    try {
-      const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        const current = await this.getProjects();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(current.filter(p => p.id !== id)));
-        return true;
-      }
-    } catch {
-      // Ignorer
-    }
-
-    // 3. Fallback Local
+    // 2. Fallback Local
     const localList = await this.getProjects();
     const filtered = localList.filter(p => p.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
@@ -281,9 +318,19 @@ export const projectService = {
 
   // Migration / Synchronisation des projets locaux vers Supabase
   // Permet de pousser vers Supabase les projets créés en local ou sur environnement de test
-  async syncLocalProjectsToSupabase(): Promise<{ uploaded: number; failed: number; message: string }> {
+  async syncLocalProjectsToSupabase(): Promise<{ 
+    uploaded: number; 
+    failed: number; 
+    message: string;
+    rlsBlocked?: boolean;
+  }> {
     if (!isSupabaseConfigured || !supabase) {
-      return { uploaded: 0, failed: 0, message: 'Supabase n’est pas configuré.' };
+      return { 
+        uploaded: 0, 
+        failed: 0, 
+        message: 'Supabase pa konfigire. Verifye VITE_SUPABASE_URL ak VITE_SUPABASE_ANON_KEY.',
+        rlsBlocked: false,
+      };
     }
 
     let localProjects: ManagedProject[] = [];
@@ -291,30 +338,43 @@ export const projectService = {
       const cached = localStorage.getItem(STORAGE_KEY);
       if (cached) localProjects = JSON.parse(cached);
     } catch {
-      return { uploaded: 0, failed: 0, message: 'Aucun projet local trouvé.' };
+      return { uploaded: 0, failed: 0, message: 'Pa gen pwojè lokal pou senkronize.' };
     }
 
     if (!localProjects || localProjects.length === 0) {
-      return { uploaded: 0, failed: 0, message: 'Aucun projet en cache local à synchroniser.' };
+      return { uploaded: 0, failed: 0, message: 'Pa gen okenn pwojè nan memwa lokal la.' };
     }
 
     // Récupérer les projets déjà présents sur Supabase pour éviter les doublons
-    const { data: remoteData } = await supabase.from('projects').select('id, code, title');
+    const { data: remoteData, error: fetchErr } = await supabase.from('projects').select('id, code, title');
+    if (fetchErr) {
+      const isRls = fetchErr.code === '42501' || fetchErr.message.toLowerCase().includes('policy');
+      return {
+        uploaded: 0,
+        failed: localProjects.length,
+        message: `Erè Supabase: ${fetchErr.message}`,
+        rlsBlocked: isRls,
+      };
+    }
+
     const existingTitles = new Set((remoteData || []).map((r: any) => (r.title || '').trim().toLowerCase()));
     const existingCodes = new Set((remoteData || []).map((r: any) => (r.code || '').trim()));
 
     let uploaded = 0;
     let failed = 0;
+    let rlsDetected = false;
 
     for (const proj of localProjects) {
       const titleLower = proj.title.trim().toLowerCase();
-      if (existingTitles.has(titleLower) || (proj.code && existingCodes.has(proj.code))) {
-        continue; // Déjà présent dans Supabase
+      // Si déjà sur Supabase avec un vrai UUID, ignorer
+      if (!proj.id.startsWith('local-') && (existingTitles.has(titleLower) || (proj.code && existingCodes.has(proj.code)))) {
+        continue;
       }
 
       try {
+        const uniqueCode = proj.code?.trim() || ('HA-0926-' + Date.now().toString().slice(-6));
         const row = {
-          code: proj.code?.trim() || ('HA-0926-' + Math.floor(100 + Math.random() * 900)),
+          code: uniqueCode,
           title: proj.title.trim(),
           partner: proj.partner?.trim() || 'Église du Nazaréen de Damé',
           category: proj.category || 'Enfance & Éducation',
@@ -326,11 +386,14 @@ export const projectService = {
           banner_url: proj.images && proj.images.length > 0 ? proj.images[0] : null,
         };
 
-        const { error } = await supabase.from('projects').insert([row]);
-        if (!error) {
+        const { error: insertErr } = await supabase.from('projects').insert([row]);
+        if (!insertErr) {
           uploaded++;
         } else {
           failed++;
+          if (insertErr.code === '42501' || insertErr.message.toLowerCase().includes('policy')) {
+            rlsDetected = true;
+          }
         }
       } catch {
         failed++;
@@ -343,8 +406,14 @@ export const projectService = {
     return {
       uploaded,
       failed,
-      message: `${uploaded} projet(s) téléversé(s) avec succès vers Supabase (${failed} échec(s)).`,
+      message: uploaded > 0
+        ? `${uploaded} pwojè transfere avèk siksè nan Supabase ! (${failed} echèk)`
+        : failed > 0
+          ? `Echèk senkronizasyon : ${failed} pwojè pa rive monte sou Supabase.${rlsDetected ? ' (RLS Policy bloke l)' : ''}`
+          : 'Tout pwojè yo te deja sou Supabase !',
+      rlsBlocked: rlsDetected,
     };
   },
 };
+
 

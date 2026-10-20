@@ -53,9 +53,10 @@ import { FAQManager } from '../components/secretariat/FAQManager';
 
 interface SecretariatProps {
   onNavigate: (path: string) => void;
+  isSubdomain?: boolean;
 }
 
-export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate }) => {
+export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomain = false }) => {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => authService.isAuthenticated());
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(() => authService.getUser());
@@ -457,6 +458,16 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate }) => {
             <p className="text-xs text-slate-400">
               Accès réservé au Pasteur Bequel CHERELUS, aux diacres et aux administrateurs autorisés.
             </p>
+            {isSubdomain && (
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
+                <span className="text-[11px] font-bold text-amber-300 block">
+                  Portail Officiel : secretariat.eglisedunazareendedame.org
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  Authentification Sécurisée Cloud Supabase
+                </span>
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">

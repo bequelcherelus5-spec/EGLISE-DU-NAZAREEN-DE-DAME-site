@@ -53,6 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
     { path: '/temwayaj', label: t('nav_testimonies', 'Temwayaj'), icon: Sparkles },
     { path: '/leson-biblik', label: t('nav_lessons', 'Lekòl Dimanch'), icon: BookOpen },
     { path: '/projets', label: t('nav_projects', 'Projets (CDEJ)'), icon: HeartHandshake },
+    { path: '/faire-un-don', label: t('nav_donations', 'Faire un Don'), icon: HeartHandshake },
     { path: '/medias', label: t('nav_media', 'Médias & Prédications'), icon: Tv },
     { path: '/jeux-bibliques', label: t('nav_bible_games', 'Jeux Bibliques'), icon: Trophy },
     { path: '/faq', label: t('nav_faq', 'FAQ'), icon: HelpCircle },
@@ -72,17 +73,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
   }, []);
 
   // Bloquer le défilement de la page arrière-plan quand le menu mobile est ouvert
-  // Résout le problème : "nan meni lem ouvé map défilé meu an pa défilé se sèlman paj la anba menu an ki defile"
+  // Résout le problème Android : "nan meni lem ouvé map défilé meu an pa défilé se sèlman paj la anba menu an ki defile"
   useEffect(() => {
     if (mobileMenuOpen) {
-      const originalOverflow = document.body.style.overflow;
-      const originalTouchAction = document.body.style.touchAction;
-      document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflowY = 'hidden';
 
       return () => {
-        document.body.style.overflow = originalOverflow;
-        document.body.style.touchAction = originalTouchAction;
+        const top = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflowY = '';
+        if (top) {
+          window.scrollTo(0, parseInt(top || '0', 10) * -1);
+        }
       };
     }
   }, [mobileMenuOpen]);
@@ -133,11 +141,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
       {/* Conteneur principal de la barre d'en-tête (référencé pour la hauteur) */}
       <div ref={headerBarRef} className="w-full">
         {/* Top Bar: Official Contacts, Motto & Social (Épurée pour Android et petits écrans) */}
-        <div className="bg-[#071322] text-xs text-slate-300 py-1.5 px-3 sm:px-4 border-b border-slate-800">
+        <div className="bg-[#071322] text-xs text-slate-300 py-1 px-3 sm:px-4 border-b border-slate-800">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             {/* Devise officielle */}
             <div className="flex items-center space-x-2 min-w-0">
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30 truncate">
+              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30 truncate">
                 « Sainteté à l’Éternel »
               </span>
               <span className="hidden md:inline text-slate-400 text-[11px] truncate">
@@ -146,15 +154,19 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             </div>
 
             {/* Contacts & Réseaux Sociaux rapides */}
-            <div className="flex items-center space-x-2.5 sm:space-x-4 flex-shrink-0">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-end">
               <a 
                 href={`tel:${OFFICIAL_CHURCH_INFO.phone}`} 
-                className="inline-flex items-center space-x-1 text-[11px] sm:text-xs text-slate-300 hover:text-amber-400 transition"
+                className="inline-flex items-center space-x-1.5 text-[11px] sm:text-xs text-slate-300 hover:text-amber-400 transition"
                 title="Appeler l'Église"
               >
-                <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
+                <Phone className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                 <span className="font-mono">{OFFICIAL_CHURCH_INFO.phone}</span>
               </a>
+
+              <span className="sm:hidden text-[10px] text-amber-400/90 font-medium">
+                Damé, Haïti
+              </span>
 
               <a 
                 href={`mailto:${OFFICIAL_CHURCH_INFO.email}`} 
@@ -166,11 +178,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               </a>
 
               {/* Réseaux Sociaux */}
-              <div className="flex items-center space-x-2 pl-2 border-l border-slate-800">
+              <div className="hidden sm:flex items-center space-x-2 pl-2 border-l border-slate-800">
                 <a 
                   href={OFFICIAL_CHURCH_INFO.social.youtube} 
                   target="_blank" 
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer" 
                   className="text-slate-400 hover:text-red-500 transition p-0.5"
                   title="Chaîne YouTube Officielle"
                 >
@@ -179,7 +191,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 <a 
                   href={OFFICIAL_CHURCH_INFO.social.facebook} 
                   target="_blank" 
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer" 
                   className="text-slate-400 hover:text-blue-500 transition p-0.5"
                   title="Page Facebook Officielle"
                 >
@@ -201,9 +213,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             {/* Logo officiel & Titre de l'Église (Sécurisé pour mobile avec truncate) */}
             <button 
               onClick={() => handleNav('/')}
-              className="flex items-center space-x-2.5 sm:space-x-3 text-left focus:outline-none group min-w-0 flex-1 sm:flex-initial"
+              className="flex items-center space-x-2 sm:space-x-3 text-left focus:outline-none group min-w-0 flex-1 sm:flex-initial"
             >
-              <div className="relative w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex-shrink-0 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 rounded-full p-0.5 shadow-lg group-hover:scale-105 transition-transform">
+              <div className="relative w-8 h-8 min-[380px]:w-9 min-[380px]:h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex-shrink-0 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 rounded-full p-0.5 shadow-lg group-hover:scale-105 transition-transform">
                 <div className="w-full h-full bg-black rounded-full flex items-center justify-center p-0.5 overflow-hidden">
                   <img 
                     src={churchSealImg} 
@@ -212,11 +224,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                   />
                 </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <span className="block font-serif text-xs xs:text-sm sm:text-base lg:text-xl font-bold tracking-tight text-white group-hover:text-amber-300 transition leading-snug truncate">
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <span className="block font-serif text-[11px] min-[360px]:text-xs sm:text-base lg:text-xl font-bold tracking-tight text-white group-hover:text-amber-300 transition leading-tight truncate">
                   ÉGLISE DU NAZARÉEN DE DAMÉ
                 </span>
-                <span className="block text-[9px] sm:text-[11px] font-sans tracking-wider uppercase text-amber-400/90 font-medium truncate">
+                <span className="block text-[8.5px] min-[360px]:text-[9.5px] sm:text-[11px] font-sans tracking-wider uppercase text-amber-400/90 font-medium leading-normal truncate mt-0.5">
                   HAÏTI • FONDÉE EN 1979 <span className="hidden md:inline">• « SAINTETÉ À L’ÉTERNEL »</span>
                 </span>
               </div>
@@ -319,10 +331,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 <LanguageSelector />
               </div>
 
+              {/* Bouton Dîmes & Faire un Don */}
+              <button
+                onClick={() => handleNav('/faire-un-don')}
+                className={`ml-3 inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition shadow-sm ${
+                  currentPath.startsWith('/faire-un-don') || currentPath.startsWith('/don')
+                    ? 'bg-emerald-500 text-white font-extrabold shadow-emerald-500/25'
+                    : 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-white'
+                }`}
+                title="Soutenez l'Église et le projet CDEJ HA 0926"
+              >
+                <HeartHandshake className="w-3.5 h-3.5" />
+                <span>Faire un Don</span>
+              </button>
+
               {/* Bouton Espace Secrétariat */}
               <button
                 onClick={() => handleNav('/secretariat')}
-                className={`ml-3 inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition shadow-sm ${
+                className={`ml-2 inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition shadow-sm ${
                   currentPath.startsWith('/secretariat')
                     ? 'bg-amber-500 text-slate-950 font-bold'
                     : 'bg-gradient-to-r from-amber-500/20 to-amber-600/30 text-amber-300 border border-amber-500/40 hover:bg-amber-500 hover:text-slate-950'
@@ -360,7 +386,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           className="xl:hidden fixed inset-x-0 bottom-0 z-50 bg-slate-950/98 backdrop-blur-md overflow-y-auto overscroll-contain px-4 pt-3 pb-32 shadow-2xl border-t border-slate-800 animate-in slide-in-from-top-2 duration-200"
           style={{ 
             top: `${headerHeight}px`,
-            WebkitOverflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
           }}
         >
           {/* En-tête du menu mobile */}
@@ -437,8 +464,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             </div>
           )}
 
-          {/* Bouton Espace Secrétariat & Coordonnées dans le tiroir mobile */}
-          <div className="pt-4 mt-3 border-t border-slate-800/80 space-y-3">
+          {/* Boutons d'Action Rapide dans le tiroir mobile */}
+          <div className="pt-4 mt-3 border-t border-slate-800/80 space-y-2.5">
+            <button
+              onClick={() => handleNav('/faire-un-don')}
+              className="w-full flex items-center justify-center space-x-2 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-md hover:brightness-110 active:scale-[0.99] transition"
+            >
+              <HeartHandshake className="w-4 h-4 text-emerald-200" />
+              <span>Dîmes &amp; Faire un Don (PayPal / Mobile)</span>
+            </button>
+
             <button
               onClick={() => handleNav('/secretariat')}
               className={`w-full flex items-center justify-center space-x-2 py-3 rounded-xl text-sm font-bold transition shadow-md ${

@@ -26,13 +26,22 @@ import { DocumentRequests } from './pages/DocumentRequests';
 import { FAQ } from './pages/FAQ';
 import { DailyBibleReading } from './pages/DailyBibleReading';
 import { Testimonies } from './pages/Testimonies';
-import { ArrowUp } from 'lucide-react';
+import { Donations } from './pages/Donations';
+import { isSecretariatSubdomain } from './utils/subdomain';
+import { ArrowUp, ShieldCheck, ExternalLink } from 'lucide-react';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState<string>(() => {
     return window.location.pathname || '/';
   });
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const isSubdomain = isSecretariatSubdomain();
+
+  useEffect(() => {
+    if (isSubdomain) {
+      document.title = 'Secrétariat Général & Administration | Église du Nazaréen de Damé';
+    }
+  }, [isSubdomain]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -64,6 +73,12 @@ export default function App() {
   };
 
   const renderCurrentPage = () => {
+    // Si la requête provient du sous-domaine secretariat.eglisedunazareendedame.org
+    // La page racine ou toute route d'administration charge le portail officiel
+    if (isSubdomain && (currentPath === '/' || currentPath === '/secretariat' || currentPath === '/admin')) {
+      return <Secretariat onNavigate={navigateTo} isSubdomain={true} />;
+    }
+
     // Dynamic custom pages created in Content Manager
     if (currentPath.startsWith('/page/')) {
       const slug = currentPath.replace(/^\/page\//, '');
@@ -71,6 +86,12 @@ export default function App() {
     }
 
     switch (currentPath) {
+      case '/faire-un-don':
+      case '/don':
+      case '/dons':
+      case '/dimes':
+      case '/donations':
+        return <Donations onNavigate={navigateTo} />;
       case '/a-propos':
         return <About onNavigate={navigateTo} />;
       case '/ministeres':
@@ -106,9 +127,12 @@ export default function App() {
       case '/jeux-bibliques':
         return <BibleGames onNavigate={navigateTo} />;
       case '/secretariat':
-        return <Secretariat onNavigate={navigateTo} />;
+        return <Secretariat onNavigate={navigateTo} isSubdomain={isSubdomain} />;
       case '/':
       default:
+        if (isSubdomain) {
+          return <Secretariat onNavigate={navigateTo} isSubdomain={true} />;
+        }
         return <Home onNavigate={navigateTo} />;
     }
   };
@@ -116,6 +140,31 @@ export default function App() {
   return (
     <LanguageProvider>
       <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 font-sans selection:bg-amber-500 selection:text-white">
+        {/* Bandeau officiel spécifique au sous-domaine du Secrétariat */}
+        {isSubdomain && (
+          <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 text-slate-950 px-4 py-2 text-xs font-bold shadow-md">
+            <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <span className="px-2 py-0.5 rounded bg-black/20 text-white text-[10px] uppercase tracking-wider font-mono">
+                  PORTAIL OFFICIEL
+                </span>
+                <span>
+                  Secrétariat Général &amp; Administration Paroissiale (secretariat.eglisedunazareendedame.org)
+                </span>
+              </div>
+              <a
+                href="https://www.eglisedunazareendedame.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1 underline hover:text-white transition text-[11px]"
+              >
+                <span>Accéder au site public officiel (eglisedunazareendedame.org)</span>
+                <ExternalLink className="w-3.5 h-3.5 ml-0.5" />
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Urgent Official Announcement Banner (Option 13) */}
         <AlertBanner onNavigate={navigateTo} />
 

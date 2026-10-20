@@ -7,6 +7,7 @@ import {
   OFFICIAL_MEDIA 
 } from '../data/churchData';
 import { SEOHead } from '../components/SEOHead';
+import { DonationSection } from '../components/DonationSection';
 import churchSealImg from '../assets/images/regenerated_image_1792011564270.x-icon';
 import { 
   Calendar, 
@@ -129,6 +130,14 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
               >
                 <BookOpen className="w-4 h-4 text-amber-400" />
                 <span>Leson Lekòl Dimanch</span>
+              </button>
+
+              <button
+                onClick={() => onNavigate('/faire-un-don')}
+                className="px-6 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-lg shadow-emerald-600/25 transition flex items-center space-x-2 font-serif"
+              >
+                <HeartHandshake className="w-4 h-4 text-white" />
+                <span>Dîmes &amp; Faire un Don</span>
               </button>
 
               <button
@@ -373,6 +382,9 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
           </div>
         </div>
       </section>
+
+      {/* 4.5. SECTION DÎMES, OFFRANDES & SOUTIEN AUX PROJETS (PAYPAL, MONCASH, NATCASH) */}
+      <DonationSection onNavigate={onNavigate} />
 
       {/* 5. LES 7 MINISTÈRES OFFICIELS D'ÉGLISE */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ManagedProject } from '../types';
 import { projectService } from '../services/projectService';
-import { getSupabaseStatus, testSupabaseConnection } from '../services/supabaseClient';
+import { 
+  getSupabaseStatus, 
+  testSupabaseConnection, 
+  setRuntimeSupabaseCredentials 
+} from '../services/supabaseClient';
 import { 
   FolderPlus, 
   Edit3, 
@@ -22,7 +26,11 @@ import {
   Camera,
   Database,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Key,
+  Copy,
+  Check,
+  FileCode
 } from 'lucide-react';
 
 interface ProjectManagerProps {
@@ -63,6 +71,14 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
   const [supabaseStatus, setSupabaseStatus] = useState(() => getSupabaseStatus());
   const [syncingSupabase, setSyncingSupabase] = useState(false);
   const [supabaseDiag, setSupabaseDiag] = useState<string | null>(null);
+  const [rlsBlocked, setRlsBlocked] = useState(false);
+
+  // Modals de configuration et diagnostic
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showSqlModal, setShowSqlModal] = useState(false);
+  const [customUrl, setCustomUrl] = useState('');
+  const [customKey, setCustomKey] = useState('');
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     loadProjects();
@@ -85,7 +101,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
 
   const showNotice = (type: 'success' | 'error', message: string) => {
     setActionNotice({ type, message });
-    setTimeout(() => setActionNotice(null), 4000);
+    setTimeout(() => setActionNotice(null), 5000);
   };
 
   const handleTestSupabase = async () => {
@@ -93,10 +109,14 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
     try {
       const res = await testSupabaseConnection();
       setSupabaseDiag(res.message);
+      setRlsBlocked(Boolean(res.rlsBlocked));
       if (res.success) {
         showNotice('success', res.message);
       } else {
         showNotice('error', res.message);
+        if (res.rlsBlocked) {
+          setShowSqlModal(true);
+        }
       }
     } finally {
       setSyncingSupabase(false);
@@ -107,13 +127,55 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
     setSyncingSupabase(true);
     try {
       const res = await projectService.syncLocalProjectsToSupabase();
+      setRlsBlocked(Boolean(res.rlsBlocked));
       showNotice(res.failed === 0 ? 'success' : 'error', res.message);
+      if (res.rlsBlocked) {
+        setShowSqlModal(true);
+      }
       await loadProjects();
     } catch (err: any) {
-      showNotice('error', 'Erreur de synchronisation: ' + (err?.message || 'Inconnue'));
+      showNotice('error', 'Erè pandan senkronizasyon an: ' + (err?.message || 'Inconnue'));
     } finally {
       setSyncingSupabase(false);
     }
+  };
+
+  const handleSaveCustomCredentials = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customUrl.trim() || !customKey.trim()) {
+      showNotice('error', 'Tanpri mete URL ak ANON_KEY Supabase ou an.');
+      return;
+    }
+    const ok = setRuntimeSupabaseCredentials(customUrl.trim(), customKey.trim());
+    if (ok) {
+      showNotice('success', 'Konfigirasyon Supabase anrejistre avèk siksè nan navigatè a !');
+      setShowConfigModal(false);
+      setSupabaseStatus(getSupabaseStatus());
+      loadProjects();
+    } else {
+      showNotice('error', 'Enfòmasyon Supabase yo pa parèt kòrèk (verifye URL la ak kle a).');
+    }
+  };
+
+  const handleCopySql = () => {
+    const sql = `-- POLITIQUES DE SÉCURITÉ ROW LEVEL SECURITY (RLS) POUR LA TABLE PROJECTS
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Gestion projets admin" ON public.projects;
+DROP POLICY IF EXISTS "Gestion projets admin et secretariat" ON public.projects;
+DROP POLICY IF EXISTS "Lecture publique des projets" ON public.projects;
+
+-- 1. Lecture publique (permet à tout le monde de voir les projets sur le site)
+CREATE POLICY "Lecture publique des projets" 
+  ON public.projects FOR SELECT USING (true);
+
+-- 2. Écriture / Modification autorisée pour le Secrétariat
+CREATE POLICY "Gestion projets admin et secretariat" 
+  ON public.projects FOR ALL TO anon, authenticated 
+  USING (true) WITH CHECK (true);`;
+
+    navigator.clipboard.writeText(sql);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 3000);
   };
 
 
@@ -169,10 +231,10 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
         const rawDataUrl = event.target?.result as string;
         if (!rawDataUrl) return;
 
-        // Compression automatique pour mobile et web (max 1200px)
+        // Compression automatique pour mobile et web (max 960px, qualité 0.75)
         const img = new Image();
         img.onload = () => {
-          const maxDim = 1200;
+          const maxDim = 960;
           let width = img.width;
           let height = img.height;
           if (width > maxDim || height > maxDim) {
@@ -190,7 +252,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.75);
             setFormImages((prev) => [...prev, compressedUrl]);
           } else {
             setFormImages((prev) => [...prev, rawDataUrl]);
@@ -242,14 +304,22 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
     if (editingProject) {
       const updated = await projectService.updateProject(editingProject.id, payload);
       if (updated) {
-        showNotice('success', `Projet « ${updated.title} » mis à jour avec succès !`);
+        if (updated._syncWarning) {
+          showNotice('error', updated._syncWarning);
+        } else {
+          showNotice('success', `Pwojè « ${updated.title} » mete ajou ak siksè nan Supabase !`);
+        }
       } else {
         showNotice('error', 'Échec de mise à jour du projet.');
       }
     } else {
       const created = await projectService.createProject(payload);
       if (created) {
-        showNotice('success', `Nouveau projet « ${created.title} » créé avec succès !`);
+        if (created._syncWarning) {
+          showNotice('error', `Atansyon : ${created._syncWarning}`);
+        } else {
+          showNotice('success', `Nouveau projet « ${created.title} » créé et synchronisé sur Supabase !`);
+        }
       } else {
         showNotice('error', 'Échec de création du projet.');
       }
@@ -407,8 +477,51 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
               <Upload className="w-3.5 h-3.5" />
               <span>Pousser vers Supabase</span>
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCustomUrl(localStorage.getItem('dame_vite_supabase_url') || '');
+                setCustomKey(localStorage.getItem('dame_vite_supabase_anon_key') || '');
+                setShowConfigModal(true);
+              }}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition flex items-center space-x-1.5"
+              title="Configurer manuellement les clés Supabase si besoin"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>Kle Supabase</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSqlModal(true)}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center space-x-1.5"
+              title="Voir et copier le script SQL RLS"
+            >
+              <FileCode className="w-3.5 h-3.5 text-amber-400" />
+              <span>Kòd SQL RLS</span>
+            </button>
           </div>
         </div>
+
+        {/* Alerte urgente si RLS est bloqué */}
+        {rlsBlocked && (
+          <div className="mt-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+              <div>
+                <span className="font-bold text-white block">Supabase RLS Policy Bloke Pwojè yo :</span>
+                <span>Baz done Supabase la bezwen politik RLS pou anon/authenticated gen dwa ekri nan tab 'projects'.</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSqlModal(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 transition text-xs flex items-center justify-center space-x-1.5 flex-shrink-0"
+            >
+              <FileCode className="w-4 h-4" />
+              <span>Kopi Kòd SQL la</span>
+            </button>
+          </div>
+        )}
       </div>
 
 
@@ -523,13 +636,24 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
 
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
                             {p.category}
                           </span>
                           {p.code && (
                             <span className="text-[10px] font-mono text-slate-400">
                               {p.code}
+                            </span>
+                          )}
+                          {p.id.startsWith('local-') || p._source === 'local' ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/30 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 text-amber-500" />
+                              <span>Lokal sèlman</span>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-500/30 flex items-center gap-1">
+                              <Database className="w-3 h-3 text-emerald-600" />
+                              <span>Supabase Cloud</span>
                             </span>
                           )}
                         </div>
@@ -565,6 +689,13 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
                     <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
                       {p.description}
                     </p>
+
+                    {p._syncWarning && (
+                      <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-start gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <span>{p._syncWarning}</span>
+                      </div>
+                    )}
 
                     <div className="pt-2 text-[11px] text-slate-400 flex items-center justify-between border-t border-slate-100">
                       <span>Auteur : {p.author}</span>
@@ -971,6 +1102,203 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ onProjectsUpdate
                   Publier sur le site maintenant
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIGURATION MANUELLE SUPABASE */}
+      {showConfigModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between border-b pb-4">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-slate-900">
+                    Konfigirasyon Kle Supabase
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Konekte sit la dirèkteman ak baz done Supabase ou a
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowConfigModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1.5">
+              <p className="font-semibold text-slate-800">
+                Eta aktyèl : {supabaseStatus.isConfigured ? (
+                  <span className="text-emerald-600 font-bold">Konekte ({supabaseStatus.source})</span>
+                ) : (
+                  <span className="text-amber-600 font-bold">Poko konekte / Kle manke</span>
+                )}
+              </p>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Si varyab yo pa t pran pandan deplwaman Cloudflare la, ou ka kole yo isit la kounye a pou debloke piblikasyon an imedyatman nan navigatè w la.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveCustomCredentials} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">
+                  VITE_SUPABASE_URL (URL Pwojè a) :
+                </label>
+                <input
+                  type="text"
+                  value={customUrl}
+                  onChange={(e) => setCustomUrl(e.target.value)}
+                  placeholder="https://xyzabcdefg.supabase.co"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 font-mono focus:outline-none focus:border-amber-500"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">
+                  VITE_SUPABASE_ANON_KEY (Kle Anonim lan) :
+                </label>
+                <textarea
+                  rows={3}
+                  value={customKey}
+                  onChange={(e) => setCustomKey(e.target.value)}
+                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 font-mono focus:outline-none focus:border-amber-500"
+                  required
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
+                <strong>Konsèy Cloudflare Pages :</strong> Pou tout vizitè sou <em>www.eglisedunazareendedame.org</em> wè pwojè yo san w pa bezwen mete kle sa yo chak fwa, mete varyab sa yo nan <strong>Cloudflare Pages &gt; Settings &gt; Environment variables</strong> epi klike <strong>Retry deployment</strong>.
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowConfigModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                >
+                  Anile
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-md"
+                >
+                  Anrejistre &amp; Konekte Kounye a
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SCRIPT SQL RLS POUR SUPABASE */}
+      {showSqlModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between border-b pb-4">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+                  <FileCode className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-slate-900">
+                    Kòd SQL pou Debloke Supabase (RLS Policy)
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Otorize piblikasyon ak lekti pwojè yo sou sit la
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSqlModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-600">
+              <p className="leading-relaxed">
+                Lè yon pwojè pibliye nan Secrétariat a men li pa monte sou <strong className="text-slate-800">www.eglisedunazareendedame.org</strong>, se paske règleman sekirite (RLS) Supabase bloke ekriti pa kle anonim lan.
+              </p>
+
+              <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-2">
+                <span className="font-bold text-indigo-950 block">Kijan pou w aplike kòd sa a nan 2 minit :</span>
+                <ol className="list-decimal list-inside space-y-1 text-[11px] text-indigo-900">
+                  <li>Ale sou panèl pwojè Supabase ou an : <strong>supabase.com/dashboard</strong></li>
+                  <li>Klike sou meni <strong>SQL Editor</strong> ki sou bò goch la.</li>
+                  <li>Klike sou bouton <strong>+ New Query</strong>.</li>
+                  <li>Kole kòd ki anba a epi klike sou bouton vèt <strong>RUN</strong>.</li>
+                </ol>
+              </div>
+
+              <div className="relative">
+                <div className="flex items-center justify-between bg-slate-900 text-slate-300 px-4 py-2 rounded-t-xl text-[11px] font-mono border-b border-slate-800">
+                  <span>supabase_projects_fix.sql</span>
+                  <button
+                    type="button"
+                    onClick={handleCopySql}
+                    className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-amber-500 text-slate-950 text-xs font-bold hover:bg-amber-400 transition"
+                  >
+                    {copySuccess ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Kopye !</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Kopye Kòd la</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <pre className="p-4 bg-slate-950 text-emerald-400 font-mono text-[11px] rounded-b-xl overflow-x-auto leading-relaxed border border-slate-900 select-all">
+{`-- OUVRI PÈMISYON POU PROJÈ YO KAPAB PUBLIYE SOU SITE LA
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Gestion projets admin" ON public.projects;
+DROP POLICY IF EXISTS "Gestion projets admin et secretariat" ON public.projects;
+DROP POLICY IF EXISTS "Lecture publique des projets" ON public.projects;
+
+-- 1. Tout moun ka li pwojè ki sou sit la
+CREATE POLICY "Lecture publique des projets" 
+  ON public.projects FOR SELECT USING (true);
+
+-- 2. Secrétariat ka ajoute, modifye, oswa efase pwojè
+CREATE POLICY "Gestion projets admin et secretariat" 
+  ON public.projects FOR ALL TO anon, authenticated 
+  USING (true) WITH CHECK (true);`}
+                </pre>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 pt-3 border-t">
+              <button
+                type="button"
+                onClick={() => setShowSqlModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100"
+              >
+                Fèmen
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSqlModal(false);
+                  handleTestSupabase();
+                }}
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-500 shadow-md"
+              >
+                Mwen fin kouri l, fè yon tès kounye a
+              </button>
             </div>
           </div>
         </div>

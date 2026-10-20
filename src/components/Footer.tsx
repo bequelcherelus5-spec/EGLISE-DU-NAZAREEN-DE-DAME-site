@@ -14,7 +14,8 @@ import {
   Loader2,
   ShieldCheck,
   FileText,
-  Heart
+  Heart,
+  HeartHandshake
 } from 'lucide-react';
 import { LanguageSelector } from './LanguageSelector';
 
@@ -149,6 +150,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               <li>
                 <button onClick={() => onNavigate('/evenements')} className="hover:text-amber-300 transition">
                   Cultes &amp; Calendrier des Réunions
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('/faire-un-don')} className="hover:text-amber-300 transition flex items-center space-x-1.5 text-emerald-300 font-semibold">
+                  <HeartHandshake className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Dîmes &amp; Faire un Don (PayPal / Mobile)</span>
                 </button>
               </li>
               <li>
