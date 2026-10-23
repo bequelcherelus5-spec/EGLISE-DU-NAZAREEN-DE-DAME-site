@@ -65,19 +65,34 @@ export default {
             }),
           });
 
-          const brevoData = await brevoRes.json();
+          if (brevoRes.ok || brevoRes.status === 204 || brevoRes.status === 201) {
+            return new Response(
+              JSON.stringify({
+                success: true,
+                message: 'Merci pour votre abonnement à la newsletter !',
+                isNew: true,
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
 
-          if (!brevoRes.ok) {
-            if (brevoData && brevoData.code === 'duplicate_parameter') {
-              return new Response(
-                JSON.stringify({
-                  success: true,
-                  message: 'Vous êtes déjà inscrit(e) à notre Newsletter ! Vos coordonnées sont à jour.',
-                  isNew: false,
-                }),
-                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-              );
-            }
+          let brevoData = null;
+          const contentType = brevoRes.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            try {
+              brevoData = await brevoRes.json();
+            } catch {}
+          }
+
+          if (brevoData && brevoData.code === 'duplicate_parameter') {
+            return new Response(
+              JSON.stringify({
+                success: true,
+                message: 'Merci pour votre abonnement à la newsletter !',
+                isNew: false,
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
           }
 
           return new Response(

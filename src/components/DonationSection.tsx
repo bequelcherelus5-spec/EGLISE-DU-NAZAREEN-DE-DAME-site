@@ -119,65 +119,59 @@ export const DonationSection: React.FC<DonationSectionProps> = ({
 
         {/* Système de Choix du Mode de Don */}
         <div className="bg-slate-950/90 rounded-2xl border border-slate-800 p-6 sm:p-8 max-w-3xl mx-auto relative z-10 space-y-6">
-          <div className="flex flex-wrap items-center justify-center gap-2 border-b border-slate-800 pb-4">
+          <div 
+            className="flex flex-wrap items-center justify-center gap-2 border-b border-slate-800 pb-4"
+            style={{ writingMode: 'horizontal-tb', direction: 'ltr' }}
+          >
             <button
               onClick={() => setActiveTab('paypal')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex flex-row items-center space-x-2 whitespace-nowrap ${
                 activeTab === 'paypal'
                   ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
                   : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
               }`}
+              style={{ writingMode: 'horizontal-tb', direction: 'ltr' }}
             >
-              <CreditCard className="w-4 h-4" />
-              <span>PayPal &amp; Cartes Bancaires (USD)</span>
+              <CreditCard className="w-4 h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">PayPal &amp; Cartes Bancaires (USD)</span>
             </button>
 
             <button
               onClick={() => setActiveTab('mobile')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex flex-row items-center space-x-2 whitespace-nowrap ${
                 activeTab === 'mobile'
                   ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
                   : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
               }`}
+              style={{ writingMode: 'horizontal-tb', direction: 'ltr' }}
             >
-              <Smartphone className="w-4 h-4" />
-              <span>MonCash &amp; Natcash (Haïti)</span>
+              <Smartphone className="w-4 h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">MonCash &amp; Natcash (Haïti)</span>
             </button>
 
             <button
               onClick={() => setActiveTab('bank')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex flex-row items-center space-x-2 whitespace-nowrap ${
                 activeTab === 'bank'
                   ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
                   : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
               }`}
+              style={{ writingMode: 'horizontal-tb', direction: 'ltr' }}
             >
-              <Building2 className="w-4 h-4" />
-              <span>Zelle &amp; Virement Bancaire</span>
+              <Building2 className="w-4 h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Zelle &amp; Virement Bancaire</span>
             </button>
           </div>
 
-          {/* ONGLET 1: PAYPAL SMART PAYMENT BUTTONS & CARTES BANCAIRES */}
+          {/* ONGLET 1: PAYPAL HOSTED BUTTONS & CARTES BANCAIRES */}
           {activeTab === 'paypal' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="text-center space-y-1.5">
-                <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-amber-400">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>Passerelle Sécurisée PayPal Smart Payment Buttons &amp; Cartes</span>
-                </div>
-                <h4 className="font-serif text-lg sm:text-xl font-bold text-white">
-                  Paiement sécurisé par Carte de Crédit/Débit ou PayPal (USD)
-                </h4>
-                <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
-                  Choisissez une affectation, sélectionnez ou entrez votre montant personnalisé en USD. Tout se passe de manière instantanée et sécurisée sans rechargement de page.
-                </p>
-              </div>
-
-              {/* Module interactif Smart Buttons */}
-              <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-inner max-w-xl mx-auto">
+            <div className="space-y-6 animate-in fade-in duration-200 w-full" style={{ writingMode: 'horizontal-tb' }}>
+              {/* Module officiel PayPal Hosted Buttons */}
+              <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-inner max-w-xl mx-auto w-full">
                 <PayPalDonationButton 
                   buttonId="J6F3GVMK9T27Y"
-                  containerId="paypal-smart-container-main"
+                  containerId="paypal-container-J6F3GVMK9T27Y"
+                  label="DONATION POUR L'EGLISE ET LE CDEND"
                 />
               </div>
 

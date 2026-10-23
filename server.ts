@@ -794,12 +794,25 @@ app.post('/api/newsletter/subscribe', async (req: Request, res: Response) => {
           body: JSON.stringify(brevoPayload)
         });
 
-        const brevoData = await brevoRes.json();
         if (brevoRes.ok || brevoRes.status === 204 || brevoRes.status === 201) {
           brevoSuccess = true;
-          brevoId = brevoData?.id || null;
-        } else if (brevoData?.code === 'duplicate_parameter') {
-          brevoSuccess = true;
+          const contentType = brevoRes.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            try {
+              const brevoData = await brevoRes.json();
+              brevoId = brevoData?.id || null;
+            } catch {}
+          }
+        } else {
+          const contentType = brevoRes.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            try {
+              const brevoData = await brevoRes.json();
+              if (brevoData?.code === 'duplicate_parameter') {
+                brevoSuccess = true;
+              }
+            } catch {}
+          }
         }
       } catch (err: any) {
         console.error('Brevo API error:', err.message);

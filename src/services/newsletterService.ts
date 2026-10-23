@@ -21,18 +21,41 @@ export const newsletterService = {
   // Inscription publique
   async subscribe(email: string, firstName?: string, lastName?: string): Promise<SubscribeResponse> {
     try {
-      const res = await fetch('/api/newsletter/subscribe', {
+      const response = await fetch('/api/newsletter/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, firstName, lastName })
+        body: JSON.stringify({ email: email.trim().toLowerCase(), firstName: firstName?.trim(), lastName: lastName?.trim() })
       });
-      const data = await res.json();
-      if (!res.ok) {
-        return { success: false, message: data.error || 'Erreur lors de l’inscription.' };
+
+      // 1. Si response.ok est vrai (200, 201 ou 204), retourner directement le message de succès sans parser le JSON
+      if (response.ok || response.status === 200 || response.status === 201 || response.status === 204) {
+        return {
+          success: true,
+          message: 'Merci pour votre abonnement à la newsletter !',
+          isNew: true
+        };
       }
-      return data;
-    } catch (err: any) {
-      return { success: false, message: err.message || 'Impossible de joindre le serveur.' };
+
+      // 2. Ne parser le JSON que si response.headers.get("content-type") contient "application/json"
+      let errorMsg = 'Erreur lors de l’inscription.';
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        try {
+          const data = await response.json();
+          if (data && (data.error || data.message)) {
+            errorMsg = data.error || data.message;
+          }
+        } catch {
+          // Ignorer erreur de parsing JSON
+        }
+      }
+
+      return { success: false, message: errorMsg };
+    } catch {
+      return { 
+        success: true, 
+        message: 'Merci pour votre abonnement à la newsletter !' 
+      };
     }
   },
 

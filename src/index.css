@@ -28,3 +28,79 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #d4af37;
 }
+
+/* =========================================================
+   STYLING & HORIZONTAL LAYOUT FOR PAYPAL & DONATION SECTION
+   ========================================================= */
+
+/* Ensure entire donation area and all text are strictly horizontal */
+.paypal-donation-wrapper,
+.paypal-donation-wrapper * {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  direction: ltr !important;
+  box-sizing: border-box;
+}
+
+/* Heading & Text Horizontal flow guarantees */
+.paypal-donation-wrapper h1,
+.paypal-donation-wrapper h2,
+.paypal-donation-wrapper h3,
+.paypal-donation-wrapper h4,
+.paypal-donation-wrapper p,
+.paypal-donation-wrapper span,
+.paypal-donation-wrapper button,
+.paypal-donation-wrapper a {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  direction: ltr !important;
+  word-break: normal !important;
+  text-wrap: wrap !important;
+}
+
+/* PayPal Hosted Buttons Container: Block display so children don't collapse to zero width */
+.paypal-hosted-container,
+#paypal-container-J6F3GVMK9T27Y,
+[id^="paypal-container-"] {
+  display: block !important;
+  width: 100% !important;
+  max-width: 400px !important;
+  min-width: 260px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center !important;
+  writing-mode: horizontal-tb !important;
+  direction: ltr !important;
+  min-height: 50px;
+}
+
+/* Force all elements inside the PayPal container (iframe, form, div, buttons) to stretch horizontally */
+.paypal-hosted-container *,
+#paypal-container-J6F3GVMK9T27Y *,
+[id^="paypal-container-"] * {
+  writing-mode: horizontal-tb !important;
+  direction: ltr !important;
+  word-break: normal !important;
+}
+
+.paypal-hosted-container iframe,
+#paypal-container-J6F3GVMK9T27Y iframe,
+[id^="paypal-container-"] iframe {
+  width: 100% !important;
+  min-width: 260px !important;
+  max-width: 400px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  display: block !important;
+}
+
+/* Horizontal pill & tab labels */
+.paypal-horizontal-text {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  writing-mode: horizontal-tb !important;
+  direction: ltr !important;
+}
