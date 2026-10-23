@@ -54,7 +54,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
     { path: '/priere', label: t('nav_prayer', 'Priyè Sekrè'), icon: Heart },
     { path: '/temwayaj', label: t('nav_testimonies', 'Temwayaj'), icon: Sparkles },
     { path: '/leson-biblik', label: t('nav_lessons', 'Lekòl Dimanch'), icon: BookOpen },
-    { path: '/projets', label: t('nav_projects', 'Projets (CDEJ)'), icon: HeartHandshake },
+    { path: '/projets', label: t('nav_projects', 'Nos Projets'), icon: HeartHandshake },
     { path: '/faire-un-don', label: t('nav_donations', 'Faire un Don'), icon: HeartHandshake },
     { path: '/medias', label: t('nav_media', 'Médias & Prédications'), icon: Tv },
     { path: '/jeux-bibliques', label: t('nav_bible_games', 'Jeux Bibliques'), icon: Trophy },

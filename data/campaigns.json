@@ -1,5 +1,15 @@
 [
   {
+    "id": "camp-paypal-test-brevo",
+    "title": "Campagne Officielle Brevo - Don en ligne via PayPal",
+    "subject": "Soutenez l’œuvre de Dieu à Damé : Dons en ligne désormais disponibles via PayPal",
+    "contentHtml": "<p>Chers frères et sœurs en Christ, chers partenaires et amis de l’<strong>Église du Nazaréen de Damé</strong>,</p><p>Que la grâce, la paix et la joie de notre Seigneur Jésus-Christ soient avec vous et vos familles !</p><p>Nous vous écrivons pour vous bénir et partager une excellente nouvelle : notre site officiel met désormais à disposition une plateforme sécurisée pour effectuer vos dîmes, offrandes et dons d'amour directement par <strong>carte bancaire ou PayPal</strong>.</p><div style=\"text-align: center; margin: 30px 0;\"><a href=\"https://www.eglisedunazareendedame.org/faire-un-don\" style=\"background-color: #0b1b33; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; border-bottom: 3px solid #d4af37;\">Faire un don en ligne sécurisé (PayPal)</a></div><p>Pour les fidèles et bienfaiteurs en Haïti, vous pouvez également envoyer votre soutien via <strong>Digicel MonCash</strong> au numéro officiel :<br/><strong>+509 48 59 60 89</strong> (Pasteur Bequel CHERELUS).</p><p>Nous vous invitons également à découvrir <em>Nos Projets</em> prioritaires en cours, notamment l'équipement en matériel de sonorisation et instruments pour le temple et les croisades d'évangélisation.</p><p style=\"margin-top: 25px;\">Que le Seigneur vous récompense au centuple pour votre dévouement et vos prières.</p><p>Fraternellement en Christ,<br/><strong>Pasteur Bequel CHERELUS</strong><br/><em>Église du Nazaréen de Damé • « Sainteté à l’Éternel »</em></p>",
+    "status": "sent",
+    "sentBy": "Pasteur Bequel CHERELUS",
+    "sentCount": 3,
+    "sentAt": "2026-10-23T14:40:00.000Z"
+  },
+  {
     "id": "camp-1792006032075",
     "title": "Test Campagne",
     "subject": "Sujet Test",

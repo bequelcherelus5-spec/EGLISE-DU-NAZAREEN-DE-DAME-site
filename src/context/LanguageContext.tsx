@@ -35,7 +35,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'nav_prayer': 'Espas Priyè Sekrè',
     'nav_testimonies': 'Temwayaj Gras Bondye',
     'nav_lessons': 'Lekòl Dimanch & Leson',
-    'nav_projects': 'Pwojè (CDEJ HA 0926)',
+    'nav_projects': 'Nos Projets',
     'nav_media': 'Medya & Prèch',
     'nav_bible_games': 'Jwèt Biblik',
     'nav_contact': 'Kontak',

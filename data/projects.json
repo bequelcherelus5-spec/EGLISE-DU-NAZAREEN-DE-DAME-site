@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "proj-sound-system-dame",
+    "title": "Système de Sonorisation & Instruments pour le Temple",
+    "code": "HA-0926-SON01",
+    "partner": "Église du Nazaréen de Damé",
+    "category": "Infrastructures & Équipements",
+    "description": "Projet d'acquisition et de modernisation du système de sonorisation professionnelle, microphones sans fil, console numérique et instruments de musique pour les cultes et évangélisations de plein air à Damé.",
+    "htmlContent": "<h3>Modernisation de la Sonorisation et des Instruments du Sanctuaire</h3><p>Pour la gloire de Dieu et l'amélioration de la louange lors de nos cultes dominicaux, réunions de prière et croisades d'évangélisation dans la 3ème Section Damé, l'Église du Nazaréen lance une levée de fonds dédiée à l'acquisition d'un système audio moderne.</p><h4>Besoins Prioritaires :</h4><ul><li>1 Console de mixage numérique 16/24 pistes</li><li>4 Microphones sans fil professionnels UHF avec récepteurs</li><li>2 Enceintes acoustiques amplifiées de haute portée pour le sanctuaire et l'extérieur</li><li>1 Clavier arrangeur professionnel (Synthétiseur Yamaha / Roland)</li><li>1 Kit batterie acoustique complète et micros d'instruments</li><li>Câblage blindé, stabilisateurs de tension et parasurtenseurs</li></ul><p>Votre contribution, même modeste, permettra de propager la Parole de Dieu avec clarté et puissance, tout en encadrant les jeunes musiciens de notre assemblée. <em>« Louez-le avec les instruments à cordes et le chalumeau ! Que tout ce qui respire loue l’Éternel ! » — Psaume 150:4,6</em></p>",
+    "images": [
+      "/images/eglise/sound-system.jpg"
+    ],
+    "author": "Pasteur Bequel CHERELUS",
+    "status": "published",
+    "targetAmount": "$3,500 USD",
+    "currentAmount": "$850 USD",
+    "beneficiariesCount": 650,
+    "createdAt": "2026-10-23T14:00:00.000Z"
+  }
+]

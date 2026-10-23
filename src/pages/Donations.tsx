@@ -25,7 +25,7 @@ export const Donations: React.FC<DonationsProps> = ({ onNavigate }) => {
     <div className="space-y-16 pb-20">
       <SEOHead 
         title="Dîmes, Offrandes & Dons Sécurisés | Église du Nazaréen de Damé"
-        description="Contribuez aux dîmes, offrandes et soutenez le projet CDEJ HA 0926 Compassion International à Damé via PayPal officiel, MonCash, Natcash ou virement bancaire."
+        description="Contribuez aux dîmes, offrandes et soutenez le projet CDEJ HA 0926 Compassion International à Damé via PayPal officiel, MonCash ou virement bancaire."
         path="/faire-un-don"
         image="/images/eglise/og-banner.svg"
       />
@@ -53,7 +53,7 @@ export const Donations: React.FC<DonationsProps> = ({ onNavigate }) => {
             </span>
             <span className="flex items-center space-x-1.5 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-700">
               <Lock className="w-4 h-4 text-amber-400" />
-              <span>MonCash &amp; Natcash Haïti</span>
+              <span>Digicel MonCash Haïti</span>
             </span>
             <span className="flex items-center space-x-1.5 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-700">
               <CheckCircle2 className="w-4 h-4 text-amber-400" />

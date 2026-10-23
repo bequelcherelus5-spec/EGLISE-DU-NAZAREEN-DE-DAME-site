@@ -76,8 +76,8 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-16 pb-20">
       <SEOHead 
-        title="Projets & Initiatives Officielles | Église du Nazaréen de Damé"
-        description="Découvrez les projets sociaux, éducatifs et missionnaires menés par l'Église du Nazaréen de Damé, Haïti."
+        title="Nos Projets | Église du Nazaréen de Damé"
+        description="Découvrez Nos Projets spirituels, éducatifs, communautaires et missionnaires menés par l'Église du Nazaréen de Damé, Haïti."
         path="/projets"
         image="/images/eglise/sceau-officiel.svg"
       />
@@ -87,16 +87,15 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
         <div className="max-w-5xl mx-auto text-center space-y-6 relative z-10">
           <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-widest border border-amber-500/30">
             <HeartHandshake className="w-4 h-4" />
-            <span>Chantiers &amp; Action Sociale</span>
+            <span>Chantiers, Évangélisation &amp; Action Sociale</span>
           </div>
 
           <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
-            Projets &amp; Œuvres de l'Église
+            Nos Projets
           </h1>
 
           <p className="text-slate-300 text-sm sm:text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
-            L'Église du Nazaréen de Damé s'engage activement pour la transformation spirituelle,
-            éducative et sociale de notre communauté à travers des projets concrets, transparents et durables.
+            Découvrez nos projets concrets et soutenez le développement spirituel, matériel et social de l’Église du Nazaréen de Damé et de la communauté.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -435,10 +434,9 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-1 text-xs text-amber-950">
-                  <span className="font-bold block">Option Mobile Haïti (MonCash / Natcash) :</span>
+                  <span className="font-bold block">Option Mobile Haïti (Digicel MonCash) :</span>
                   <p className="text-[11px] text-slate-700">
-                    MonCash : <strong className="font-mono text-slate-900">+509 48 59 60 89</strong> (Pasteur Bequel CHERELUS)<br />
-                    Natcash : <strong className="font-mono text-slate-900">+509 41 87 23 23</strong>
+                    MonCash : <strong className="font-mono text-slate-900">+509 48 59 60 89</strong> (Pasteur Bequel CHERELUS)
                   </p>
                 </div>
 

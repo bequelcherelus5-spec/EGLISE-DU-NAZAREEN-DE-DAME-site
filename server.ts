@@ -115,6 +115,7 @@ const ALERT_FILE = path.join(__dirname, 'data', 'alert.json');
 const RADIO_FILE = path.join(__dirname, 'data', 'radio.json');
 const TESTIMONIES_FILE = path.join(__dirname, 'data', 'testimonies.json');
 const FAQ_FILE = path.join(__dirname, 'data', 'faq.json');
+const BREVO_SETTINGS_FILE = path.join(__dirname, 'data', 'brevo_settings.json');
 
 export interface StoredFAQ {
   id: string;
@@ -582,14 +583,44 @@ function saveStoredFAQ(list: StoredFAQ[]) {
 
 
 
-let brevoConfig: BrevoConfig = {
-  apiKey: process.env.BREVO_API_KEY || '',
-  senderEmail: process.env.BREVO_SENDER_EMAIL || 'eglisedunazareendedame@gmail.com',
-  senderName: process.env.BREVO_SENDER_NAME || 'Église du Nazaréen de Damé',
-  brevoListId: process.env.BREVO_LIST_ID || '2',
-  isActive: true,
-  updatedAt: new Date().toISOString()
-};
+function loadStoredBrevoConfig(): BrevoConfig {
+  try {
+    ensureDataDir();
+    if (fs.existsSync(BREVO_SETTINGS_FILE)) {
+      const content = fs.readFileSync(BREVO_SETTINGS_FILE, 'utf-8');
+      const parsed = JSON.parse(content);
+      return {
+        apiKey: parsed.apiKey || process.env.BREVO_API_KEY || '',
+        senderEmail: parsed.senderEmail || process.env.BREVO_SENDER_EMAIL || 'eglisedunazareendedame@gmail.com',
+        senderName: parsed.senderName || process.env.BREVO_SENDER_NAME || 'Église du Nazaréen de Damé',
+        brevoListId: parsed.brevoListId || process.env.BREVO_LIST_ID || '5',
+        isActive: parsed.isActive !== undefined ? parsed.isActive : true,
+        updatedAt: parsed.updatedAt || new Date().toISOString()
+      };
+    }
+  } catch (err) {
+    console.warn('Erreur lecture brevo_settings.json:', err);
+  }
+  return {
+    apiKey: process.env.BREVO_API_KEY || '',
+    senderEmail: process.env.BREVO_SENDER_EMAIL || 'eglisedunazareendedame@gmail.com',
+    senderName: process.env.BREVO_SENDER_NAME || 'Église du Nazaréen de Damé',
+    brevoListId: process.env.BREVO_LIST_ID || '5',
+    isActive: true,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function saveStoredBrevoConfig(config: BrevoConfig) {
+  try {
+    ensureDataDir();
+    fs.writeFileSync(BREVO_SETTINGS_FILE, JSON.stringify(config, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Erreur écriture brevo_settings.json:', err);
+  }
+}
+
+let brevoConfig: BrevoConfig = loadStoredBrevoConfig();
 
 // Merges real subscribers from Brevo API, Supabase, and local persistence (ZERO FICTIVE DATA)
 async function fetchAllSubscribers(): Promise<Subscriber[]> {
@@ -875,16 +906,18 @@ app.get('/api/newsletter/settings', (req: Request, res: Response) => {
 
 app.post('/api/newsletter/settings', (req: Request, res: Response) => {
   try {
-    const { apiKey, senderEmail, senderName, brevoListId } = req.body;
-    if (apiKey && typeof apiKey === 'string' && apiKey.trim().length > 0) {
-      brevoConfig.apiKey = apiKey.trim();
+    const { apiKey, brevoApiKey, senderEmail, senderName, brevoListId } = req.body;
+    const providedKey = (apiKey || brevoApiKey || '').trim();
+    if (providedKey.length > 0) {
+      brevoConfig.apiKey = providedKey;
     }
     if (senderEmail) brevoConfig.senderEmail = senderEmail.trim();
     if (senderName) brevoConfig.senderName = senderName.trim();
     if (brevoListId) brevoConfig.brevoListId = String(brevoListId).trim();
     brevoConfig.updatedAt = new Date().toISOString();
+    saveStoredBrevoConfig(brevoConfig);
 
-    res.json({ success: true, message: 'Configuration Brevo mise à jour avec succès.' });
+    res.json({ success: true, message: 'Configuration Brevo enregistrée avec succès sur le serveur.' });
   } catch (err: any) {
     res.status(500).json({ error: 'Erreur lors de la mise à jour des paramètres.' });
   }
@@ -892,6 +925,12 @@ app.post('/api/newsletter/settings', (req: Request, res: Response) => {
 
 app.post('/api/newsletter/test-connection', async (req: Request, res: Response) => {
   try {
+    const directKey = (req.body?.apiKey || '').trim();
+    if (directKey && directKey.startsWith('xkeysib-')) {
+      brevoConfig.apiKey = directKey;
+      saveStoredBrevoConfig(brevoConfig);
+    }
+
     const activeKey = brevoConfig.apiKey || process.env.BREVO_API_KEY;
     if (!activeKey || !activeKey.startsWith('xkeysib-')) {
       res.status(400).json({
@@ -905,13 +944,20 @@ app.post('/api/newsletter/test-connection', async (req: Request, res: Response) 
       headers: { 'api-key': activeKey, accept: 'application/json' }
     });
 
-    const accountData = await brevoRes.json();
+    let accountData: any = {};
+    const ct = brevoRes.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      try {
+        accountData = await brevoRes.json();
+      } catch {}
+    }
+
     if (brevoRes.ok) {
       res.json({
         success: true,
         message: 'Connexion à l’API Brevo réussie avec succès !',
         account: {
-          email: accountData.email,
+          email: accountData.email || brevoConfig.senderEmail,
           firstName: accountData.firstName,
           lastName: accountData.lastName,
           companyName: accountData.companyName,
@@ -921,7 +967,7 @@ app.post('/api/newsletter/test-connection', async (req: Request, res: Response) 
     } else {
       res.status(400).json({
         success: false,
-        error: accountData.message || 'Échec de la validation de la clé API Brevo.'
+        error: accountData.message || 'Échec de la validation de la clé API Brevo (Vérifiez la clé d’API).'
       });
     }
   } catch (err: any) {

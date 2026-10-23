@@ -48,7 +48,7 @@ export const INITIAL_FAQS: FAQItem[] = [
     id: 'faq-6',
     category: 'general',
     question: 'Kijan pou m voye yon ofrann oswa yon demann priyè sekrè ?',
-    answer: 'Pou demann priyè : ou ka itilize paj « Espas Priyè Sekrè » sou sit la. Lè w koche « Sekrè Pastoral », se sèlman Pasteur Bequel CHERELUS ki wè li. Pou ofrann ak donasyon : ou ka kontakte sekretarya a pa telefòn oswa WhatsApp sou +509 48596089 pou kowòdone MonCash, Natcash oswa transfè dirèk.',
+    answer: 'Pou demann priyè : ou ka itilize paj « Espas Priyè Sekrè » sou sit la. Lè w koche « Sekrè Pastoral », se sèlman Pasteur Bequel CHERELUS ki wè li. Pou ofrann ak donasyon : ou ka kontakte sekretarya a pa telefòn oswa WhatsApp sou +509 48596089 pou kowòdone Digicel MonCash oswa transfè dirèk.',
     createdAt: '2026-01-01T00:00:00Z'
   },
   {

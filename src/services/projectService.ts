@@ -105,7 +105,7 @@ export const projectService = {
     // 1. Insertion directe dans Supabase table 'projects'
     if (isSupabaseConfigured && supabase) {
       try {
-        const row = {
+        let row: any = {
           code: projCode,
           title: project.title.trim(),
           partner: project.partner?.trim() || 'Église du Nazaréen de Damé',
@@ -124,10 +124,20 @@ export const projectService = {
           .select()
           .single();
 
+        // Si la colonne 'banner_url' n'existe pas dans la table Supabase (erreur schema cache), retenter sans banner_url
+        if (error && (error.message.includes('banner_url') || error.message.includes('schema cache'))) {
+          console.warn('[ProjectService] Colonne banner_url non trouvée dans le cache Supabase, réessai sans banner_url...');
+          delete row.banner_url;
+          const retryBanner = await supabase.from('projects').insert([row]).select().single();
+          data = retryBanner.data;
+          error = retryBanner.error;
+        }
+
         // Si le code existe déjà, retenter avec un code horodaté unique
         if (error && (error.message.includes('unique') || error.message.includes('code'))) {
           projCode = 'PROJ-' + Date.now();
           row.code = projCode;
+          delete row.banner_url; // au cas où
           const retry = await supabase.from('projects').insert([row]).select().single();
           data = retry.data;
           error = retry.error;
@@ -135,6 +145,10 @@ export const projectService = {
 
         if (!error && data) {
           const created = mapSupabaseRowToProject(data);
+          // Si Supabase ne stocke pas banner_url, préserver l'image dans l'objet créé
+          if (bannerUrl && (!created.images || created.images.length === 0)) {
+            created.images = [bannerUrl];
+          }
           // Mettre à jour le cache local immédiatement
           const current = await this.getProjects();
           const filtered = current.filter(p => p.id !== created.id);
@@ -246,15 +260,32 @@ export const projectService = {
           patch.banner_url = updates.images.length > 0 ? updates.images[0] : null;
         }
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('projects')
           .update(patch)
           .eq('id', id)
           .select()
           .single();
 
+        if (error && (error.message.includes('banner_url') || error.message.includes('schema cache'))) {
+          console.warn('[ProjectService] Colonne banner_url non supportée lors de update, réessai sans banner_url...');
+          const patchWithoutBanner = { ...patch };
+          delete patchWithoutBanner.banner_url;
+          const retry = await supabase
+            .from('projects')
+            .update(patchWithoutBanner)
+            .eq('id', id)
+            .select()
+            .single();
+          data = retry.data;
+          error = retry.error;
+        }
+
         if (!error && data) {
           const updatedProj = mapSupabaseRowToProject(data);
+          if (updates.images && (!updatedProj.images || updatedProj.images.length === 0)) {
+            updatedProj.images = updates.images;
+          }
           const current = await this.getProjects();
           const idx = current.findIndex(p => p.id === id);
           if (idx !== -1) current[idx] = updatedProj;
@@ -373,7 +404,7 @@ export const projectService = {
 
       try {
         const uniqueCode = proj.code?.trim() || ('HA-0926-' + Date.now().toString().slice(-6));
-        const row = {
+        let row: any = {
           code: uniqueCode,
           title: proj.title.trim(),
           partner: proj.partner?.trim() || 'Église du Nazaréen de Damé',
@@ -386,7 +417,13 @@ export const projectService = {
           banner_url: proj.images && proj.images.length > 0 ? proj.images[0] : null,
         };
 
-        const { error: insertErr } = await supabase.from('projects').insert([row]);
+        let { error: insertErr } = await supabase.from('projects').insert([row]);
+        if (insertErr && (insertErr.message.includes('banner_url') || insertErr.message.includes('schema cache'))) {
+          delete row.banner_url;
+          const retry = await supabase.from('projects').insert([row]);
+          insertErr = retry.error;
+        }
+
         if (!insertErr) {
           uploaded++;
         } else {

@@ -1262,18 +1262,22 @@ CREATE POLICY "Gestion projets admin et secretariat"
                   </button>
                 </div>
                 <pre className="p-4 bg-slate-950 text-emerald-400 font-mono text-[11px] rounded-b-xl overflow-x-auto leading-relaxed border border-slate-900 select-all">
-{`-- OUVRI PÈMISYON POU PROJÈ YO KAPAB PUBLIYE SOU SITE LA
+{`-- 1. ASIRANS KOLÒN AK KACH TABLE PROJETS
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS banner_url text;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS image_url text;
+
+-- 2. OUVRI PÈMISYON POU PROJÈ YO KAPAB PUBLIYE SOU SITE LA
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Gestion projets admin" ON public.projects;
 DROP POLICY IF EXISTS "Gestion projets admin et secretariat" ON public.projects;
 DROP POLICY IF EXISTS "Lecture publique des projets" ON public.projects;
 
--- 1. Tout moun ka li pwojè ki sou sit la
+-- 3. Tout moun ka li pwojè ki sou sit la
 CREATE POLICY "Lecture publique des projets" 
   ON public.projects FOR SELECT USING (true);
 
--- 2. Secrétariat ka ajoute, modifye, oswa efase pwojè
+-- 4. Secrétariat ka ajoute, modifye, oswa efase pwojè
 CREATE POLICY "Gestion projets admin et secretariat" 
   ON public.projects FOR ALL TO anon, authenticated 
   USING (true) WITH CHECK (true);`}

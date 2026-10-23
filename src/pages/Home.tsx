@@ -383,7 +383,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
         </div>
       </section>
 
-      {/* 4.5. SECTION DÎMES, OFFRANDES & SOUTIEN AUX PROJETS (PAYPAL, MONCASH, NATCASH) */}
+      {/* 4.5. SECTION DÎMES, OFFRANDES & SOUTIEN AUX PROJETS (PAYPAL & DIGICEL MONCASH) */}
       <DonationSection onNavigate={onNavigate} />
 
       {/* 5. LES 7 MINISTÈRES OFFICIELS D'ÉGLISE */}

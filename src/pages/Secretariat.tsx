@@ -298,7 +298,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     setBrevoTestLoading(true);
     setBrevoTestResult(null);
     try {
-      const res = await newsletterService.testBrevoConnection();
+      const res = await newsletterService.testBrevoConnection(inputApiKey || undefined);
       setBrevoTestResult({
         success: res.success,
         message: res.message,
