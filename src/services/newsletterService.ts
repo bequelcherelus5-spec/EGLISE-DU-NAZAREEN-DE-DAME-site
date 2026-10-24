@@ -280,24 +280,102 @@ export const newsletterService = {
 
   // Admin : Tester la connexion Brevo
   async testBrevoConnection(apiKey?: string): Promise<{ success: boolean; message: string; account?: any; error?: string }> {
+    const keyToTest = (apiKey || '').trim() || (() => {
+      try {
+        const stored = localStorage.getItem('dame_brevo_config');
+        return stored ? JSON.parse(stored)?.apiKey : '';
+      } catch {
+        return '';
+      }
+    })();
+
+    // 1. Tenter via le proxy backend d'abord
     try {
       const res = await fetch('/api/newsletter/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(apiKey ? { apiKey: apiKey.trim() } : {})
+        body: JSON.stringify(keyToTest ? { apiKey: keyToTest } : {})
       });
+
       const contentType = res.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        try {
-          return await res.json();
-        } catch {}
-      }
-      if (res.ok) {
+      if (res.ok || res.status === 200 || res.status === 201 || res.status === 204) {
+        if (contentType.includes('application/json')) {
+          try {
+            const data = await res.json();
+            return {
+              success: true,
+              message: data.message || 'Connexion à Brevo vérifiée avec succès !',
+              account: data.account
+            };
+          } catch {
+            // Ignorer l'erreur JSON et continuer avec le succès HTTP
+          }
+        }
         return { success: true, message: 'Connexion à Brevo vérifiée avec succès !' };
       }
-      return { success: false, message: 'Échec de la validation avec l’API Brevo.' };
-    } catch (err: any) {
-      return { success: false, message: 'Échec de communication avec le serveur.', error: err.message };
+
+      if (contentType.includes('application/json')) {
+        try {
+          const errData = await res.json();
+          if (errData && (errData.error || errData.message)) {
+            return { success: false, message: errData.error || errData.message, error: errData.error };
+          }
+        } catch {}
+      }
+    } catch {
+      // Échec de communication avec le proxy local, tenter la validation directe
     }
+
+    // 2. Si pas de proxy ou échec serveur, valider directement avec l'API Brevo v3
+    if (keyToTest && keyToTest.startsWith('xkeysib-')) {
+      try {
+        const directRes = await fetch('https://api.brevo.com/v3/account', {
+          headers: {
+            'api-key': keyToTest,
+            accept: 'application/json'
+          }
+        });
+
+        if (directRes.ok || directRes.status === 200 || directRes.status === 204) {
+          let directData: any = {};
+          const ct = directRes.headers.get('content-type') || '';
+          if (ct.includes('application/json')) {
+            try {
+              directData = await directRes.json();
+            } catch {}
+          }
+          return {
+            success: true,
+            message: 'Connexion directe à l’API Brevo v3 validée avec succès !',
+            account: {
+              email: directData.email || 'Vérifié',
+              companyName: directData.companyName || 'Église du Nazaréen de Damé',
+              plan: directData.plan?.[0]?.type || 'Standard'
+            }
+          };
+        }
+
+        let errMsg = 'Clé API Brevo invalide ou refusée.';
+        const ct = directRes.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          try {
+            const errJson = await directRes.json();
+            if (errJson.message) errMsg = errJson.message;
+          } catch {}
+        }
+        return { success: false, message: errMsg, error: errMsg };
+      } catch (directErr: any) {
+        return {
+          success: false,
+          message: 'Erreur lors de la tentative de connexion directe à Brevo: ' + (directErr?.message || String(directErr)),
+          error: directErr?.message
+        };
+      }
+    }
+
+    return {
+      success: false,
+      message: 'Veuillez renseigner une clé API Brevo v3 valide (commençant par xkeysib-).'
+    };
   }
 };

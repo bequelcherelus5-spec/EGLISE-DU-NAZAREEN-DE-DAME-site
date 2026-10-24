@@ -117,6 +117,23 @@ export interface MemberRecord {
   joinedDate: string;
 }
 
+export interface SacramentRecord {
+  id: string;
+  type: 'bapteme' | 'mariage' | 'dedicace';
+  regNumber: string;
+  recipientName: string;
+  spouseName?: string;
+  fatherName?: string;
+  motherName?: string;
+  date: string;
+  officiatingPastor: string;
+  location: string;
+  witnesses?: string;
+  certificateIssued: boolean;
+  notes?: string;
+  createdAt: string;
+}
+
 export interface NewsletterSubscriber {
   id: string;
   email: string;

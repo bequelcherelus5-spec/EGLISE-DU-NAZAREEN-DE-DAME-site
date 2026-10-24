@@ -70,6 +70,28 @@ export const authService = {
     }
   },
 
+  // Vérifie si une session Supabase active existe déjà
+  async checkSupabaseSession(): Promise<AdminUser | null> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.user) {
+          const user: AdminUser = {
+            name: data.session.user.user_metadata?.full_name || data.session.user.email?.split('@')[0] || 'Secrétaire / Admin',
+            email: data.session.user.email,
+            role: 'admin',
+          };
+          sessionStorage.setItem(AUTH_TOKEN_KEY, data.session.access_token);
+          sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+          return user;
+        }
+      } catch {
+        // Ignorer
+      }
+    }
+    return this.getUser();
+  },
+
   // Récupère le token pour les en-têtes Authorization
   getToken(): string | null {
     try {

@@ -1,1548 +1,2085 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Lock, 
-  Key, 
-  ShieldCheck, 
-  Mail, 
-  Users, 
-  Calendar, 
-  Image as ImageIcon, 
-  Settings, 
-  Database, 
-  FileText, 
-  CheckCircle2, 
-  AlertCircle, 
-  Loader2, 
-  Search, 
-  Trash2, 
-  Plus, 
-  Download, 
-  Copy, 
-  Check, 
+import {
+  Shield,
+  Lock,
   LogOut,
-  RefreshCw,
-  ExternalLink,
-  HeartHandshake,
-  Globe,
+  Users,
+  Award,
   Heart,
-  MessageSquare,
+  Send,
+  Database,
+  Briefcase,
+  Plus,
+  Search,
+  Download,
+  Trash2,
+  Edit2,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
+  Printer,
+  Copy,
+  Check,
+  RefreshCw,
+  Mail,
+  Calendar,
   Phone,
-  BookOpen,
-  Sparkles,
-  UserCheck,
-  Scroll,
-  Radio,
-  Megaphone,
-  HelpCircle
+  MapPin,
+  FileText,
+  Key,
+  Flame,
+  ChevronRight,
+  Eye,
+  Sliders,
+  DollarSign
 } from 'lucide-react';
-import { SEOHead } from '../components/SEOHead';
-import { OFFICIAL_CHURCH_INFO, INITIAL_MEMBERS, OFFICIAL_SERVICES } from '../data/churchData';
-import { newsletterService } from '../services/newsletterService';
 import { authService, AdminUser } from '../services/authService';
-import { getSupabaseStatus } from '../services/supabaseClient';
-import { NewsletterSubscriber, BrevoConfigView, MemberRecord, ChurchPost } from '../types';
-import { NewsletterManager } from '../components/NewsletterManager';
-import { ProjectManager } from '../components/ProjectManager';
-import { ContentManager } from '../components/ContentManager';
-import { LessonsManager } from '../components/secretariat/LessonsManager';
-import { TestimoniesManager } from '../components/secretariat/TestimoniesManager';
-import { DiscipleshipManager } from '../components/secretariat/DiscipleshipManager';
-import { DocRequestsManager } from '../components/secretariat/DocRequestsManager';
-import { RadioAlertManager } from '../components/secretariat/RadioAlertManager';
-import { FAQManager } from '../components/secretariat/FAQManager';
+import { secretariatService, INITIAL_MEMBERS, INITIAL_SACRAMENTS } from '../services/secretariatService';
+import { newsletterService } from '../services/newsletterService';
+import { projectService } from '../services/projectService';
+import { testSupabaseConnection, isSupabaseConfigured, setRuntimeSupabaseCredentials } from '../services/supabaseClient';
+import { MemberRecord, SacramentRecord, PrayerRequest, ManagedProject, BrevoConfigView } from '../types';
 
 interface SecretariatProps {
-  onNavigate: (path: string) => void;
+  onNavigate?: (path: string) => void;
   isSubdomain?: boolean;
 }
 
+type TabType = 'dashboard' | 'members' | 'sacraments' | 'projects' | 'prayers' | 'brevo' | 'supabase';
+
 export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomain = false }) => {
-  // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => authService.isAuthenticated());
-  const [currentUser, setCurrentUser] = useState<AdminUser | null>(() => authService.getUser());
-  const [adminEmail, setAdminEmail] = useState<string>('');
-  const [adminPassword, setAdminPassword] = useState<string>('');
-  const [authError, setAuthError] = useState<string>('');
-  const [authLoading, setAuthLoading] = useState<boolean>(false);
+  // ----------------------------------------------------
+  // AUTHENTICATION STATE
+  // ----------------------------------------------------
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [loginEmail, setLoginEmail] = useState('eglisedunazareendedame@gmail.com');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginSubmitting, setLoginSubmitting] = useState(false);
 
-  // Active Admin Section (Sections autorisées)
-  const [activeTab, setActiveTab] = useState<
-    | 'overview' 
-    | 'prayers' 
-    | 'lessons' 
-    | 'testimonies' 
-    | 'discipleship' 
-    | 'documents' 
-    | 'radio_alert' 
-    | 'publications' 
-    | 'brevo_config' 
-    | 'newsletter_manager' 
-    | 'projects' 
-    | 'faqs' 
-    | 'content' 
-    | 'events' 
-    | 'members' 
-    | 'images' 
-    | 'settings'
-  >('overview');
+  // ----------------------------------------------------
+  // ACTIVE TAB & UI
+  // ----------------------------------------------------
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
-  // Prayer Requests Management
-  const [prayersList, setPrayersList] = useState<Array<{
-    id: string;
-    category: string;
-    fullName?: string;
-    isAnonymous: boolean;
-    phone?: string;
-    email?: string;
-    message: string;
-    isUrgent: boolean;
-    pastorOnly: boolean;
-    createdAt: string;
-    status: 'pending' | 'prayed';
-    notes?: string;
-    amenCount?: number;
-  }>>([]);
-  const [loadingPrayers, setLoadingPrayers] = useState<boolean>(false);
-  const [prayerFilter, setPrayerFilter] = useState<'all' | 'pastorOnly' | 'public' | 'urgent' | 'pending' | 'prayed'>('all');
-  const [prayerSearch, setPrayerSearch] = useState<string>('');
-
-  // Brevo Settings State
-  const [brevoSettings, setBrevoSettings] = useState<BrevoConfigView>({
-    hasApiKey: false,
-    apiKeyPreview: '',
-    senderEmail: 'eglisedunazareendedame@gmail.com',
-    senderName: 'Église du Nazaréen de Damé',
-    brevoListId: '2',
-    isActive: true,
-    updatedAt: ''
-  });
-  const [inputApiKey, setInputApiKey] = useState<string>('');
-  const [brevoSaveLoading, setBrevoSaveLoading] = useState<boolean>(false);
-  const [brevoSaveMsg, setBrevoSaveMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [brevoTestLoading, setBrevoTestLoading] = useState<boolean>(false);
-  const [brevoTestResult, setBrevoTestResult] = useState<{ success: boolean; message: string; account?: any } | null>(null);
-
-  // Stats Counters
-  const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
-
-  // Members Management
-  const [members, setMembers] = useState<MemberRecord[]>(INITIAL_MEMBERS);
-  const [memberSearch, setMemberSearch] = useState('');
-  const [newMemberModal, setNewMemberModal] = useState(false);
-  const [newMemberForm, setNewMemberForm] = useState({
+  // ----------------------------------------------------
+  // MEMBERS DATA & STATE
+  // ----------------------------------------------------
+  const [members, setMembers] = useState<MemberRecord[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersSearch, setMembersSearch] = useState('');
+  const [memberFilterMinistry, setMemberFilterMinistry] = useState('all');
+  const [memberModalOpen, setMemberModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<MemberRecord | null>(null);
+  const [memberForm, setMemberForm] = useState({
     fullName: '',
+    gender: 'M' as 'M' | 'F',
     phone: '',
-    address: '3ème Section Damé',
-    ministryAffiliation: 'Jeunesse (JNI)',
-    gender: 'M' as 'M' | 'F'
+    email: '',
+    address: '3ème Section Damé, Môle-Saint-Nicolas',
+    baptismDate: '',
+    ministryAffiliation: 'Assemblée Générale',
+    status: 'actif' as 'actif' | 'inactif' | 'transfere',
+    joinedDate: new Date().toISOString().split('T')[0]
   });
 
-  // Publications Management (Espace Propre du Secrétariat / Pasteur)
-  const [publications, setPublications] = useState<ChurchPost[]>(() => {
-    try {
-      const saved = localStorage.getItem('dame_church_publications');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Storage read failed', e);
-    }
-    return [];
+  // ----------------------------------------------------
+  // SACRAMENTS DATA & STATE
+  // ----------------------------------------------------
+  const [sacraments, setSacraments] = useState<SacramentRecord[]>([]);
+  const [sacramentFilterType, setSacramentFilterType] = useState('all');
+  const [sacramentModalOpen, setSacramentModalOpen] = useState(false);
+  const [certificateModalRecord, setCertificateModalRecord] = useState<SacramentRecord | null>(null);
+  const [sacramentForm, setSacramentForm] = useState({
+    type: 'bapteme' as 'bapteme' | 'mariage' | 'dedicace',
+    regNumber: '',
+    recipientName: '',
+    spouseName: '',
+    fatherName: '',
+    motherName: '',
+    date: new Date().toISOString().split('T')[0],
+    officiatingPastor: 'Pasteur Bequel CHERELUS',
+    location: 'Temple de Damé, 3ème Section',
+    witnesses: '',
+    notes: ''
   });
-  const [postSearch, setPostSearch] = useState('');
-  const [newPostModal, setNewPostModal] = useState(false);
-  const [newPostForm, setNewPostForm] = useState<{
-    title: string;
-    category: string;
-    ministryTag: string;
-    excerpt: string;
-    content: string;
-    author: string;
-    image: string;
-    status: 'published' | 'draft';
-  }>({
+
+  // ----------------------------------------------------
+  // PROJECTS STATE
+  // ----------------------------------------------------
+  const [projects, setProjects] = useState<ManagedProject[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [projectForm, setProjectForm] = useState({
     title: '',
-    category: 'Annonce Pastorale',
-    ministryTag: 'Global',
-    excerpt: '',
-    content: '',
-    author: 'Pasteur Bequel CHERELUS',
-    image: '/images/eglise/sceau-officiel.svg',
-    status: 'published'
+    code: '',
+    category: 'Construction & Temple',
+    targetAmount: '5000',
+    description: '',
+    status: 'published' as 'published' | 'draft'
   });
-  const [postNotice, setPostNotice] = useState<string | null>(null);
 
-  // Images Manager
-  const [selectedImageFolder, setSelectedImageFolder] = useState<string>('eglise');
-  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  // ----------------------------------------------------
+  // PRAYERS STATE
+  // ----------------------------------------------------
+  const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
+  const [prayerFilter, setPrayerFilter] = useState<'all' | 'pending' | 'prayed'>('all');
 
-  const loadPrayers = async () => {
-    setLoadingPrayers(true);
-    try {
-      const res = await fetch('/api/prayers');
-      if (res.ok) {
-        const data = await res.json();
-        setPrayersList(data);
-      }
-    } catch (e) {
-      console.warn('Erreur chargement prières admin:', e);
-    } finally {
-      setLoadingPrayers(false);
-    }
-  };
+  // ----------------------------------------------------
+  // BREVO NEWSLETTER STATE
+  // ----------------------------------------------------
+  const [brevoSettings, setBrevoSettings] = useState<BrevoConfigView | null>(null);
+  const [brevoApiKeyInput, setBrevoApiKeyInput] = useState('');
+  const [brevoSenderEmail, setBrevoSenderEmail] = useState('eglisedunazareendedame@gmail.com');
+  const [brevoSenderName, setBrevoSenderName] = useState('Église du Nazaréen de Damé');
+  const [brevoListId, setBrevoListId] = useState('5');
+  const [brevoTesting, setBrevoTesting] = useState(false);
+  const [brevoSaving, setBrevoSaving] = useState(false);
+  const [brevoTestResult, setBrevoTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  const handleTogglePrayerStatus = async (id: string, currentStatus: 'pending' | 'prayed') => {
-    const nextStatus = currentStatus === 'pending' ? 'prayed' : 'pending';
-    try {
-      const res = await fetch(`/api/prayers/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextStatus })
-      });
-      if (res.ok) {
-        setPrayersList(prev => prev.map(p => p.id === id ? { ...p, status: nextStatus } : p));
-      }
-    } catch (e) {
-      console.warn('Erreur modification prière:', e);
-    }
-  };
+  // Quick Campaign Sender
+  const [campaignSubject, setCampaignSubject] = useState('Test & Annonce Officielle - Église du Nazaréen de Damé');
+  const [campaignContent, setCampaignContent] = useState(
+    'Chers frères et sœurs,\n\nNous vous remercions pour votre fidélité et votre engagement. Vous pouvez désormais soutenir les projets de l’Église de Damé via PayPal ou MonCash (+509 48 59 60 89).\n\nQue Dieu vous bénisse abondamment !\n« Sainteté à l’Éternel »'
+  );
+  const [campaignSending, setCampaignSending] = useState(false);
 
-  const handleDeletePrayer = async (id: string) => {
-    if (!window.confirm('Voulez-vous archiver cette requête de prière ?')) return;
-    try {
-      const res = await fetch(`/api/prayers/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setPrayersList(prev => prev.filter(p => p.id !== id));
-      }
-    } catch (e) {
-      console.warn('Erreur suppression prière:', e);
-    }
-  };
+  // ----------------------------------------------------
+  // SUPABASE DATABASE STATE
+  // ----------------------------------------------------
+  const [supabaseTestStatus, setSupabaseTestStatus] = useState<{ loading: boolean; success?: boolean; message?: string } | null>(null);
+  const [sqlCopied, setSqlCopied] = useState(false);
+  const [customSupaUrl, setCustomSupaUrl] = useState('');
+  const [customSupaKey, setCustomSupaKey] = useState('');
 
-  // Initial Load when logged in
+  // ----------------------------------------------------
+  // LIFECYCLE: VERIFY SESSION
+  // ----------------------------------------------------
   useEffect(() => {
-    if (isAuthenticated) {
-      loadBrevoSettings();
-      loadSubscribersCount();
-      loadPrayers();
+    async function initAuth() {
+      setAuthLoading(true);
+      try {
+        const user = await authService.checkSupabaseSession();
+        if (user) {
+          setCurrentUser(user);
+        }
+      } catch (err) {
+        console.warn('Auth check error:', err);
+      } finally {
+        setAuthLoading(false);
+      }
     }
-  }, [isAuthenticated]);
+    initAuth();
+  }, []);
 
+  // LOAD DATA WHEN AUTHENTICATED
+  useEffect(() => {
+    if (currentUser) {
+      loadAllData();
+    }
+  }, [currentUser]);
+
+  const loadAllData = async () => {
+    setMembersLoading(true);
+    setProjectsLoading(true);
+
+    try {
+      // 1. Membres
+      const memRes = await secretariatService.getMembers();
+      setMembers(memRes.data);
+
+      // 2. Sacrements
+      const sacRes = await secretariatService.getSacraments();
+      setSacraments(sacRes.data);
+
+      // 3. Projets
+      const projList = await projectService.getProjects();
+      setProjects(projList);
+
+      // 4. Prières
+      const prayList = await secretariatService.getPrayerRequests();
+      setPrayers(prayList);
+
+      // 5. Brevo
+      const brevo = await newsletterService.getBrevoSettings();
+      if (brevo) {
+        setBrevoSettings(brevo);
+        setBrevoSenderEmail(brevo.senderEmail || 'eglisedunazareendedame@gmail.com');
+        setBrevoSenderName(brevo.senderName || 'Église du Nazaréen de Damé');
+        setBrevoListId(brevo.brevoListId || '5');
+      }
+    } catch (err) {
+      console.error('Error loading secretariat data:', err);
+    } finally {
+      setMembersLoading(false);
+      setProjectsLoading(false);
+    }
+  };
+
+  const showToast = (type: 'success' | 'error' | 'info', text: string) => {
+    setFeedbackMsg({ type, text });
+    setTimeout(() => setFeedbackMsg(null), 5000);
+  };
+
+  // ----------------------------------------------------
+  // LOGIN HANDLER (SUPABASE AUTH + FALLBACK)
+  // ----------------------------------------------------
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adminPassword.trim()) {
-      setAuthError('Veuillez saisir votre mot de passe administrateur.');
+    if (!loginPassword.trim()) {
+      setLoginError('Veuillez entrer un mot de passe ou code d’accès.');
       return;
     }
 
-    setAuthLoading(true);
-    setAuthError('');
+    setLoginSubmitting(true);
+    setLoginError('');
 
     try {
-      const res = await authService.login(adminPassword.trim(), adminEmail.trim() || undefined);
+      const res = await authService.login(loginPassword, loginEmail);
       if (res.success) {
-        setIsAuthenticated(true);
-        setCurrentUser(authService.getUser());
-        setAdminPassword('');
-        setAdminEmail('');
+        const user = authService.getUser();
+        setCurrentUser(user);
+        showToast('success', 'Bienvenue au Secrétariat Général de l’Église de Damé.');
       } else {
-        setAuthError(res.error || 'Code secret incorrect. Accès refusé.');
+        setLoginError(res.error || 'Identifiants invalides. Veuillez réessayer.');
       }
-    } catch {
-      setAuthError('Erreur de communication avec le serveur d’authentification.');
+    } catch (err: any) {
+      setLoginError(err.message || 'Erreur lors de la connexion.');
     } finally {
-      setAuthLoading(false);
+      setLoginSubmitting(false);
     }
   };
 
   const handleLogout = () => {
     authService.logout();
-    setIsAuthenticated(false);
     setCurrentUser(null);
+    showToast('info', 'Session terminée avec succès.');
   };
 
-  const loadBrevoSettings = async () => {
-    const data = await newsletterService.getBrevoSettings();
-    if (data) setBrevoSettings(data);
+  // ----------------------------------------------------
+  // MEMBER ACTIONS
+  // ----------------------------------------------------
+  const handleOpenMemberModal = (member?: MemberRecord) => {
+    if (member) {
+      setEditingMember(member);
+      setMemberForm({
+        fullName: member.fullName,
+        gender: member.gender,
+        phone: member.phone,
+        email: member.email || '',
+        address: member.address,
+        baptismDate: member.baptismDate || '',
+        ministryAffiliation: member.ministryAffiliation,
+        status: member.status,
+        joinedDate: member.joinedDate
+      });
+    } else {
+      setEditingMember(null);
+      setMemberForm({
+        fullName: '',
+        gender: 'M',
+        phone: '+509 ',
+        email: '',
+        address: '3ème Section Damé, Môle-Saint-Nicolas',
+        baptismDate: '',
+        ministryAffiliation: 'Assemblée Générale',
+        status: 'actif',
+        joinedDate: new Date().toISOString().split('T')[0]
+      });
+    }
+    setMemberModalOpen(true);
   };
 
-  const loadSubscribersCount = async () => {
-    const list = await newsletterService.getSubscribers();
-    setSubscribers(list);
+  const handleSaveMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!memberForm.fullName.trim()) {
+      showToast('error', 'Le nom complet du membre est obligatoire.');
+      return;
+    }
+
+    try {
+      const res = await secretariatService.saveMember({
+        id: editingMember?.id,
+        regNumber: editingMember?.regNumber,
+        ...memberForm
+      });
+
+      if (res.success) {
+        setMemberModalOpen(false);
+        showToast('success', editingMember ? 'Fiche membre mise à jour.' : 'Nouveau membre enregistré avec succès.');
+        const updated = await secretariatService.getMembers();
+        setMembers(updated.data);
+      }
+    } catch (err: any) {
+      showToast('error', 'Erreur lors de l’enregistrement: ' + err.message);
+    }
   };
 
+  const handleDeleteMember = async (id: string, regNumber?: string) => {
+    if (!window.confirm('Voulez-vous vraiment retirer ce membre du registre ?')) return;
+    await secretariatService.deleteMember(id, regNumber);
+    showToast('info', 'Membre retiré du registre.');
+    setMembers(prev => prev.filter(m => m.id !== id));
+  };
+
+  // ----------------------------------------------------
+  // SACRAMENT ACTIONS
+  // ----------------------------------------------------
+  const handleSaveSacrament = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sacramentForm.recipientName.trim()) {
+      showToast('error', 'Le nom du bénéficiaire est obligatoire.');
+      return;
+    }
+
+    const reg = sacramentForm.regNumber.trim() || `SAC-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+    try {
+      const res = await secretariatService.saveSacrament({
+        ...sacramentForm,
+        regNumber: reg,
+        certificateIssued: true
+      });
+
+      if (res.success) {
+        setSacramentModalOpen(false);
+        showToast('success', 'Acte enregistré avec succès dans le registre officiel.');
+        const updated = await secretariatService.getSacraments();
+        setSacraments(updated.data);
+      }
+    } catch (err: any) {
+      showToast('error', 'Erreur lors de l’enregistrement du sacrement: ' + err.message);
+    }
+  };
+
+  const handleDeleteSacrament = async (id: string, regNumber?: string) => {
+    if (!window.confirm('Confirmez-vous la suppression de cet acte du registre ?')) return;
+    await secretariatService.deleteSacrament(id, regNumber);
+    showToast('info', 'Acte supprimé du registre.');
+    setSacraments(prev => prev.filter(s => s.id !== id));
+  };
+
+  // ----------------------------------------------------
+  // PROJECT ACTIONS
+  // ----------------------------------------------------
+  const handleSaveProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!projectForm.title.trim()) {
+      showToast('error', 'Le titre du projet est obligatoire.');
+      return;
+    }
+
+    try {
+      const created = await projectService.createProject({
+        title: projectForm.title.trim(),
+        code: projectForm.code.trim() || `PRJ-${Date.now().toString().slice(-4)}`,
+        category: projectForm.category,
+        description: projectForm.description,
+        targetAmount: projectForm.targetAmount,
+        status: projectForm.status,
+        author: currentUser?.name || 'Secrétariat Général',
+        partner: 'Église du Nazaréen de Damé',
+        images: ['/images/eglise/sound-system.jpg']
+      });
+
+      if (created) {
+        setProjectModalOpen(false);
+        showToast('success', 'Projet publié avec succès dans la section "Nos Projets".');
+        const updated = await projectService.getProjects();
+        setProjects(updated);
+      } else {
+        showToast('error', 'Erreur lors de la création du projet.');
+      }
+    } catch (err: any) {
+      showToast('error', 'Erreur: ' + err.message);
+    }
+  };
+
+  // ----------------------------------------------------
+  // PRAYER ACTIONS
+  // ----------------------------------------------------
+  const handleTogglePrayer = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'pending' ? 'prayed' : 'pending';
+    await secretariatService.updatePrayerStatus(id, newStatus);
+    showToast('success', newStatus === 'prayed' ? 'Requête marquée comme portée en prière.' : 'Requête marquée en attente.');
+    const updated = await secretariatService.getPrayerRequests();
+    setPrayers(updated);
+  };
+
+  // ----------------------------------------------------
+  // BREVO ACTIONS
+  // ----------------------------------------------------
   const handleSaveBrevo = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBrevoSaveLoading(true);
-    setBrevoSaveMsg(null);
+    setBrevoSaving(true);
     try {
       const res = await newsletterService.saveBrevoSettings({
-        apiKey: inputApiKey || undefined,
-        senderEmail: brevoSettings.senderEmail,
-        senderName: brevoSettings.senderName,
-        brevoListId: brevoSettings.brevoListId
+        apiKey: brevoApiKeyInput.trim() || undefined,
+        senderEmail: brevoSenderEmail.trim(),
+        senderName: brevoSenderName.trim(),
+        brevoListId: brevoListId.trim()
       });
+
       if (res.success) {
-        setBrevoSaveMsg({ type: 'success', text: 'Paramètres Brevo enregistrés de façon sécurisée sur le serveur !' });
-        setInputApiKey('');
-        loadBrevoSettings();
+        showToast('success', 'Configuration Brevo enregistrée.');
+        const updated = await newsletterService.getBrevoSettings();
+        if (updated) setBrevoSettings(updated);
+        setBrevoApiKeyInput('');
       } else {
-        setBrevoSaveMsg({ type: 'error', text: res.message });
+        showToast('error', res.message || 'Erreur d’enregistrement Brevo.');
       }
-    } catch {
-      setBrevoSaveMsg({ type: 'error', text: 'Erreur lors de l’enregistrement.' });
+    } catch (err: any) {
+      showToast('error', err.message);
     } finally {
-      setBrevoSaveLoading(false);
+      setBrevoSaving(false);
     }
   };
 
   const handleTestBrevo = async () => {
-    setBrevoTestLoading(true);
+    setBrevoTesting(true);
     setBrevoTestResult(null);
     try {
-      const res = await newsletterService.testBrevoConnection(inputApiKey || undefined);
+      const res = await newsletterService.testBrevoConnection(brevoApiKeyInput.trim() || undefined);
       setBrevoTestResult({
         success: res.success,
-        message: res.message,
-        account: res.account
+        message: res.message + (res.account ? ` (Compte: ${res.account.email || res.account.companyName})` : '')
       });
-    } catch (err: any) {
-      setBrevoTestResult({ success: false, message: 'Échec du test de communication.' });
-    } finally {
-      setBrevoTestLoading(false);
-    }
-  };
-
-  const handleAddMember = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newRecord: MemberRecord = {
-      id: 'mem-' + Date.now(),
-      regNumber: `END-2026-${String(members.length + 1).padStart(3, '0')}`,
-      fullName: newMemberForm.fullName,
-      gender: newMemberForm.gender,
-      phone: newMemberForm.phone,
-      address: newMemberForm.address,
-      ministryAffiliation: newMemberForm.ministryAffiliation,
-      status: 'actif',
-      joinedDate: new Date().toISOString().split('T')[0]
-    };
-    setMembers([newRecord, ...members]);
-    setNewMemberModal(false);
-    setNewMemberForm({
-      fullName: '',
-      phone: '',
-      address: '3ème Section Damé',
-      ministryAffiliation: 'Jeunesse (JNI)',
-      gender: 'M'
-    });
-  };
-
-  const exportMembersCSV = () => {
-    const headers = ['Numero Registre', 'Nom Complet', 'Sexe', 'Telephone', 'Adresse', 'Ministere', 'Statut', 'Date Adhesion'];
-    const rows = members.map(m => [
-      m.regNumber,
-      `"${m.fullName}"`,
-      m.gender,
-      `"${m.phone}"`,
-      `"${m.address}"`,
-      `"${m.ministryAffiliation}"`,
-      m.status,
-      m.joinedDate
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `registre_membres_dame_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedUrl(text);
-    setTimeout(() => setCopiedUrl(null), 2000);
-  };
-
-  const persistPublications = (list: ChurchPost[]) => {
-    setPublications(list);
-    try {
-      localStorage.setItem('dame_church_publications', JSON.stringify(list));
-    } catch (e) {
-      console.warn('Storage write failed', e);
-    }
-  };
-
-  const handleCreatePost = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPostForm.title.trim() || !newPostForm.content.trim()) return;
-
-    const slug = newPostForm.title
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
-
-    const newPost: ChurchPost = {
-      id: 'post-' + Date.now(),
-      slug: slug || 'publication-' + Date.now(),
-      title: newPostForm.title.trim(),
-      category: newPostForm.category,
-      ministryTag: newPostForm.ministryTag,
-      excerpt: newPostForm.excerpt.trim() || newPostForm.content.slice(0, 140) + '...',
-      content: newPostForm.content.trim(),
-      author: newPostForm.author || 'Direction Pastorale',
-      publishedAt: new Date().toISOString(),
-      status: newPostForm.status,
-      image: newPostForm.image || '/images/eglise/sceau-officiel.svg'
-    };
-
-    const updated = [newPost, ...publications];
-    persistPublications(updated);
-    setNewPostModal(false);
-    setNewPostForm({
-      title: '',
-      category: 'Annonce Pastorale',
-      ministryTag: 'Global',
-      excerpt: '',
-      content: '',
-      author: 'Pasteur Bequel CHERELUS',
-      image: '/images/eglise/sceau-officiel.svg',
-      status: 'published'
-    });
-    setPostNotice('Publication enregistrée avec succès !');
-    setTimeout(() => setPostNotice(null), 3000);
-  };
-
-  const handleDeletePost = (id: string) => {
-    if (confirm('Voulez-vous vraiment supprimer cet article ?')) {
-      const updated = publications.filter(p => p.id !== id);
-      persistPublications(updated);
-    }
-  };
-
-  const handleTogglePostStatus = (id: string) => {
-    const updated = publications.map(p => {
-      if (p.id === id) {
-        const nextStatus: 'published' | 'draft' = p.status === 'published' ? 'draft' : 'published';
-        return { ...p, status: nextStatus };
+      if (res.success) {
+        showToast('success', 'Connexion API Brevo vérifiée à 100% !');
+      } else {
+        showToast('error', res.message);
       }
-      return p;
-    });
-    persistPublications(updated);
+    } catch (err: any) {
+      setBrevoTestResult({ success: false, message: err.message || 'Échec du test Brevo.' });
+    } finally {
+      setBrevoTesting(false);
+    }
   };
 
-  const supabaseStatus = getSupabaseStatus();
+  const handleSendCampaign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!campaignSubject.trim() || !campaignContent.trim()) {
+      showToast('error', 'Le sujet et le contenu sont requis.');
+      return;
+    }
 
-  // If NOT authenticated, show official login screen (NO secrets exposed in UI)
-  if (!isAuthenticated) {
+    setCampaignSending(true);
+    try {
+      const subscribers = await newsletterService.getSubscribers();
+      const recipients = subscribers.length > 0
+        ? subscribers.filter(s => s.isActive).map(s => s.email)
+        : ['eglisedunazareendedame@gmail.com'];
+
+      const res = await newsletterService.sendViaWorker({
+        subject: campaignSubject,
+        htmlContent: `<div style="font-family: sans-serif; line-height: 1.6; color: #1e293b;">
+          <h2 style="color: #d97706;">Église du Nazaréen de Damé</h2>
+          <p style="white-space: pre-wrap;">${campaignContent}</p>
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #64748b;">« Sainteté à l’Éternel » — 3ème Section Damé, Môle-Saint-Nicolas, Haïti.</p>
+        </div>`,
+        recipients,
+        senderEmail: brevoSenderEmail,
+        senderName: brevoSenderName
+      });
+
+      if (res.success) {
+        showToast('success', `Message d'information envoyé à ${recipients.length} destinataire(s) via Brevo !`);
+      } else {
+        showToast('error', res.message || 'Échec de l’envoi de la campagne.');
+      }
+    } catch (err: any) {
+      showToast('error', 'Erreur d’envoi: ' + err.message);
+    } finally {
+      setCampaignSending(false);
+    }
+  };
+
+  // ----------------------------------------------------
+  // SUPABASE DIAGNOSTIC ACTIONS
+  // ----------------------------------------------------
+  const handleTestSupabase = async () => {
+    setSupabaseTestStatus({ loading: true });
+    try {
+      const res = await testSupabaseConnection();
+      setSupabaseTestStatus({
+        loading: false,
+        success: res.success,
+        message: res.message
+      });
+      if (res.success) {
+        showToast('success', 'Supabase opérationnel : Lecture et écriture validées.');
+      } else {
+        showToast('error', res.message);
+      }
+    } catch (err: any) {
+      setSupabaseTestStatus({
+        loading: false,
+        success: false,
+        message: 'Erreur inattendue: ' + (err?.message || String(err))
+      });
+    }
+  };
+
+  const handleCopySql = () => {
+    const sql = secretariatService.getSupabaseMigrationSql();
+    navigator.clipboard.writeText(sql);
+    setSqlCopied(true);
+    showToast('success', 'Script SQL copié dans le presse-papier !');
+    setTimeout(() => setSqlCopied(false), 3000);
+  };
+
+  const handleSaveRuntimeSupabase = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customSupaUrl.trim() || !customSupaKey.trim()) {
+      showToast('error', 'Veuillez saisir l’URL Supabase et la clé Anon.');
+      return;
+    }
+    const ok = setRuntimeSupabaseCredentials(customSupaUrl.trim(), customSupaKey.trim());
+    if (ok) {
+      showToast('success', 'Identifiants Supabase configurés et mémorisés avec succès !');
+      handleTestSupabase();
+    } else {
+      showToast('error', 'URL ou clé invalide.');
+    }
+  };
+
+  // ----------------------------------------------------
+  // FILTERED MEMBERS
+  // ----------------------------------------------------
+  const filteredMembers = members.filter(m => {
+    const matchesSearch =
+      m.fullName.toLowerCase().includes(membersSearch.toLowerCase()) ||
+      m.regNumber.toLowerCase().includes(membersSearch.toLowerCase()) ||
+      m.phone.includes(membersSearch);
+    const matchesMinistry =
+      memberFilterMinistry === 'all' || m.ministryAffiliation === memberFilterMinistry;
+    return matchesSearch && matchesMinistry;
+  });
+
+  const filteredSacraments = sacraments.filter(s => {
+    if (sacramentFilterType === 'all') return true;
+    return s.type === sacramentFilterType;
+  });
+
+  const filteredPrayers = prayers.filter(p => {
+    if (prayerFilter === 'all') return true;
+    return p.status === prayerFilter;
+  });
+
+  // ----------------------------------------------------
+  // RENDER: LOADING STATE
+  // ----------------------------------------------------
+  if (authLoading) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4 py-16 bg-slate-950 text-white">
-        <SEOHead 
-          title="Secrétariat & Administration – Église du Nazaréen de Damé"
-          description="Espace d'administration réservé au secrétariat, pastorat et diaconat de l'Église du Nazaréen de Damé, Haïti."
-          path="/secretariat"
-          image="/images/eglise/sceau-officiel.svg"
-        />
-        <div className="max-w-md w-full bg-slate-900 rounded-3xl p-8 border border-amber-500/30 shadow-2xl space-y-6">
-          <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center mx-auto shadow-lg">
-              <Lock className="w-8 h-8" />
-            </div>
-            <h1 className="font-serif text-2xl font-bold text-white">
-              Espace Secrétariat
-            </h1>
-            <p className="text-xs text-amber-400 font-serif">
-              « SAINTETÉ À L’ÉTERNEL »
-            </p>
-            <p className="text-xs text-slate-400">
-              Accès réservé au Pasteur Bequel CHERELUS, aux diacres et aux administrateurs autorisés.
-            </p>
-            {isSubdomain && (
-              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
-                <span className="text-[11px] font-bold text-amber-300 block">
-                  Portail Officiel : secretariat.eglisedunazareendedame.org
-                </span>
-                <span className="text-[10px] text-slate-400">
-                  Authentification Sécurisée Cloud Supabase
-                </span>
-              </div>
-            )}
-          </div>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-slate-900">
+        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-slate-600 font-medium">Chargement du Secrétariat Général...</p>
+      </div>
+    );
+  }
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">
-                Identifiant / Email (Optionnel)
-              </label>
-              <input
-                type="email"
-                placeholder="pastorat@eglisedunazareendedame.org"
-                value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-amber-400"
+  // ----------------------------------------------------
+  // RENDER: AUTHENTICATION SCREEN (PURE WHITE & GOLD ACCENT)
+  // ----------------------------------------------------
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col justify-between py-12 px-4 sm:px-6 lg:px-8 text-slate-900">
+        <div className="max-w-md w-full mx-auto my-auto">
+          {/* Header & Official Church Badge */}
+          <div className="text-center mb-8">
+            <div className="inline-flex p-3 rounded-2xl bg-amber-50 border border-amber-200 mb-4 shadow-sm">
+              <img
+                src="/images/eglise/sceau-officiel.svg"
+                alt="Sceau Église du Nazaréen Damé"
+                className="w-16 h-16 object-contain"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
               />
             </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+              Secrétariat Général
+            </h1>
+            <p className="text-xs sm:text-sm font-semibold text-amber-600 tracking-wider uppercase mt-1">
+              Église du Nazaréen de Damé — « Sainteté à l'Éternel »
+            </p>
+            <p className="text-slate-500 text-sm mt-2">
+              Portail d'administration pastorale & gestion ecclésiale
+            </p>
+          </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">
-                Mot de passe d'accès administratif *
-              </label>
-              <div className="relative">
-                <Key className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  required
-                  placeholder="Code secret administrateur..."
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-amber-400"
-                />
+          {/* Login Card */}
+          <div className="bg-white border border-slate-200 shadow-md rounded-2xl p-6 sm:p-8">
+            <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
+              <div className="flex items-center space-x-2">
+                <Lock className="w-5 h-5 text-amber-500" />
+                <span className="font-semibold text-slate-900 text-sm sm:text-base">Connexion Sécurisée</span>
               </div>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                Supabase Auth
+              </span>
             </div>
 
-            {authError && (
-              <div className="p-3 rounded-lg bg-rose-950/80 border border-rose-500/50 text-xs text-rose-300 flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
-                <span>{authError}</span>
+            {loginError && (
+              <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 flex items-start space-x-2 text-red-700 text-sm">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <span>{loginError}</span>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={authLoading}
-              className="w-full py-3 rounded-xl font-bold text-xs bg-amber-500 text-slate-950 hover:bg-amber-400 transition shadow-lg shadow-amber-500/20 disabled:opacity-50 flex items-center justify-center space-x-2"
-            >
-              {authLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Vérification...</span>
-                </>
-              ) : (
-                <span>Déverrouiller le Tableau de Bord</span>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                  Email Administrateur / Secrétaire
+                </label>
+                <div className="relative">
+                  <Mail className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    placeholder="ex: eglisedunazareendedame@gmail.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                  Mot de passe ou Clé Pastorale
+                </label>
+                <div className="relative">
+                  <Key className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    placeholder="••••••••••••"
+                  />
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Authentification via Supabase Auth ou code pastoral autorisé (ex: <code className="text-slate-700">dame1979</code>).
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loginSubmitting}
+                className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl transition duration-150 flex items-center justify-center space-x-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-50"
+              >
+                {loginSubmitting ? (
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Shield className="w-5 h-5" />
+                    <span>Accéder au Secrétariat</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span>Haïti - Môle-Saint-Nicolas</span>
+              {onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('/')}
+                  className="text-amber-600 hover:text-amber-700 font-semibold"
+                >
+                  Retour au site public &rarr;
+                </button>
               )}
-            </button>
-          </form>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center text-xs text-slate-400 mt-8">
+          © {new Date().getFullYear()} Église du Nazaréen de Damé. Tous droits réservés.
         </div>
       </div>
     );
   }
 
-  // AUTHENTICATED DASHBOARD
+  // ----------------------------------------------------
+  // RENDER: AUTHENTICATED SECRETARIAT PORTAL (WHITE + GOLD)
+  // ----------------------------------------------------
   return (
-    <div className="min-h-screen bg-slate-100 pb-16">
-      <SEOHead 
-        title="Secrétariat & Administration | Église du Nazaréen de Damé"
-        description="Espace d'administration réservé au secrétariat, pastorat et diaconat de l'Église du Nazaréen de Damé, Haïti."
-        path="/secretariat"
-        image="/images/eglise/sceau-officiel.svg"
-      />
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col">
+      {/* Toast Notification Banner */}
+      {feedbackMsg && (
+        <div
+          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium flex items-center space-x-2 animate-fade-in ${
+            feedbackMsg.type === 'success'
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+              : feedbackMsg.type === 'error'
+              ? 'bg-red-50 border-red-300 text-red-800'
+              : 'bg-amber-50 border-amber-300 text-amber-800'
+          }`}
+        >
+          {feedbackMsg.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+          {feedbackMsg.type === 'error' && <AlertCircle className="w-5 h-5 text-red-600" />}
+          {feedbackMsg.type === 'info' && <Shield className="w-5 h-5 text-amber-600" />}
+          <span>{feedbackMsg.text}</span>
+        </div>
+      )}
 
-      {/* Top Admin Header Banner */}
-      <header className="bg-slate-900 text-white border-b border-amber-500/20 px-4 sm:px-8 py-4">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-6 h-6" />
+      {/* TOP OFFICIAL APP BAR */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Left: Church Brand & Portal Title */}
+            <div className="flex items-center space-x-3">
+              <img
+                src="/images/eglise/sceau-officiel.svg"
+                alt="Sceau Église du Nazaréen Damé"
+                className="w-10 h-10 object-contain"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight">
+                    Secrétariat Général
+                  </span>
+                  <span className="hidden sm:inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                    Officiel
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium truncate max-w-xs sm:max-w-md">
+                  Église du Nazaréen de Damé • « Sainteté à l’Éternel »
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-serif font-bold text-base sm:text-lg text-white">
-                Secrétariat &amp; Administration Centrale
-              </h1>
-              <p className="text-[11px] text-amber-400">
-                Église du Nazaréen de Damé • {currentUser?.name || 'Session administrative active'}
-              </p>
+
+            {/* Right: User Profile & Actions */}
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="hidden md:flex flex-col text-right">
+                <span className="text-xs font-bold text-slate-900">{currentUser.name}</span>
+                <span className="text-2xs text-slate-500 truncate max-w-[160px]">{currentUser.email}</span>
+              </div>
+
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate('/')}
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                  title="Voir le site public"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 inline mr-1" />
+                  Site Public
+                </button>
+              )}
+
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition flex items-center space-x-1"
+                title="Déconnexion"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Quitter</span>
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          {/* TAB NAVIGATION BAR */}
+          <nav className="flex space-x-1 sm:space-x-2 overflow-x-auto scrollbar-none py-2 border-t border-slate-100">
             <button
-              onClick={() => onNavigate('/')}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white transition border border-slate-700"
+              onClick={() => setActiveTab('dashboard')}
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center space-x-1.5 transition whitespace-nowrap ${
+                activeTab === 'dashboard'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
             >
-              Voir le site public
+              <Flame className="w-4 h-4" />
+              <span>Tableau de Bord</span>
             </button>
+
             <button
-              onClick={handleLogout}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-rose-600/20 text-rose-300 border border-rose-500/30 hover:bg-rose-600 hover:text-white flex items-center space-x-1 transition"
+              onClick={() => setActiveTab('members')}
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center space-x-1.5 transition whitespace-nowrap ${
+                activeTab === 'members'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
             >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Verrouiller</span>
+              <Users className="w-4 h-4" />
+              <span>Registre des Membres ({members.length})</span>
             </button>
-          </div>
+
+            <button
+              onClick={() => setActiveTab('sacraments')}
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center space-x-1.5 transition whitespace-nowrap ${
+                activeTab === 'sacraments'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Award className="w-4 h-4" />
+              <span>Actes & Sacrements ({sacraments.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('projects')}
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center space-x-1.5 transition whitespace-nowrap ${
+                activeTab === 'projects'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Briefcase className="w-4 h-4" />
+              <span>Nos Projets ({projects.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('prayers')}
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center space-x-1.5 transition whitespace-nowrap ${
+                activeTab === 'prayers'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Heart className="w-4 h-4" />
+              <span>Prières ({prayers.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('brevo')}
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center space-x-1.5 transition whitespace-nowrap ${
+                activeTab === 'brevo'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Send className="w-4 h-4" />
+              <span>Newsletter Brevo</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('supabase')}
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center space-x-1.5 transition whitespace-nowrap ${
+                activeTab === 'supabase'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Database className="w-4 h-4" />
+              <span>Base Supabase & SQL</span>
+            </button>
+          </nav>
         </div>
       </header>
 
-      {/* Sub Navigation Bar (Clean Menu with Only Legitimate Admin Sections) */}
-      <div className="bg-white border-b border-slate-200 sticky top-20 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          <div className="flex items-center space-x-2 overflow-x-auto py-2.5">
-            {[
-              { id: 'overview', label: 'Tableau de bord', icon: Database },
-              { id: 'prayers', label: 'Requêtes de Prière', icon: Heart },
-              { id: 'lessons', label: 'Lekòl Dimanch (Leçons)', icon: BookOpen },
-              { id: 'testimonies', label: 'Témoignages (Temwayaj)', icon: Sparkles },
-              { id: 'discipleship', label: 'Nouvo Kwayan (Discipulat)', icon: UserCheck },
-              { id: 'documents', label: 'Demann Dokiman', icon: Scroll },
-              { id: 'radio_alert', label: 'Radyo & Banyè Alèt', icon: Radio },
-              { id: 'publications', label: 'Mes Publications', icon: FileText },
-              { id: 'brevo_config', label: 'Configuration Brevo', icon: Key },
-              { id: 'newsletter_manager', label: 'Newsletter Manager', icon: Mail },
-              { id: 'projects', label: 'Gestion des Projets', icon: HeartHandshake },
-              { id: 'faqs', label: 'Gestion FAQ', icon: HelpCircle },
-              { id: 'content', label: 'Gestion Contenu', icon: Globe },
-              { id: 'events', label: 'Événements & Cultes', icon: Calendar },
-              { id: 'members', label: 'Registre des Membres', icon: Users },
-              { id: 'images', label: 'Gestion des Images', icon: ImageIcon },
-              { id: 'settings', label: 'Paramètres', icon: Settings },
-            ].map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${
-                    isActive
-                      ? 'bg-amber-500 text-slate-950 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-8 pt-8 space-y-8">
-        
-        {/* ========================================================================= */}
-        {/* TAB 1: OVERVIEW */}
-        {/* ========================================================================= */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <span className="text-[11px] font-bold text-slate-500 uppercase">Membres au Registre</span>
-                <p className="font-serif text-3xl font-extrabold text-slate-900 mt-1">{members.length}</p>
-                <p className="text-xs text-slate-500 mt-1">Registre de Damé actif</p>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <span className="text-[11px] font-bold text-slate-500 uppercase">Abonnés Newsletter</span>
-                <p className="font-serif text-3xl font-extrabold text-slate-900 mt-1">{subscribers.length}</p>
-                <p className="text-xs text-amber-600 mt-1">
-                  {subscribers.filter(s => s.isActive).length} actif(s) synchronisés
-                </p>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <span className="text-[11px] font-bold text-slate-500 uppercase">Publications Pastorales</span>
-                <p className="font-serif text-3xl font-extrabold text-slate-900 mt-1">{publications.length}</p>
-                <p className="text-xs text-emerald-600 mt-1">
-                  {publications.filter(p => p.status === 'published').length} en ligne
-                </p>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <span className="text-[11px] font-bold text-slate-500 uppercase">Ministères Actifs</span>
-                <p className="font-serif text-3xl font-extrabold text-slate-900 mt-1">7</p>
-                <p className="text-xs text-blue-600 mt-1">Comités coordonnés</p>
-              </div>
-            </div>
-
-            {/* Quick Status Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Brevo Status */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-serif font-bold text-slate-900 text-base">État Système Brevo API</h3>
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
-                    brevoSettings.hasApiKey ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {brevoSettings.hasApiKey ? 'Clé Active Côté Serveur' : 'Clé non définie'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  L'API Brevo gère la synchronisation des contacts et l'envoi des lettres pastorales par SMTP transactionnel.
-                </p>
-                <div className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl font-mono space-y-1">
-                  <p>Expéditeur : {brevoSettings.senderEmail}</p>
-                  <p>Nom : {brevoSettings.senderName}</p>
-                  <p>List ID : {brevoSettings.brevoListId}</p>
-                </div>
-                <button
-                  onClick={() => setActiveTab('brevo_config')}
-                  className="text-xs font-bold text-amber-600 hover:text-amber-700"
-                >
-                  Gérer la configuration Brevo →
-                </button>
-              </div>
-
-              {/* Supabase Status */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-serif font-bold text-slate-900 text-base">État Backend Supabase</h3>
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
-                    supabaseStatus.isConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
-                  }`}>
-                    {supabaseStatus.isConfigured ? 'Connecté' : 'Mode Résilience Actif'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Base de données pour la persistance cloud sécurisée des abonnés, membres et articles de l’Église.
-                </p>
-                <div className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl font-mono space-y-1">
-                  <p>Projet : {supabaseStatus.projectUrl}</p>
-                  <p>Clé Anon : {supabaseStatus.hasAnonKey ? 'Définie' : 'Non renseignée'}</p>
-                  <p>Table abonnés : newsletter_subscribers</p>
-                </div>
-                <button
-                  onClick={() => setActiveTab('newsletter_manager')}
-                  className="text-xs font-bold text-amber-600 hover:text-amber-700"
-                >
-                  Consulter les abonnés en direct →
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB: REQUÊTES DE PRIÈRE & INTERCESSION PASTORALE */}
-        {/* ========================================================================= */}
-        {activeTab === 'prayers' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-4">
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* ======================================================== */}
+        {/* TAB 1: TABLEAU DE BORD (DASHBOARD)                       */}
+        {/* ======================================================== */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-8">
+            {/* Welcome banner */}
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <div className="flex items-center space-x-2">
-                  <h2 className="font-serif text-2xl font-bold text-slate-900">
-                    Requêtes de Prière &amp; Espas Sekrè
-                  </h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
-                    {prayersList.length} reçues
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Accès réservé au Pasteur Bequel CHERELUS et à l’équipe d'intercession pour le suivi spirituel confidentiel.
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={loadPrayers}
-                  disabled={loadingPrayers}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center space-x-1.5 transition"
-                  title="Actualiser les requêtes"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${loadingPrayers ? 'animate-spin' : ''}`} />
-                  <span>Actualiser</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Filters Bar */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {[
-                  { id: 'all', label: `Toutes (${prayersList.length})` },
-                  { id: 'pastorOnly', label: `🔒 Sekrè Pastorales (${prayersList.filter(p => p.pastorOnly).length})` },
-                  { id: 'public', label: `🌐 Mur Public (${prayersList.filter(p => !p.pastorOnly).length})` },
-                  { id: 'urgent', label: `⚡ Ijans (${prayersList.filter(p => p.isUrgent).length})` },
-                  { id: 'pending', label: `⏳ En cours (${prayersList.filter(p => p.status === 'pending').length})` },
-                  { id: 'prayed', label: `✅ Priyè Fèt (${prayersList.filter(p => p.status === 'prayed').length})` },
-                ].map(f => (
-                  <button
-                    key={f.id}
-                    onClick={() => setPrayerFilter(f.id as any)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                      prayerFilter === f.id
-                        ? 'bg-amber-500 text-slate-950 shadow-sm'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="relative w-full md:w-64">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Rechercher nom, mot-clé..."
-                  value={prayerSearch}
-                  onChange={(e) => setPrayerSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-500"
-                />
-              </div>
-            </div>
-
-            {/* Prayer Requests Cards List */}
-            {loadingPrayers ? (
-              <div className="py-16 text-center">
-                <Loader2 className="w-8 h-8 text-amber-500 animate-spin mx-auto" />
-                <p className="text-xs text-slate-500 mt-2">Chargement des requêtes de prière...</p>
-              </div>
-            ) : prayersList.length === 0 ? (
-              <div className="py-12 text-center bg-slate-50 rounded-2xl border border-slate-200">
-                <Heart className="w-8 h-8 text-slate-400 mx-auto" />
-                <p className="text-sm font-semibold text-slate-700 mt-2">Aucune requête de prière enregistrée</p>
-                <p className="text-xs text-slate-500">Les requêtes soumises via le site apparaîtront ici.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {prayersList
-                  .filter(p => {
-                    if (prayerFilter === 'pastorOnly') return p.pastorOnly;
-                    if (prayerFilter === 'public') return !p.pastorOnly;
-                    if (prayerFilter === 'urgent') return p.isUrgent;
-                    if (prayerFilter === 'pending') return p.status === 'pending';
-                    if (prayerFilter === 'prayed') return p.status === 'prayed';
-                    return true;
-                  })
-                  .filter(p => {
-                    if (!prayerSearch) return true;
-                    const q = prayerSearch.toLowerCase();
-                    return (
-                      p.message.toLowerCase().includes(q) ||
-                      (p.fullName && p.fullName.toLowerCase().includes(q)) ||
-                      p.category.toLowerCase().includes(q)
-                    );
-                  })
-                  .map(p => (
-                    <div
-                      key={p.id}
-                      className={`p-5 rounded-2xl border transition space-y-3 ${
-                        p.status === 'prayed'
-                          ? 'bg-emerald-50/40 border-emerald-200'
-                          : p.isUrgent
-                          ? 'bg-rose-50/50 border-rose-300 ring-1 ring-rose-300'
-                          : 'bg-white border-slate-200 shadow-sm'
-                      }`}
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-sm text-slate-900">
-                            {p.isAnonymous ? '👤 Anonyme' : (p.fullName || 'Fidèle de Damé')}
-                          </span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
-                            {p.category}
-                          </span>
-                          {p.pastorOnly ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-amber-300 flex items-center space-x-1">
-                              <Lock className="w-2.5 h-2.5" />
-                              <span>Sekrè Pastoral</span>
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">
-                              🌐 Mur Public
-                            </span>
-                          )}
-                          {p.isUrgent && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white">
-                              ⚡ Ijans
-                            </span>
-                          )}
-                        </div>
-
-                        <span className="text-[11px] text-slate-400 font-mono">
-                          {new Date(p.createdAt).toLocaleDateString('fr-HT', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                      </div>
-
-                      <p className="text-xs text-slate-800 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100 whitespace-pre-line">
-                        {p.message}
-                      </p>
-
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
-                        <div className="flex items-center space-x-3 text-xs text-slate-500">
-                          {p.phone && (
-                            <div className="flex items-center space-x-1 font-mono text-amber-700 font-bold">
-                              <Phone className="w-3.5 h-3.5" />
-                              <a href={`tel:${p.phone}`} className="hover:underline">{p.phone}</a>
-                            </div>
-                          )}
-                          {p.email && (
-                            <div className="flex items-center space-x-1 text-slate-600">
-                              <Mail className="w-3.5 h-3.5" />
-                              <a href={`mailto:${p.email}`} className="hover:underline">{p.email}</a>
-                            </div>
-                          )}
-                          {typeof p.amenCount === 'number' && p.amenCount > 0 && (
-                            <span className="text-[11px] text-emerald-600 font-semibold">
-                              🙏 {p.amenCount} fidèles ont prié
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          {p.phone && (
-                            <a
-                              href={`https://wa.me/${p.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                                `Bonjour ${p.fullName || ''},\n\nPasteur Bequel CHERELUS vous contacte fraternellement concernant votre requête de prière confiée à l'Église du Nazaréen de Damé. Nous prions avec foi pour vous ! « Sainteté à l'Éternel »`
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 flex items-center space-x-1 transition shadow-sm"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5" />
-                              <span>WhatsApp</span>
-                            </a>
-                          )}
-
-                          <button
-                            onClick={() => handleTogglePrayerStatus(p.id, p.status)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1 ${
-                              p.status === 'prayed'
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                            }`}
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            <span>{p.status === 'prayed' ? 'Priyè Fèt (Achevé)' : 'Marquer comme Prié'}</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleDeletePrayer(p.id)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                            title="Archiver"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB: LEKOL DIMANCH (LEÇONS - OPTION 7) */}
-        {activeTab === 'lessons' && (
-          <LessonsManager onNavigate={onNavigate} />
-        )}
-
-        {/* TAB: TÉMOIGNAGES (TEMWAYAJ - OPTION 5) */}
-        {activeTab === 'testimonies' && (
-          <TestimoniesManager onNavigate={onNavigate} />
-        )}
-
-        {/* TAB: NOUVEAUX CONVERTIS (DISCIPULAT - OPTION 17) */}
-        {activeTab === 'discipleship' && (
-          <DiscipleshipManager onNavigate={onNavigate} />
-        )}
-
-        {/* TAB: DEMANDE DE DOCUMENTS (OPTION 6) */}
-        {activeTab === 'documents' && (
-          <DocRequestsManager onNavigate={onNavigate} />
-        )}
-
-        {/* TAB: RADIO & BANNIÈRE D'ALERTE (OPTION 3 & 13) */}
-        {activeTab === 'radio_alert' && (
-          <RadioAlertManager />
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 2: MES PUBLICATIONS */}
-        {/* ========================================================================= */}
-        {activeTab === 'publications' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200 space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-4">
-              <div>
-                <h2 className="font-serif text-2xl font-bold text-slate-900">
-                  Mes Publications &amp; Annonces
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-200 text-amber-900 mb-2">
+                  Session Active • {currentUser.name}
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  Bienvenue dans l'espace pastoral & administratif
                 </h2>
-                <p className="text-xs text-slate-500">
-                  Espace d’écriture et de diffusion réservé à la direction pastorale et au secrétariat.
+                <p className="text-slate-600 text-sm mt-1 max-w-2xl">
+                  Gérez avec rigueur et transparence le troupeau de l'Éternel : fiches des membres, actes pastoraux (baptêmes, mariages), projets en cours et communication via Brevo.
                 </p>
               </div>
-              <button
-                onClick={() => setNewPostModal(true)}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 flex items-center space-x-1.5 shadow-sm transition"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Rédiger une Publication</span>
-              </button>
-            </div>
 
-            {postNotice && (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>{postNotice}</span>
-              </div>
-            )}
-
-            {/* List */}
-            {publications.length === 0 ? (
-              <div className="py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl space-y-3">
-                <FileText className="w-10 h-10 text-slate-300 mx-auto" />
-                <p className="text-xs font-bold text-slate-700">Aucune publication pastorale pour le moment.</p>
+              <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => setNewPostModal(true)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400"
-                >
-                  Créer le premier article
-                </button>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-500 uppercase font-semibold text-[10px] tracking-wider border-b">
-                    <tr>
-                      <th className="py-3 px-4">Titre</th>
-                      <th className="py-3 px-4">Catégorie</th>
-                      <th className="py-3 px-4">Statut</th>
-                      <th className="py-3 px-4">Auteur</th>
-                      <th className="py-3 px-4">Date</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {publications.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-3.5 px-4 font-bold text-slate-900">{p.title}</td>
-                        <td className="py-3.5 px-4 text-slate-600">{p.category}</td>
-                        <td className="py-3.5 px-4">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            p.status === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {p.status === 'published' ? 'Publié' : 'Brouillon'}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-600">{p.author}</td>
-                        <td className="py-3.5 px-4 text-slate-500">
-                          {new Date(p.publishedAt).toLocaleDateString('fr-FR')}
-                        </td>
-                        <td className="py-3.5 px-4 text-right space-x-2">
-                          <button
-                            onClick={() => handleTogglePostStatus(p.id)}
-                            className="px-2.5 py-1 rounded text-[11px] font-bold bg-slate-100 hover:bg-slate-200"
-                          >
-                            {p.status === 'published' ? 'Passer brouillon' : 'Publier'}
-                          </button>
-                          <button
-                            onClick={() => handleDeletePost(p.id)}
-                            className="p-1.5 rounded text-slate-400 hover:text-rose-600"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 3: CONFIGURATION BREVO */}
-        {/* ========================================================================= */}
-        {activeTab === 'brevo_config' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200 space-y-6">
-            <div className="border-b pb-4">
-              <h2 className="font-serif text-2xl font-bold text-slate-900">
-                Configuration de l’API Brevo (Sendinblue)
-              </h2>
-              <p className="text-xs text-slate-500">
-                Gérez la clé d'API, l'adresse d'expédition officielle et la liste de contacts.
-              </p>
-            </div>
-
-            {brevoSaveMsg && (
-              <div className={`p-4 rounded-2xl border text-xs flex items-center space-x-2 ${
-                brevoSaveMsg.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
-              }`}>
-                {brevoSaveMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-rose-600" />}
-                <span>{brevoSaveMsg.text}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveBrevo} className="space-y-4 max-w-2xl">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Clé d’API Brevo v3 (xkeysib-...)
-                </label>
-                <div className="relative">
-                  <Key className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="password"
-                    placeholder={brevoSettings.hasApiKey ? `Clé actuelle : ${brevoSettings.apiKeyPreview}` : "Collez votre clé xkeysib-..."}
-                    value={inputApiKey}
-                    onChange={(e) => setInputApiKey(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl border border-slate-300 font-mono focus:outline-none focus:border-amber-400"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Email de l’expéditeur officiel *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={brevoSettings.senderEmail}
-                    onChange={(e) => setBrevoSettings({ ...brevoSettings, senderEmail: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-0.5 block">
-                    Doit être vérifié dans Brevo &gt; Expéditeurs &amp; IP
-                  </span>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Nom de l’expéditeur affiché *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={brevoSettings.senderName}
-                    onChange={(e) => setBrevoSettings({ ...brevoSettings, senderName: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Identifiant de la Liste Brevo (List ID)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={brevoSettings.brevoListId}
-                  onChange={(e) => setBrevoSettings({ ...brevoSettings, brevoListId: e.target.value })}
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 font-mono focus:outline-none focus:border-amber-400"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center space-x-3">
-                <button
-                  type="submit"
-                  disabled={brevoSaveLoading}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition shadow-sm"
-                >
-                  {brevoSaveLoading ? 'Enregistrement...' : 'Enregistrer la configuration'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleTestBrevo}
-                  disabled={brevoTestLoading}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition"
-                >
-                  {brevoTestLoading ? 'Test en cours...' : 'Tester la connexion Brevo'}
-                </button>
-              </div>
-            </form>
-
-            {brevoTestResult && (
-              <div className={`p-4 rounded-2xl border text-xs max-w-2xl ${
-                brevoTestResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'
-              }`}>
-                <div className="flex items-center space-x-2 font-bold mb-1">
-                  {brevoTestResult.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-rose-600" />}
-                  <span>{brevoTestResult.message}</span>
-                </div>
-                {brevoTestResult.account && (
-                  <p className="font-mono text-[11px] text-emerald-700">
-                    Compte : {brevoTestResult.account.email} • Plan : {brevoTestResult.account.plan}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 4: NEWSLETTER MANAGER (DÉDIÉ) */}
-        {/* ========================================================================= */}
-        {activeTab === 'newsletter_manager' && (
-          <NewsletterManager 
-            brevoConfig={brevoSettings} 
-            onRefreshBrevoConfig={loadBrevoSettings} 
-          />
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 5: GESTION DES PROJETS */}
-        {/* ========================================================================= */}
-        {activeTab === 'projects' && (
-          <ProjectManager />
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB: GESTION FAQ (FOIRE AUX QUESTIONS) */}
-        {/* ========================================================================= */}
-        {activeTab === 'faqs' && (
-          <FAQManager onNavigate={onNavigate} />
-        )}
-
-
-        {/* ========================================================================= */}
-        {/* TAB 6: GESTION CONTENU (PAGES PERSONNALISÉES) */}
-        {/* ========================================================================= */}
-        {activeTab === 'content' && (
-          <ContentManager onNavigateToPage={(slug) => onNavigate('/page/' + slug)} />
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 7: EVENTS & SERVICES */}
-        {/* ========================================================================= */}
-        {activeTab === 'events' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200 space-y-6">
-            <div className="flex items-center justify-between border-b pb-4">
-              <div>
-                <h2 className="font-serif text-2xl font-bold text-slate-900">
-                  Gestion des Cultes &amp; Événements
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Horaires hebdomadaires et conférences de l'Église du Nazaréen de Damé.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {OFFICIAL_SERVICES.map((s) => (
-                <div key={s.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-serif font-bold text-slate-900 text-sm">{s.title}</h4>
-                    <p className="text-xs text-slate-500">{s.day} • {s.time} — {s.location}</p>
-                  </div>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">
-                    Actif
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 8: MEMBERS REGISTRY */}
-        {/* ========================================================================= */}
-        {activeTab === 'members' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b pb-4">
-              <div>
-                <h2 className="font-serif text-2xl font-bold text-slate-900">
-                  Registre Officiel des Membres
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Registre des membres de l'Église du Nazaréen de Damé
-                </p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setNewMemberModal(true)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 flex items-center space-x-1"
+                  onClick={() => handleOpenMemberModal()}
+                  className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-sm transition flex items-center space-x-1.5 shadow-xs"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Nouveau Membre</span>
                 </button>
                 <button
-                  onClick={exportMembersCSV}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 flex items-center space-x-1"
+                  onClick={() => {
+                    setSacramentForm({
+                      type: 'bapteme',
+                      regNumber: '',
+                      recipientName: '',
+                      spouseName: '',
+                      fatherName: '',
+                      motherName: '',
+                      date: new Date().toISOString().split('T')[0],
+                      officiatingPastor: 'Pasteur Bequel CHERELUS',
+                      location: 'Temple de Damé',
+                      witnesses: '',
+                      notes: ''
+                    });
+                    setSacramentModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-semibold rounded-xl text-sm transition flex items-center space-x-1.5"
                 >
-                  <Download className="w-4 h-4" />
-                  <span>Exporter CSV</span>
+                  <Award className="w-4 h-4 text-amber-500" />
+                  <span>Enregistrer Sacrement</span>
                 </button>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 uppercase font-semibold text-[10px] tracking-wider border-b">
-                  <tr>
-                    <th className="py-3 px-4">Numéro</th>
-                    <th className="py-3 px-4">Nom Complet</th>
-                    <th className="py-3 px-4">Téléphone</th>
-                    <th className="py-3 px-4">Ministère</th>
-                    <th className="py-3 px-4">Statut</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {members.map((m) => (
-                    <tr key={m.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-3 px-4 font-mono font-medium text-slate-900">{m.regNumber}</td>
-                      <td className="py-3 px-4 font-bold text-slate-800">{m.fullName}</td>
-                      <td className="py-3 px-4 text-slate-600">{m.phone}</td>
-                      <td className="py-3 px-4 text-slate-600">{m.ministryAffiliation}</td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                          {m.status}
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* Membres Actifs */}
+              <div
+                onClick={() => setActiveTab('members')}
+                className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:border-amber-400 hover:shadow-sm transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Registre des Membres
+                  </span>
+                  <div className="p-2 bg-amber-100 rounded-xl text-amber-700">
+                    <Users className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="text-3xl font-black text-slate-900">{members.length}</span>
+                  <span className="text-xs text-slate-500 ml-2">fidèles enregistrés</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2 flex items-center">
+                  <span>{members.filter(m => m.status === 'actif').length} actifs</span>
+                  <span className="mx-1.5">•</span>
+                  <span>{members.filter(m => m.gender === 'F').length} Femmes / {members.filter(m => m.gender === 'M').length} Hommes</span>
+                </p>
+              </div>
+
+              {/* Sacrements & Actes */}
+              <div
+                onClick={() => setActiveTab('sacraments')}
+                className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:border-amber-400 hover:shadow-sm transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Actes & Sacrements
+                  </span>
+                  <div className="p-2 bg-amber-100 rounded-xl text-amber-700">
+                    <Award className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="text-3xl font-black text-slate-900">{sacraments.length}</span>
+                  <span className="text-xs text-slate-500 ml-2">certificats officiels</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  {sacraments.filter(s => s.type === 'bapteme').length} Baptêmes • {sacraments.filter(s => s.type === 'mariage').length} Mariages
+                </p>
+              </div>
+
+              {/* Requêtes de Prière */}
+              <div
+                onClick={() => setActiveTab('prayers')}
+                className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:border-amber-400 hover:shadow-sm transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Requêtes de Prière
+                  </span>
+                  <div className="p-2 bg-amber-100 rounded-xl text-amber-700">
+                    <Heart className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="text-3xl font-black text-slate-900">{prayers.length}</span>
+                  <span className="text-xs text-slate-500 ml-2">intentions</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  <span className="text-amber-600 font-semibold">{prayers.filter(p => p.status === 'pending').length} en attente</span> • {prayers.filter(p => p.status === 'prayed').length} portées
+                </p>
+              </div>
+
+              {/* Supabase & Brevo Status */}
+              <div
+                onClick={() => setActiveTab('supabase')}
+                className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:border-amber-400 hover:shadow-sm transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Services Connectés
+                  </span>
+                  <div className="p-2 bg-amber-100 rounded-xl text-amber-700">
+                    <Database className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-col space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700">Supabase Auth / DB:</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                      Connecté
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700">Brevo Newsletter:</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                      brevoSettings?.hasApiKey ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
+                    }`}>
+                      {brevoSettings?.hasApiKey ? 'Configuré' : 'À tester'}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Cliquez pour voir les diagnostics &rarr;</p>
+              </div>
+            </div>
+
+            {/* Quick Actions & Recent Sacraments Preview */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Derniers Sacrements Célébrés */}
+              <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                  <h3 className="font-bold text-slate-900 text-base flex items-center space-x-2">
+                    <Award className="w-5 h-5 text-amber-500" />
+                    <span>Derniers Actes du Registre Pastoral</span>
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab('sacraments')}
+                    className="text-xs font-bold text-amber-600 hover:text-amber-700"
+                  >
+                    Voir tout ({sacraments.length}) &rarr;
+                  </button>
+                </div>
+
+                <div className="divide-y divide-slate-100">
+                  {sacraments.slice(0, 4).map((sac) => (
+                    <div key={sac.id} className="py-3 flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <span className={`px-2.5 py-1 text-xs font-bold rounded-lg uppercase ${
+                          sac.type === 'bapteme'
+                            ? 'bg-blue-100 text-blue-800'
+                            : sac.type === 'mariage'
+                            ? 'bg-rose-100 text-rose-800'
+                            : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {sac.type}
                         </span>
-                      </td>
-                    </tr>
+                        <div>
+                          <p className="font-bold text-slate-900 text-sm">{sac.recipientName}</p>
+                          <p className="text-xs text-slate-500">
+                            {sac.regNumber} • {sac.date} • {sac.officiatingPastor}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setCertificateModalRecord(sac)}
+                        className="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-amber-100 hover:text-amber-900 rounded-lg transition"
+                      >
+                        Certificat
+                      </button>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </div>
+
+              {/* Raccourcis Rapides du Secrétaire */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+                <h3 className="font-bold text-slate-900 text-base pb-3 border-b border-slate-100">
+                  Raccourcis du Secrétaire
+                </h3>
+
+                <button
+                  onClick={() => secretariatService.exportMembersToCsv(members)}
+                  className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between transition"
+                >
+                  <span className="flex items-center space-x-2">
+                    <Download className="w-4 h-4 text-amber-500" />
+                    <span>Exporter le Registre CSV</span>
+                  </span>
+                  <span className="text-slate-400">Excel / Sheets</span>
+                </button>
+
+                <button
+                  onClick={handleTestSupabase}
+                  className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between transition"
+                >
+                  <span className="flex items-center space-x-2">
+                    <Database className="w-4 h-4 text-amber-500" />
+                    <span>Tester la Base Supabase</span>
+                  </span>
+                  <span className="text-slate-400">Ping RLS</span>
+                </button>
+
+                <button
+                  onClick={handleTestBrevo}
+                  className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between transition"
+                >
+                  <span className="flex items-center space-x-2">
+                    <Send className="w-4 h-4 text-amber-500" />
+                    <span>Tester la Clé Brevo</span>
+                  </span>
+                  <span className="text-slate-400">v3 API</span>
+                </button>
+
+                <button
+                  onClick={handleCopySql}
+                  className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between transition"
+                >
+                  <span className="flex items-center space-x-2">
+                    <Copy className="w-4 h-4 text-amber-500" />
+                    <span>Copier le Script SQL Supabase</span>
+                  </span>
+                  <span className="text-slate-400">DDL & RLS</span>
+                </button>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    « Je puis tout par celui qui me fortifie. » — Philippiens 4:13
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* ========================================================================= */}
-        {/* TAB 9: IMAGES MANAGER */}
-        {/* ========================================================================= */}
-        {activeTab === 'images' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200 space-y-6">
-            <div className="border-b pb-4">
-              <h2 className="font-serif text-2xl font-bold text-slate-900">
-                Gestion des Images &amp; Médias
-              </h2>
-              <p className="text-xs text-slate-500">
-                Répertoire des visuels officiels de l'Église. Utilisez ces URL relatives pour illustrer vos projets et publications.
-              </p>
+        {/* ======================================================== */}
+        {/* TAB 2: REGISTRE DES MEMBRES                              */}
+        {/* ======================================================== */}
+        {activeTab === 'members' && (
+          <div className="space-y-6">
+            {/* Header with Title & Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Registre Officiel des Membres
+                </h2>
+                <p className="text-slate-500 text-sm">
+                  Base de données des fidèles baptisés et engagés de l’Église du Nazaréen de Damé.
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => secretariatService.exportMembersToCsv(members)}
+                  className="px-3.5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-xl text-xs transition flex items-center space-x-1.5 shadow-2xs"
+                >
+                  <Download className="w-4 h-4 text-slate-600" />
+                  <span>Exporter CSV</span>
+                </button>
+                <button
+                  onClick={() => handleOpenMemberModal()}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition flex items-center space-x-1.5 shadow-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Ajouter Membre</span>
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                { title: 'Sceau Officiel de l’Église', url: '/images/eglise/sceau-officiel.svg', cat: 'Identité Officielle' },
-                { title: 'Bannière Réseaux Sociaux (OG)', url: '/images/eglise/og-banner.svg', cat: 'Partage Social' },
-                { title: 'Pasteur Bequel CHERELUS', url: '/images/pasteur/pasteur-cherelus.svg', cat: 'Direction Pastorale' },
-                { title: 'Projet CDEJ Compassion', url: '/images/projets/cdej-compassion.svg', cat: 'Projets Sociaux' },
-                { title: 'Badge Événements & Cultes', url: '/images/evenements/evenement-badge.svg', cat: 'Calendrier' },
-                { title: 'Badge Ministères', url: '/images/ministeres/ministere-badge.svg', cat: 'Ministères' },
-              ].map((img, i) => (
-                <div key={i} className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
-                  <div className="h-32 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center p-2">
-                    <img src={img.url} alt={img.title} className="max-h-full object-contain" />
-                  </div>
+            {/* Filter & Search Bar */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row items-center gap-3">
+              <div className="relative flex-1 w-full">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={membersSearch}
+                  onChange={(e) => setMembersSearch(e.target.value)}
+                  placeholder="Rechercher par nom, numéro de registre ou téléphone..."
+                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="w-full md:w-auto flex items-center space-x-2">
+                <select
+                  value={memberFilterMinistry}
+                  onChange={(e) => setMemberFilterMinistry(e.target.value)}
+                  className="w-full md:w-auto px-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="all">Tous les Ministères</option>
+                  <option value="Fondateur & Conseil des Anciens">Conseil des Anciens</option>
+                  <option value="Pasteur Titulaire">Direction Pastorale</option>
+                  <option value="Ministère des Femmes">Ministère des Femmes</option>
+                  <option value="Jeunesse (JNI)">Jeunesse (JNI)</option>
+                  <option value="CDEJ HA 0926 & Enfants">CDEJ & Enfants</option>
+                  <option value="Assemblée Générale">Assemblée Générale</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Members Table */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-700">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-500 tracking-wider">
+                    <tr>
+                      <th className="py-3.5 px-4">Registre #</th>
+                      <th className="py-3.5 px-4">Nom Complet</th>
+                      <th className="py-3.5 px-4">Sexe</th>
+                      <th className="py-3.5 px-4">Contact & Adresse</th>
+                      <th className="py-3.5 px-4">Ministère / Rôle</th>
+                      <th className="py-3.5 px-4">Statut</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredMembers.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-12 text-center text-slate-500">
+                          Aucun membre trouvé correspondant aux critères.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredMembers.map((m) => (
+                        <tr key={m.id} className="hover:bg-slate-50 transition">
+                          <td className="py-3.5 px-4 font-mono font-bold text-xs text-amber-700">
+                            {m.regNumber}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-slate-900 block">{m.fullName}</span>
+                            <span className="text-2xs text-slate-500">Adhésion : {m.joinedDate}</span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
+                              m.gender === 'F' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {m.gender === 'F' ? 'Femme' : 'Homme'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-xs">
+                            <div className="flex items-center space-x-1 text-slate-800 font-medium">
+                              <Phone className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{m.phone || 'Non renseigné'}</span>
+                            </div>
+                            <div className="flex items-center space-x-1 text-slate-500 text-2xs mt-0.5">
+                              <MapPin className="w-3 h-3 text-slate-400" />
+                              <span className="truncate max-w-[180px]">{m.address}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-xs font-medium text-slate-800">
+                            {m.ministryAffiliation}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                              m.status === 'actif'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : m.status === 'inactif'
+                                ? 'bg-slate-200 text-slate-700'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {m.status.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <button
+                                onClick={() => handleOpenMemberModal(m)}
+                                className="p-1.5 text-slate-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
+                                title="Modifier la fiche"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMember(m.id, m.regNumber)}
+                                className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                                title="Supprimer du registre"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 3: ACTES & SACREMENTS (BAPTÊMES, MARIAGES, DÉDICACES) */}
+        {/* ======================================================== */}
+        {activeTab === 'sacraments' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Registre des Actes & Sacrements
+                </h2>
+                <p className="text-slate-500 text-sm">
+                  Certificats officiels de baptême, célébration de mariages et dédicace d'enfants au temple.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setSacramentForm({
+                    type: 'bapteme',
+                    regNumber: '',
+                    recipientName: '',
+                    spouseName: '',
+                    fatherName: '',
+                    motherName: '',
+                    date: new Date().toISOString().split('T')[0],
+                    officiatingPastor: 'Pasteur Bequel CHERELUS',
+                    location: 'Temple de Damé',
+                    witnesses: '',
+                    notes: ''
+                  });
+                  setSacramentModalOpen(true);
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition flex items-center space-x-1.5 shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Enregistrer un Acte</span>
+              </button>
+            </div>
+
+            {/* Filter buttons */}
+            <div className="flex items-center space-x-2 border-b border-slate-200 pb-2">
+              <button
+                onClick={() => setSacramentFilterType('all')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                  sacramentFilterType === 'all'
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Tous ({sacraments.length})
+              </button>
+              <button
+                onClick={() => setSacramentFilterType('bapteme')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                  sacramentFilterType === 'bapteme'
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Baptêmes ({sacraments.filter(s => s.type === 'bapteme').length})
+              </button>
+              <button
+                onClick={() => setSacramentFilterType('mariage')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                  sacramentFilterType === 'mariage'
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Mariages ({sacraments.filter(s => s.type === 'mariage').length})
+              </button>
+              <button
+                onClick={() => setSacramentFilterType('dedicace')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                  sacramentFilterType === 'dedicace'
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Dédicaces ({sacraments.filter(s => s.type === 'dedicace').length})
+              </button>
+            </div>
+
+            {/* Sacraments Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredSacraments.map((sac) => (
+                <div
+                  key={sac.id}
+                  className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:border-amber-300 transition flex flex-col justify-between"
+                >
                   <div>
-                    <span className="text-[10px] font-bold text-amber-600 block">{img.cat}</span>
-                    <h4 className="font-bold text-xs text-slate-900">{img.title}</h4>
-                    <code className="text-[10px] font-mono text-slate-500 block truncate mt-1">{img.url}</code>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold uppercase ${
+                        sac.type === 'bapteme'
+                          ? 'bg-blue-100 text-blue-800'
+                          : sac.type === 'mariage'
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-emerald-100 text-emerald-800'
+                      }`}>
+                        {sac.type}
+                      </span>
+                      <span className="text-2xs font-mono font-bold text-slate-400">
+                        {sac.regNumber}
+                      </span>
+                    </div>
+
+                    <h3 className="font-extrabold text-base text-slate-900 leading-snug">
+                      {sac.recipientName}
+                      {sac.spouseName && (
+                        <span className="text-slate-500 font-medium block text-xs mt-0.5">
+                          & {sac.spouseName}
+                        </span>
+                      )}
+                    </h3>
+
+                    <div className="mt-3 space-y-1 text-xs text-slate-600">
+                      <p className="flex items-center space-x-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Date : <strong>{sac.date}</strong></span>
+                      </p>
+                      <p className="flex items-center space-x-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                        <span className="truncate">{sac.location}</span>
+                      </p>
+                      <p className="flex items-center space-x-1.5">
+                        <Shield className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Officiant : {sac.officiatingPastor}</span>
+                      </p>
+                      {sac.witnesses && (
+                        <p className="text-2xs text-slate-500 pt-1">
+                          Témoins : {sac.witnesses}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <button
-                    onClick={() => copyToClipboard(img.url)}
-                    className="w-full py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center justify-center space-x-1"
-                  >
-                    {copiedUrl === img.url ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedUrl === img.url ? 'URL Copiée !' : 'Copier le lien'}</span>
-                  </button>
+
+                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <button
+                      onClick={() => setCertificateModalRecord(sac)}
+                      className="px-3 py-1.5 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-lg transition flex items-center space-x-1"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Imprimer Certificat</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSacrament(sac.id, sac.regNumber)}
+                      className="text-slate-400 hover:text-red-600 p-1 rounded transition"
+                      title="Supprimer l'acte"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* ========================================================================= */}
-        {/* TAB 10: PARAMÈTRES */}
-        {/* ========================================================================= */}
-        {activeTab === 'settings' && (
+        {/* ======================================================== */}
+        {/* TAB 4: NOS PROJETS & CHANTIERS                            */}
+        {/* ======================================================== */}
+        {activeTab === 'projects' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200 space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-4">
-                <div>
-                  <h2 className="font-serif text-2xl font-bold text-slate-900">
-                    Paramètres &amp; Administration
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Gestion de la sécurité administrative, connectivité des services et informations d’Église.
-                  </p>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 flex items-center space-x-1.5 transition"
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Gestion des Projets & Chantiers de l'Église
+                </h2>
+                <p className="text-slate-500 text-sm">
+                  Supervisez la publication des projets sur la page officielle « Nos Projets » et synchronisez avec Supabase.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setProjectForm({
+                    title: '',
+                    code: `PRJ-${Date.now().toString().slice(-4)}`,
+                    category: 'Sonorisation & Temple',
+                    targetAmount: '3500',
+                    description: '',
+                    status: 'published'
+                  });
+                  setProjectModalOpen(true);
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition flex items-center space-x-1.5 shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nouveau Projet</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((proj) => (
+                <div
+                  key={proj.id}
+                  className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:border-amber-400 transition flex flex-col justify-between"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Verrouiller l’espace Secrétariat</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 1. Infrastructure */}
-                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Database className="w-4 h-4 text-amber-600" />
-                    <h3 className="font-serif font-bold text-sm text-slate-900">
-                      Services &amp; Connectivité
-                    </h3>
-                  </div>
-                  <div className="space-y-2.5 text-xs">
-                    <div className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-200">
-                      <div>
-                        <p className="font-bold text-slate-800">Serveur API Express</p>
-                        <p className="text-[11px] text-slate-500">Flux d’abonnement &amp; synchronisation</p>
-                      </div>
-                      <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                        Opérationnel (Port 3000)
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-amber-100 text-amber-800">
+                        {proj.category}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
+                        proj.status === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {proj.status === 'published' ? 'Publié' : 'Brouillon'}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-200">
-                      <div>
-                        <p className="font-bold text-slate-800">API Brevo Transactionnel</p>
-                        <p className="text-[11px] text-slate-500">SMTP v3 : {brevoSettings.senderEmail}</p>
-                      </div>
-                      <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                        Actif
+                    <h3 className="font-extrabold text-base text-slate-900 line-clamp-2">
+                      {proj.title}
+                    </h3>
+
+                    <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">
+                      {proj.description}
+                    </p>
+
+                    <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-600">Objectif de Financement :</span>
+                      <span className="font-bold text-amber-600 text-sm">
+                        ${proj.targetAmount || '0'} USD
                       </span>
                     </div>
                   </div>
-                </div>
 
-                {/* 2. Sécurité Pastorale */}
-                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Lock className="w-4 h-4 text-amber-600" />
-                    <h3 className="font-serif font-bold text-sm text-slate-900">
-                      Sécurité Administrative
-                    </h3>
-                  </div>
-                  <div className="space-y-3 text-xs">
-                    <div className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-2">
-                      <p className="font-bold text-slate-800">Authentification Sécurisée</p>
-                      <p className="text-[11px] text-slate-500 leading-relaxed">
-                        L’authentification administrative est protégée côté serveur (via la variable d’environnement ADMIN_SECURITY_KEY et Supabase Auth). Aucun mot de passe ni clé confidentielle n’est exposé dans le navigateur web.
-                      </p>
-                    </div>
-
-                    <div className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-slate-800">Session en cours</p>
-                        <p className="text-[11px] text-slate-500">
-                          Connecté en tant qu'administrateur
-                        </p>
-                      </div>
+                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-400 text-2xs">
+                      Code : {proj.code || 'PRJ'}
+                    </span>
+                    {onNavigate && (
                       <button
-                        onClick={handleLogout}
-                        className="px-3 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100"
+                        onClick={() => onNavigate('/nos-projets')}
+                        className="text-amber-600 hover:text-amber-700 font-bold"
                       >
-                        Se déconnecter
+                        Voir sur le site &rarr;
                       </button>
-                    </div>
+                    )}
                   </div>
                 </div>
-
-                {/* 3. Coordonnées Officielles */}
-                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-3 md:col-span-2">
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="w-4 h-4 text-amber-600" />
-                    <h3 className="font-serif font-bold text-sm text-slate-900">
-                      Coordonnées Institutionnelles de l'Église
-                    </h3>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs text-slate-700">
-                    <div className="p-2.5 bg-white rounded-xl border">
-                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Dénomination</span>
-                      <strong className="text-slate-900">{OFFICIAL_CHURCH_INFO.name}</strong>
-                    </div>
-                    <div className="p-2.5 bg-white rounded-xl border">
-                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Direction Pastorale</span>
-                      <strong className="text-slate-900">{OFFICIAL_CHURCH_INFO.seniorPastor}</strong>
-                    </div>
-                    <div className="p-2.5 bg-white rounded-xl border">
-                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Téléphone Officiel</span>
-                      <strong className="text-slate-900">{OFFICIAL_CHURCH_INFO.phone}</strong>
-                    </div>
-                    <div className="p-2.5 bg-white rounded-xl border">
-                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Courriel Officiel</span>
-                      <strong className="text-slate-900">{OFFICIAL_CHURCH_INFO.email}</strong>
-                    </div>
-                    <div className="p-2.5 bg-white rounded-xl border">
-                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Localisation</span>
-                      <strong className="text-slate-900">{OFFICIAL_CHURCH_INFO.address.full}</strong>
-                    </div>
-                    <div className="p-2.5 bg-white rounded-xl border">
-                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Devise Biblique</span>
-                      <strong className="text-slate-900 font-serif italic">« {OFFICIAL_CHURCH_INFO.motto} »</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         )}
 
+        {/* ======================================================== */}
+        {/* TAB 5: REQUÊTES DE PRIÈRE                                */}
+        {/* ======================================================== */}
+        {activeTab === 'prayers' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Requêtes & Intentions de Prière
+                </h2>
+                <p className="text-slate-500 text-sm">
+                  Doléances et sujets déposés par les frères, sœurs et visiteurs pour intercession.
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setPrayerFilter('all')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    prayerFilter === 'all'
+                      ? 'bg-amber-500 text-slate-950'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Toutes ({prayers.length})
+                </button>
+                <button
+                  onClick={() => setPrayerFilter('pending')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    prayerFilter === 'pending'
+                      ? 'bg-amber-500 text-slate-950'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  En attente ({prayers.filter(p => p.status === 'pending').length})
+                </button>
+                <button
+                  onClick={() => setPrayerFilter('prayed')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    prayerFilter === 'prayed'
+                      ? 'bg-amber-500 text-slate-950'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Portées ({prayers.filter(p => p.status === 'prayed').length})
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {filteredPrayers.length === 0 ? (
+                <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500">
+                  Aucune requête de prière dans cette sélection.
+                </div>
+              ) : (
+                filteredPrayers.map((pray) => (
+                  <div
+                    key={pray.id}
+                    className={`bg-white border rounded-2xl p-5 shadow-xs transition ${
+                      pray.isUrgent ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800">
+                          {pray.category}
+                        </span>
+                        {pray.isUrgent && (
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                            Urgent
+                          </span>
+                        )}
+                        <span className="text-xs text-slate-400">
+                          {new Date(pray.createdAt).toLocaleDateString('fr-FR')}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => handleTogglePrayer(pray.id, pray.status)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center space-x-1 ${
+                          pray.status === 'prayed'
+                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                            : 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+                        }`}
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>{pray.status === 'prayed' ? 'Portée en Prière' : 'Marquer comme priée'}</span>
+                      </button>
+                    </div>
+
+                    <p className="text-slate-800 text-sm font-medium leading-relaxed mb-3">
+                      « {pray.message} »
+                    </p>
+
+                    <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
+                      <span>Demandeur : <strong>{pray.fullName || 'Anonyme'}</strong> {pray.phone ? `(${pray.phone})` : ''}</span>
+                      {pray.notes && <span className="italic">Note : {pray.notes}</span>}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 6: BREVO NEWSLETTER MANAGER                          */}
+        {/* ======================================================== */}
+        {activeTab === 'brevo' && (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                Gestionnaire de la Newsletter & Brevo
+              </h2>
+              <p className="text-slate-500 text-sm">
+                Synchronisation de l'API Brevo v3, expédition d'annonces aux abonnés et gestion sans erreurs HTTP.
+              </p>
+            </div>
+
+            {/* Brevo Configuration Card */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
+              <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
+                <div className="flex items-center space-x-2">
+                  <Key className="w-5 h-5 text-amber-500" />
+                  <h3 className="font-bold text-slate-900 text-base">Configuration API Brevo v3</h3>
+                </div>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  brevoSettings?.hasApiKey ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {brevoSettings?.hasApiKey ? 'Clé Active' : 'Non Connecté'}
+                </span>
+              </div>
+
+              {brevoTestResult && (
+                <div className={`mb-6 p-4 rounded-xl border flex items-start space-x-2 text-sm ${
+                  brevoTestResult.success
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                    : 'bg-red-50 border-red-300 text-red-800'
+                }`}>
+                  {brevoTestResult.success ? (
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600" />
+                  )}
+                  <span>{brevoTestResult.message}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveBrevo} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                      Clé d’API Brevo v3 (xkeysib-...)
+                    </label>
+                    <input
+                      type="password"
+                      value={brevoApiKeyInput}
+                      onChange={(e) => setBrevoApiKeyInput(e.target.value)}
+                      placeholder={brevoSettings?.apiKeyPreview || 'Collez votre clé API Brevo ici (ex: xkeysib-...)'}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    <p className="text-2xs text-slate-500 mt-1">
+                      Générée dans votre compte Brevo &gt; Clés API &gt; Créer une clé.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                      Email de l’expéditeur officiel
+                    </label>
+                    <input
+                      type="email"
+                      value={brevoSenderEmail}
+                      onChange={(e) => setBrevoSenderEmail(e.target.value)}
+                      required
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    <p className="text-2xs text-slate-500 mt-1">
+                      Doit être validé dans Brevo &gt; Expéditeurs & IP.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                      Nom de l’expéditeur affiché
+                    </label>
+                    <input
+                      type="text"
+                      value={brevoSenderName}
+                      onChange={(e) => setBrevoSenderName(e.target.value)}
+                      required
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                      Identifiant de la Liste Brevo (List ID)
+                    </label>
+                    <input
+                      type="text"
+                      value={brevoListId}
+                      onChange={(e) => setBrevoListId(e.target.value)}
+                      required
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    <p className="text-2xs text-slate-500 mt-1">
+                      ID numérique du dossier des contacts (ex: 5).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={brevoSaving}
+                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-sm transition flex items-center space-x-2 shadow-xs disabled:opacity-50"
+                  >
+                    {brevoSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    <span>Enregistrer la Configuration</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleTestBrevo}
+                    disabled={brevoTesting}
+                    className="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-semibold rounded-xl text-sm transition flex items-center space-x-2 disabled:opacity-50"
+                  >
+                    {brevoTesting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 text-amber-500" />}
+                    <span>Tester la Connexion API Brevo</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Quick Broadcast / Campaign Sender */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
+              <div className="flex items-center space-x-2 pb-4 mb-6 border-b border-slate-100">
+                <Send className="w-5 h-5 text-amber-500" />
+                <h3 className="font-bold text-slate-900 text-base">
+                  Envoi d'une Annonce / Message aux Abonnés
+                </h3>
+              </div>
+
+              <form onSubmit={handleSendCampaign} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                    Sujet du Message
+                  </label>
+                  <input
+                    type="text"
+                    value={campaignSubject}
+                    onChange={(e) => setCampaignSubject(e.target.value)}
+                    required
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                    Contenu du Message (Texte / HTML)
+                  </label>
+                  <textarea
+                    rows={5}
+                    value={campaignContent}
+                    onChange={(e) => setCampaignContent(e.target.value)}
+                    required
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 font-sans"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={campaignSending}
+                    className="px-5 py-2.5 bg-slate-900 hover:bg-black text-amber-400 font-bold rounded-xl text-sm transition flex items-center space-x-2 shadow-xs disabled:opacity-50"
+                  >
+                    {campaignSending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    <span>Diffuser le Message aux Abonnés</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 7: BASE SUPABASE & SQL SCRIPTS                       */}
+        {/* ======================================================== */}
+        {activeTab === 'supabase' && (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                Supabase Auth & Base de Données
+              </h2>
+              <p className="text-slate-500 text-sm">
+                Vérification de connexion en direct, politiques RLS et script SQL de création des tables.
+              </p>
+            </div>
+
+            {/* Connection Test Panel */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
+              <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                <div className="flex items-center space-x-2">
+                  <Database className="w-5 h-5 text-amber-500" />
+                  <h3 className="font-bold text-slate-900 text-base">État du Service Supabase</h3>
+                </div>
+
+                <button
+                  onClick={handleTestSupabase}
+                  disabled={supabaseTestStatus?.loading}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition flex items-center space-x-1.5 shadow-xs"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${supabaseTestStatus?.loading ? 'animate-spin' : ''}`} />
+                  <span>Tester la Connexion (Ping RLS)</span>
+                </button>
+              </div>
+
+              {supabaseTestStatus && (
+                <div className={`p-4 rounded-xl border mb-6 text-sm flex items-start space-x-2 ${
+                  supabaseTestStatus.success
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                    : 'bg-amber-50 border-amber-300 text-amber-900'
+                }`}>
+                  {supabaseTestStatus.success ? (
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600" />
+                  )}
+                  <div>
+                    <p className="font-bold">{supabaseTestStatus.success ? 'Succès de Connexion' : 'Rapport de Diagnostic'}</p>
+                    <p className="text-xs mt-0.5 leading-relaxed">{supabaseTestStatus.message}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Configure manual credentials if needed */}
+              <form onSubmit={handleSaveRuntimeSupabase} className="space-y-4 pt-2">
+                <h4 className="text-xs font-bold uppercase text-slate-700 tracking-wider">
+                  Mettre à jour les Clés Supabase du Projet
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-2xs font-semibold text-slate-500 uppercase mb-1">
+                      URL Supabase (https://xyz.supabase.co)
+                    </label>
+                    <input
+                      type="url"
+                      value={customSupaUrl}
+                      onChange={(e) => setCustomSupaUrl(e.target.value)}
+                      placeholder="https://xyz.supabase.co"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-2xs font-semibold text-slate-500 uppercase mb-1">
+                      Clé Publique Anon (anon public key)
+                    </label>
+                    <input
+                      type="password"
+                      value={customSupaKey}
+                      onChange={(e) => setCustomSupaKey(e.target.value)}
+                      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition"
+                >
+                  Enregistrer les Clés dans le Navigateur
+                </button>
+              </form>
+            </div>
+
+            {/* SQL Script Viewer */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
+              <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">Script SQL Officiel Supabase</h3>
+                  <p className="text-xs text-slate-500">
+                    Copiez et exécutez ce script dans l'Éditeur SQL de votre tableau de bord Supabase pour créer toutes les tables avec les politiques RLS requises.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleCopySql}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition flex items-center space-x-1.5 shadow-xs"
+                >
+                  {sqlCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span>{sqlCopied ? 'Copié !' : 'Copier le SQL'}</span>
+                </button>
+              </div>
+
+              <div className="bg-slate-900 rounded-xl p-4 overflow-x-auto text-xs text-slate-200 font-mono leading-relaxed max-h-96">
+                <pre>{secretariatService.getSupabaseMigrationSql()}</pre>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* Modal Nouveau Membre */}
-      {newMemberModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6">
-            <h3 className="font-serif text-xl font-bold text-slate-900">
-              Enregistrer un Nouveau Membre
-            </h3>
-            <form onSubmit={handleAddMember} className="space-y-4">
+      {/* ======================================================== */}
+      {/* MODAL 1: AJOUTER / MODIFIER UN MEMBRE                    */}
+      {/* ======================================================== */}
+      {memberModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 sm:p-8 my-8 text-slate-900">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">
+                {editingMember ? 'Modifier la Fiche du Membre' : 'Inscrire un Nouveau Membre'}
+              </h3>
+              <button
+                onClick={() => setMemberModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveMember} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nom Complet *</label>
+                <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                  Nom Complet du Membre *
+                </label>
                 <input
                   type="text"
+                  value={memberForm.fullName}
+                  onChange={(e) => setMemberForm({ ...memberForm, fullName: e.target.value })}
                   required
-                  placeholder="Ex : Jean-Baptiste Pierre"
-                  value={newMemberForm.fullName}
-                  onChange={(e) => setNewMemberForm({ ...newMemberForm, fullName: e.target.value })}
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400"
+                  placeholder="ex: Jean-Baptiste DÉSIR"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Sexe</label>
+                  <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                    Sexe
+                  </label>
                   <select
-                    value={newMemberForm.gender}
-                    onChange={(e) => setNewMemberForm({ ...newMemberForm, gender: e.target.value as 'M' | 'F' })}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400 bg-white"
+                    value={memberForm.gender}
+                    onChange={(e) => setMemberForm({ ...memberForm, gender: e.target.value as 'M' | 'F' })}
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
-                    <option value="M">Masculin (M)</option>
-                    <option value="F">Féminin (F)</option>
+                    <option value="M">Masculin (Homme)</option>
+                    <option value="F">Féminin (Femme)</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Téléphone *</label>
+                  <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                    Statut
+                  </label>
+                  <select
+                    value={memberForm.status}
+                    onChange={(e) => setMemberForm({ ...memberForm, status: e.target.value as any })}
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="actif">Actif</option>
+                    <option value="inactif">Inactif</option>
+                    <option value="transfere">Transféré</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                    Numéro de Téléphone
+                  </label>
                   <input
-                    type="tel"
-                    required
-                    placeholder="+509 ..."
-                    value={newMemberForm.phone}
-                    onChange={(e) => setNewMemberForm({ ...newMemberForm, phone: e.target.value })}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400"
+                    type="text"
+                    value={memberForm.phone}
+                    onChange={(e) => setMemberForm({ ...memberForm, phone: e.target.value })}
+                    placeholder="+509 48596089"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                    Date de Baptême
+                  </label>
+                  <input
+                    type="date"
+                    value={memberForm.baptismDate}
+                    onChange={(e) => setMemberForm({ ...memberForm, baptismDate: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
+
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Ministère d'Affiliation</label>
+                <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                  Ministère / Département de Service
+                </label>
                 <select
-                  value={newMemberForm.ministryAffiliation}
-                  onChange={(e) => setNewMemberForm({ ...newMemberForm, ministryAffiliation: e.target.value })}
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400 bg-white"
+                  value={memberForm.ministryAffiliation}
+                  onChange={(e) => setMemberForm({ ...memberForm, ministryAffiliation: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
+                  <option value="Assemblée Générale">Assemblée Générale</option>
+                  <option value="Ministère des Femmes">Ministère des Femmes</option>
                   <option value="Jeunesse (JNI)">Jeunesse (JNI)</option>
-                  <option value="Ministère des Femmes (MNI)">Ministère des Femmes (MNI)</option>
-                  <option value="Ministère des Hommes">Ministère des Hommes</option>
-                  <option value="École du Dimanche (MIED)">École du Dimanche (MIED)</option>
-                  <option value="Évangélisation & Mission">Évangélisation &amp; Mission</option>
-                  <option value="Chorale & Louange">Chorale &amp; Louange</option>
-                  <option value="Diaconat & Accueil">Diaconat &amp; Accueil</option>
+                  <option value="CDEJ HA 0926 & Enfants">CDEJ & Enfants</option>
+                  <option value="Chorale & Louange">Chorale & Louange</option>
+                  <option value="Diaconat & Accueil">Diaconat & Accueil</option>
+                  <option value="Fondateur & Conseil des Anciens">Conseil des Anciens</option>
+                  <option value="Pasteur Titulaire">Direction Pastorale</option>
                 </select>
               </div>
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                  Adresse de Résidence
+                </label>
+                <input
+                  type="text"
+                  value={memberForm.address}
+                  onChange={(e) => setMemberForm({ ...memberForm, address: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="pt-4 flex items-center justify-end space-x-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setNewMemberModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                  onClick={() => setMemberModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400"
+                  className="px-5 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl transition shadow-xs"
                 >
-                  Inscrire le membre
+                  {editingMember ? 'Enregistrer les Modifications' : 'Ajouter le Membre'}
                 </button>
               </div>
             </form>
@@ -1550,75 +2087,365 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
         </div>
       )}
 
-      {/* Modal Nouvelle Publication */}
-      {newPostModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-serif text-xl font-bold text-slate-900">
-              Rédiger une Publication Pastorale
-            </h3>
-            <form onSubmit={handleCreatePost} className="space-y-4">
+      {/* ======================================================== */}
+      {/* MODAL 2: ENREGISTRER UN SACREMENT                        */}
+      {/* ======================================================== */}
+      {sacramentModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 sm:p-8 my-8 text-slate-900">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">
+                Enregistrer un Acte ou Sacrement
+              </h3>
+              <button
+                onClick={() => setSacramentModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSacrament} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Titre de la publication *</label>
+                <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                  Type d’Acte Pastoral
+                </label>
+                <select
+                  value={sacramentForm.type}
+                  onChange={(e) => setSacramentForm({ ...sacramentForm, type: e.target.value as any })}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-semibold"
+                >
+                  <option value="bapteme">Baptême d'Eau par Immersion</option>
+                  <option value="mariage">Sainte Bénédiction Nuptiale (Mariage)</option>
+                  <option value="dedicace">Dédicace & Présentation d'Enfant</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                  {sacramentForm.type === 'mariage' ? 'Nom de l’Époux *' : sacramentForm.type === 'dedicace' ? 'Nom de l’Enfant Dédicacé *' : 'Nom du Candidat au Baptême *'}
+                </label>
                 <input
                   type="text"
+                  value={sacramentForm.recipientName}
+                  onChange={(e) => setSacramentForm({ ...sacramentForm, recipientName: e.target.value })}
                   required
-                  placeholder="Ex : Exhortation sur la sanctification"
-                  value={newPostForm.title}
-                  onChange={(e) => setNewPostForm({ ...newPostForm, title: e.target.value })}
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400"
+                  placeholder="ex: Jean-Baptiste DÉSIR"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              {sacramentForm.type === 'mariage' && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Catégorie</label>
-                  <select
-                    value={newPostForm.category}
-                    onChange={(e) => setNewPostForm({ ...newPostForm, category: e.target.value })}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400 bg-white"
-                  >
-                    <option value="Annonce Pastorale">Annonce Pastorale</option>
-                    <option value="Méditation Biblique">Méditation Biblique</option>
-                    <option value="Vie de l'Église">Vie de l'Église</option>
-                    <option value="Projets Sociaux">Projets Sociaux</option>
-                  </select>
+                  <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                    Nom de l’Épouse *
+                  </label>
+                  <input
+                    type="text"
+                    value={sacramentForm.spouseName}
+                    onChange={(e) => setSacramentForm({ ...sacramentForm, spouseName: e.target.value })}
+                    required
+                    placeholder="ex: Marie Guerda NOËL"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
                 </div>
+              )}
+
+              {sacramentForm.type === 'dedicace' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                      Nom du Père
+                    </label>
+                    <input
+                      type="text"
+                      value={sacramentForm.fatherName}
+                      onChange={(e) => setSacramentForm({ ...sacramentForm, fatherName: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                      Nom de la Mère
+                    </label>
+                    <input
+                      type="text"
+                      value={sacramentForm.motherName}
+                      onChange={(e) => setSacramentForm({ ...sacramentForm, motherName: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Statut</label>
-                  <select
-                    value={newPostForm.status}
-                    onChange={(e) => setNewPostForm({ ...newPostForm, status: e.target.value as 'published' | 'draft' })}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400 bg-white"
-                  >
-                    <option value="published">Publier immédiatement</option>
-                    <option value="draft">Enregistrer comme brouillon</option>
-                  </select>
+                  <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                    Date de Célébration
+                  </label>
+                  <input
+                    type="date"
+                    value={sacramentForm.date}
+                    onChange={(e) => setSacramentForm({ ...sacramentForm, date: e.target.value })}
+                    required
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                    Pasteur Officiant
+                  </label>
+                  <input
+                    type="text"
+                    value={sacramentForm.officiatingPastor}
+                    onChange={(e) => setSacramentForm({ ...sacramentForm, officiatingPastor: e.target.value })}
+                    required
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
                 </div>
               </div>
+
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Contenu complet *</label>
-                <textarea
-                  rows={5}
-                  required
-                  placeholder="Rédigez le texte de l’article..."
-                  value={newPostForm.content}
-                  onChange={(e) => setNewPostForm({ ...newPostForm, content: e.target.value })}
-                  className="w-full p-3 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400 leading-relaxed"
+                <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                  Lieu de la Célébration
+                </label>
+                <input
+                  type="text"
+                  value={sacramentForm.location}
+                  onChange={(e) => setSacramentForm({ ...sacramentForm, location: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                  Témoins Officiels
+                </label>
+                <input
+                  type="text"
+                  value={sacramentForm.witnesses}
+                  onChange={(e) => setSacramentForm({ ...sacramentForm, witnesses: e.target.value })}
+                  placeholder="ex: Saurel ALCINÉ, Esther PIERRE"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="pt-4 flex items-center justify-end space-x-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setNewPostModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                  onClick={() => setSacramentModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-sm"
+                  className="px-5 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl transition shadow-xs"
                 >
-                  Enregistrer
+                  Enregistrer l'Acte
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 3: CERTIFICAT OFFICIEL IMPRIMABLE                  */}
+      {/* ======================================================== */}
+      {certificateModalRecord && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full p-8 my-8 text-slate-900">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 print:hidden">
+              <span className="text-xs font-bold text-amber-700 uppercase tracking-widest">
+                Aperçu du Certificat Officiel
+              </span>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => window.print()}
+                  className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1 shadow-xs"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Imprimer / PDF</span>
+                </button>
+                <button
+                  onClick={() => setCertificateModalRecord(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg text-lg font-bold"
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Certificate Template */}
+            <div className="mt-6 border-4 border-amber-400 p-8 rounded-2xl bg-amber-50/10 text-center relative">
+              <div className="mb-4">
+                <img
+                  src="/images/eglise/sceau-officiel.svg"
+                  alt="Sceau de l'Église"
+                  className="w-20 h-20 mx-auto object-contain mb-2"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+                <h2 className="text-xl font-extrabold uppercase tracking-wide text-slate-900">
+                  Église du Nazaréen de Damé
+                </h2>
+                <p className="text-xs font-bold text-amber-700 tracking-widest uppercase">
+                  « Sainteté à l'Éternel »
+                </p>
+                <p className="text-2xs text-slate-500">
+                  3ème Section Damé, Commune de Môle-Saint-Nicolas, Haïti
+                </p>
+              </div>
+
+              <div className="my-6 py-2 border-y border-amber-200">
+                <h3 className="text-2xl font-black uppercase text-slate-900 tracking-wider">
+                  {certificateModalRecord.type === 'bapteme'
+                    ? 'Certificat de Baptême'
+                    : certificateModalRecord.type === 'mariage'
+                    ? 'Certificat de Mariage'
+                    : 'Certificat de Dédicace'}
+                </h3>
+                <p className="text-xs font-mono font-bold text-slate-500 mt-1">
+                  Registre Officiel N° : {certificateModalRecord.regNumber}
+                </p>
+              </div>
+
+              <p className="text-sm text-slate-700 leading-relaxed max-w-lg mx-auto">
+                Le Secrétariat Général et la Direction Pastorale attestent par la présente que :
+              </p>
+
+              <div className="my-4">
+                <span className="text-2xl font-black text-slate-950 underline decoration-amber-400 decoration-2">
+                  {certificateModalRecord.recipientName}
+                </span>
+                {certificateModalRecord.spouseName && (
+                  <span className="block text-lg font-bold text-slate-900 mt-1">
+                    et {certificateModalRecord.spouseName}
+                  </span>
+                )}
+              </div>
+
+              <p className="text-xs text-slate-600 leading-relaxed max-w-md mx-auto">
+                {certificateModalRecord.type === 'bapteme'
+                  ? 'a été baptisé(e) au nom du Père, du Fils et du Saint-Esprit, selon l’ordonnance de notre Seigneur Jésus-Christ (Matthieu 28:19).'
+                  : certificateModalRecord.type === 'mariage'
+                  ? 'ont été unis devant Dieu et l’Église dans les liens sacrés du mariage chrétien (Matthieu 19:6).'
+                  : 'a été solennellement présenté(e) et consacré(e) au Seigneur en prière par ses parents (Proverbes 22:6).'}
+              </p>
+
+              <div className="mt-8 pt-6 border-t border-slate-200 flex items-center justify-between text-xs text-slate-700">
+                <div className="text-left">
+                  <p className="font-semibold">Fait à Damé, le :</p>
+                  <p className="font-bold text-slate-900">{certificateModalRecord.date}</p>
+                </div>
+
+                <div className="text-right">
+                  <p className="font-semibold">Le Pasteur Titulaire :</p>
+                  <p className="font-bold text-slate-900 underline mt-4">
+                    {certificateModalRecord.officiatingPastor}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 4: CRÉER UN PROJET (NOS PROJETS)                   */}
+      {/* ======================================================== */}
+      {projectModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 sm:p-8 my-8 text-slate-900">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">
+                Créer & Publier un Projet pour l'Église
+              </h3>
+              <button
+                onClick={() => setProjectModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProject} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                  Titre du Projet *
+                </label>
+                <input
+                  type="text"
+                  value={projectForm.title}
+                  onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
+                  required
+                  placeholder="ex: Système de Sonorisation & Instruments pour le Temple"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                    Catégorie
+                  </label>
+                  <select
+                    value={projectForm.category}
+                    onChange={(e) => setProjectForm({ ...projectForm, category: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="Sonorisation & Temple">Sonorisation & Instruments</option>
+                    <option value="Construction & Temple">Construction & Réfection</option>
+                    <option value="Développement de l’Enfance">Développement de l’Enfance (CDEJ)</option>
+                    <option value="Énergie & Solaire">Énergie Solaire</option>
+                    <option value="Social & Secours">Social & Secours</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                    Objectif Financier ($ USD)
+                  </label>
+                  <input
+                    type="number"
+                    value={projectForm.targetAmount}
+                    onChange={(e) => setProjectForm({ ...projectForm, targetAmount: e.target.value })}
+                    required
+                    placeholder="3500"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 tracking-wider mb-1">
+                  Description & Impact du Projet
+                </label>
+                <textarea
+                  rows={4}
+                  value={projectForm.description}
+                  onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
+                  placeholder="Expliquez la vision et l'importance de ce projet pour la communauté et les cultes d'adoration à Damé..."
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="pt-4 flex items-center justify-end space-x-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setProjectModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl transition shadow-xs"
+                >
+                  Publier le Projet
                 </button>
               </div>
             </form>
