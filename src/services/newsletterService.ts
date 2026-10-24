@@ -168,44 +168,164 @@ export const newsletterService = {
     }
   },
 
-  // Admin : Envoi direct via payload Cloudflare Worker ou API
+  // Admin : Envoi direct d'annonce/campagne via l'API Brevo v3 (/v3/smtp/email) ou proxy
   async sendViaWorker(payload: {
     subject: string;
     htmlContent: string;
     recipients: Array<{ email: string; name?: string } | string>;
     senderEmail?: string;
     senderName?: string;
+    apiKey?: string;
   }): Promise<SendCampaignResponse> {
     try {
+      // 1. Récupérer les clés et paramètres
+      const settings = await this.getBrevoSettings();
+      let activeKey = (payload.apiKey || '').trim();
+      if (!activeKey) {
+        try {
+          const stored = localStorage.getItem('dame_brevo_config');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            activeKey = parsed.apiKey || '';
+          }
+        } catch {}
+      }
+
+      // Préparation et validation des destinataires
+      const toList = (payload.recipients || [])
+        .map(r => {
+          if (typeof r === 'string') return { email: r.trim().toLowerCase() };
+          return { email: r.email.trim().toLowerCase(), name: r.name || undefined };
+        })
+        .filter(r => r.email && r.email.includes('@'));
+
+      if (toList.length === 0) {
+        return {
+          success: false,
+          message: 'Aucun destinataire avec une adresse email valide n’a été sélectionné.',
+          error: 'Destinataires manquants'
+        };
+      }
+
+      const finalSenderEmail = payload.senderEmail || settings?.senderEmail || 'eglisedunazareendedame@gmail.com';
+      const finalSenderName = payload.senderName || settings?.senderName || 'Église du Nazaréen de Damé';
+
+      // 2. Appel direct à l'API Brevo v3 (/v3/smtp/email) si la clé est présente
+      if (activeKey && activeKey.startsWith('xkeysib-')) {
+        try {
+          const directRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'api-key': activeKey,
+              'accept': 'application/json'
+            },
+            body: JSON.stringify({
+              sender: { name: finalSenderName, email: finalSenderEmail },
+              to: toList,
+              subject: payload.subject,
+              htmlContent: payload.htmlContent
+            })
+          });
+
+          // En cas de réponse HTTP 200, 201 ou 204
+          if (directRes.ok || directRes.status === 200 || directRes.status === 201 || directRes.status === 204) {
+            let messageId: string | undefined = undefined;
+            const ct = directRes.headers.get('content-type') || '';
+            if (ct.includes('application/json')) {
+              try {
+                const bData = await directRes.json();
+                messageId = bData?.messageId;
+              } catch {}
+            }
+            return {
+              success: true,
+              message: `Annonce envoyée avec succès via l’API Brevo v3 (${toList.length} destinataire(s)) !`,
+              sentCount: toList.length,
+              brevoSent: true,
+              brevoDetails: messageId ? { messageId } : undefined
+            };
+          }
+
+          // En cas d'erreur de l'API Brevo
+          let errorMsg = `Erreur API Brevo (Code HTTP ${directRes.status}).`;
+          const ct = directRes.headers.get('content-type') || '';
+          if (ct.includes('application/json')) {
+            try {
+              const errData = await directRes.json();
+              if (errData?.message) {
+                const rawMsg = errData.message;
+                if (rawMsg.toLowerCase().includes('sender') || rawMsg.toLowerCase().includes('not valid')) {
+                  errorMsg = `L’adresse email expéditeur (${finalSenderEmail}) n’est pas encore vérifiée dans votre compte Brevo. Rendez-vous sur Brevo > Expéditeurs & Domaines pour la valider.`;
+                } else if (directRes.status === 401 || rawMsg.toLowerCase().includes('key')) {
+                  errorMsg = 'Clé API Brevo invalide ou révoquée (Erreur 401). Veuillez vérifier votre clé API dans la configuration.';
+                } else {
+                  errorMsg = `Brevo : ${rawMsg}`;
+                }
+              }
+            } catch {}
+          }
+          return {
+            success: false,
+            message: errorMsg,
+            error: errorMsg
+          };
+        } catch (directErr: any) {
+          console.warn('[NewsletterService] Échec appel direct Brevo SMTP, essai via le proxy...', directErr);
+        }
+      }
+
+      // 3. Fallback via le backend /api/newsletter/send
       const res = await fetch('/api/newsletter/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          ...payload,
+          recipients: toList,
+          senderEmail: finalSenderEmail,
+          senderName: finalSenderName
+        })
       });
-      let data: any = {};
+
+      // Gestion sûre sans plantage JSON pour 200/201/204
+      if (res.ok || res.status === 200 || res.status === 201 || res.status === 204) {
+        let resData: any = {};
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          try {
+            resData = await res.json();
+          } catch {}
+        }
+        return {
+          success: true,
+          message: resData.message || `Annonce envoyée avec succès à ${toList.length} destinataire(s) !`,
+          sentCount: toList.length,
+          brevoSent: true,
+          ...resData
+        };
+      }
+
+      let errorMsg = 'Erreur lors de l’envoi de l’annonce.';
       const contentType = res.headers.get('content-type') || '';
       if (contentType.includes('application/json')) {
         try {
-          data = await res.json();
+          const errData = await res.json();
+          if (errData && (errData.error || errData.message)) {
+            errorMsg = errData.error || errData.message;
+          }
         } catch {}
       }
-      if (!res.ok) {
-        return {
-          success: false,
-          message: data.error || 'Erreur lors de l’envoi.',
-          error: data.error
-        };
-      }
+
       return {
-        success: true,
-        message: data.message || 'Message envoyé avec succès !',
-        ...data
+        success: false,
+        message: errorMsg,
+        error: errorMsg
       };
     } catch (err: any) {
       return {
         success: false,
-        message: err.message || 'Impossible de joindre le service d’envoi Brevo.',
-        error: err.message
+        message: 'Impossible de joindre le service d’envoi Brevo : ' + (err?.message || String(err)),
+        error: err?.message
       };
     }
   },

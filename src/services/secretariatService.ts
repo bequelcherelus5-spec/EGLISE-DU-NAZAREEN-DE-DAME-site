@@ -453,6 +453,14 @@ CREATE TABLE IF NOT EXISTS public.projects (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Migration / Ajout automatique des colonnes requises si la table projects existait déjà
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS category text DEFAULT 'Développement Communautaire';
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS banner_url text;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS code text;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS target_amount numeric(12,2) DEFAULT 0;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS current_amount numeric(12,2) DEFAULT 0;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS beneficiaries_count integer DEFAULT 0;
+
 -- 4. Table des Requêtes de Prière
 CREATE TABLE IF NOT EXISTS public.prayer_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

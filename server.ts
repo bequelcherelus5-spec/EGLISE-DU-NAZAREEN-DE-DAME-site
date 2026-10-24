@@ -1181,9 +1181,14 @@ app.post('/api/newsletter/campaigns/:id/send', async (req: Request, res: Respons
         })
       });
 
-      brevoResponseData = await bRes.json();
+      const ct = bRes.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        try {
+          brevoResponseData = await bRes.json();
+        } catch {}
+      }
 
-      if (!bRes.ok) {
+      if (!bRes.ok && bRes.status !== 204 && bRes.status !== 201) {
         let errorMsg = 'Erreur lors de l’envoi avec Brevo.';
         if (bRes.status === 401) {
           errorMsg = 'Clé API Brevo invalide ou révoquée (Erreur 401). Veuillez vérifier votre clé dans la Configuration Brevo.';
@@ -1281,8 +1286,15 @@ app.post('/api/newsletter/send', async (req: Request, res: Response) => {
       })
     });
 
-    const bData = await bRes.json();
-    if (!bRes.ok) {
+    let bData: any = {};
+    const ct = bRes.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      try {
+        bData = await bRes.json();
+      } catch {}
+    }
+
+    if (!bRes.ok && bRes.status !== 204 && bRes.status !== 201) {
       let errorMsg = 'Erreur lors de l’envoi avec Brevo.';
       if (bRes.status === 401) {
         errorMsg = 'Clé API Brevo invalide ou révoquée (Erreur 401).';

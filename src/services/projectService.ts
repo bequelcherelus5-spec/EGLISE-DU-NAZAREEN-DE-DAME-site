@@ -124,7 +124,16 @@ export const projectService = {
           .select()
           .single();
 
-        // Si la colonne 'banner_url' n'existe pas dans la table Supabase (erreur schema cache), retenter sans banner_url
+        // 1. Fallback automatique si la colonne 'category' n'existe pas dans la table Supabase (schema cache error)
+        if (error && (error.message.includes('category') || (error.message.includes('schema cache') && error.message.includes('category')))) {
+          console.warn('[ProjectService] Colonne category non trouvée dans le cache Supabase, réessai en retirant category...');
+          delete row.category;
+          const retryCat = await supabase.from('projects').insert([row]).select().single();
+          data = retryCat.data;
+          error = retryCat.error;
+        }
+
+        // 2. Fallback automatique si la colonne 'banner_url' n'existe pas dans la table Supabase
         if (error && (error.message.includes('banner_url') || error.message.includes('schema cache'))) {
           console.warn('[ProjectService] Colonne banner_url non trouvée dans le cache Supabase, réessai sans banner_url...');
           delete row.banner_url;
@@ -133,11 +142,12 @@ export const projectService = {
           error = retryBanner.error;
         }
 
-        // Si le code existe déjà, retenter avec un code horodaté unique
+        // 3. Si le code existe déjà ou si les deux colonnes posaient problème
         if (error && (error.message.includes('unique') || error.message.includes('code'))) {
           projCode = 'PROJ-' + Date.now();
           row.code = projCode;
-          delete row.banner_url; // au cas où
+          delete row.banner_url;
+          delete row.category;
           const retry = await supabase.from('projects').insert([row]).select().single();
           data = retry.data;
           error = retry.error;
@@ -145,7 +155,10 @@ export const projectService = {
 
         if (!error && data) {
           const created = mapSupabaseRowToProject(data);
-          // Si Supabase ne stocke pas banner_url, préserver l'image dans l'objet créé
+          // Préserver category et banner_url localement si la DB ne stocke pas encore ces colonnes
+          if (project.category && (!created.category || created.category === 'Enfance & Éducation')) {
+            created.category = project.category;
+          }
           if (bannerUrl && (!created.images || created.images.length === 0)) {
             created.images = [bannerUrl];
           }
@@ -267,10 +280,25 @@ export const projectService = {
           .select()
           .single();
 
+        // Fallback si la colonne 'category' n'existe pas dans la table Supabase
+        if (error && (error.message.includes('category') || (error.message.includes('schema cache') && error.message.includes('category')))) {
+          console.warn('[ProjectService] Colonne category non supportée lors de update, réessai sans category...');
+          delete patch.category;
+          const retryCat = await supabase
+            .from('projects')
+            .update(patch)
+            .eq('id', id)
+            .select()
+            .single();
+          data = retryCat.data;
+          error = retryCat.error;
+        }
+
         if (error && (error.message.includes('banner_url') || error.message.includes('schema cache'))) {
           console.warn('[ProjectService] Colonne banner_url non supportée lors de update, réessai sans banner_url...');
           const patchWithoutBanner = { ...patch };
           delete patchWithoutBanner.banner_url;
+          delete patchWithoutBanner.category;
           const retry = await supabase
             .from('projects')
             .update(patchWithoutBanner)

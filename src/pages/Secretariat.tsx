@@ -481,7 +481,8 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
         </div>`,
         recipients,
         senderEmail: brevoSenderEmail,
-        senderName: brevoSenderName
+        senderName: brevoSenderName,
+        apiKey: brevoApiKeyInput.trim() || undefined
       });
 
       if (res.success) {
