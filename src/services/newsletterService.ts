@@ -153,11 +153,12 @@ export const newsletterService = {
         }
       }
 
-      // C. Si une clé API Brevo est disponible en direct, ajouter le contact dans Brevo
+      // C. Si une clé API Brevo est disponible en direct, ajouter le contact dans Brevo et l'associer à la Liste 5
       const brevoKey = getResolvedBrevoApiKey();
       if (brevoKey) {
         try {
-          await fetch('https://api.brevo.com/v3/contacts', {
+          const targetListId = parseInt(getResolvedBrevoListId() || '5', 10) || 5;
+          const brevoContactRes = await fetch('https://api.brevo.com/v3/contacts', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -170,9 +171,25 @@ export const newsletterService = {
                 PRENOM: cleanFn || undefined,
                 NOM: cleanLn || undefined
               },
+              listIds: [targetListId],
               updateEnabled: true
             })
           });
+
+          // Si le contact existait déjà ou pour garantir l'appartenance à la Liste 5
+          if (!brevoContactRes.ok) {
+            try {
+              await fetch(`https://api.brevo.com/v3/contacts/lists/${targetListId}/contacts/add`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'api-key': brevoKey,
+                  accept: 'application/json'
+                },
+                body: JSON.stringify({ emails: [cleanEmail] })
+              });
+            } catch {}
+          }
         } catch {}
       }
     };
@@ -212,21 +229,97 @@ export const newsletterService = {
     }
   },
 
-  // Admin : Récupérer les abonnés (avec filtre de recherche)
+  // Admin : Récupérer les abonnés réels (agrégation /api, Supabase 'newsletter_subscribers', et local)
   async getSubscribers(query = ''): Promise<NewsletterSubscriber[]> {
+    const subscribersMap = new Map<string, NewsletterSubscriber>();
+
+    // 1. Tenter via /api/newsletter/subscribers
     try {
       const res = await fetch(`/api/newsletter/subscribers?q=${encodeURIComponent(query)}`);
-      if (!res.ok) return [];
-      const contentType = res.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        try {
-          return await res.json();
-        } catch {}
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            for (const s of data) {
+              if (s && s.email) {
+                subscribersMap.set(s.email.toLowerCase().trim(), {
+                  id: s.id || 'sub-' + s.email,
+                  email: s.email.toLowerCase().trim(),
+                  firstName: s.firstName || '',
+                  lastName: s.lastName || '',
+                  isActive: s.isActive !== false,
+                  subscribedAt: s.subscribedAt || new Date().toISOString()
+                });
+              }
+            }
+          }
+        }
       }
-      return [];
-    } catch {
-      return [];
+    } catch {}
+
+    // 2. Récupérer depuis Supabase (table 'newsletter_subscribers')
+    const client = getActiveSupabaseClient() || supabase;
+    if (client) {
+      try {
+        let qb = client.from('newsletter_subscribers').select('*');
+        if (query) {
+          qb = qb.or(`email.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%`);
+        }
+        const { data, error } = await qb;
+        if (!error && Array.isArray(data)) {
+          for (const row of data) {
+            const email = (row.email || '').toLowerCase().trim();
+            if (email && !subscribersMap.has(email)) {
+              subscribersMap.set(email, {
+                id: row.id ? String(row.id) : 'supa-' + email,
+                email,
+                firstName: row.first_name || '',
+                lastName: row.last_name || '',
+                isActive: row.active ?? row.is_active ?? true,
+                subscribedAt: row.created_at || row.subscribed_at || new Date().toISOString()
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[Newsletter] Fallback Supabase getSubscribers:', e);
+      }
     }
+
+    // 3. Récupérer depuis localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem('dame_local_subscribers') || localStorage.getItem('dame_subscribers');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed)) {
+            for (const s of parsed) {
+              const email = (s.email || '').toLowerCase().trim();
+              if (email && !subscribersMap.has(email)) {
+                subscribersMap.set(email, {
+                  id: s.id || 'local-' + email,
+                  email,
+                  firstName: s.firstName || '',
+                  lastName: s.lastName || '',
+                  isActive: s.isActive !== false,
+                  subscribedAt: s.subscribedAt || new Date().toISOString()
+                });
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+
+    const all = Array.from(subscribersMap.values());
+    if (!query) return all;
+    const qLower = query.toLowerCase().trim();
+    return all.filter(s =>
+      s.email.toLowerCase().includes(qLower) ||
+      (s.firstName && s.firstName.toLowerCase().includes(qLower)) ||
+      (s.lastName && s.lastName.toLowerCase().includes(qLower))
+    );
   },
 
   // Admin : Basculer le statut actif/inactif
@@ -343,30 +436,38 @@ export const newsletterService = {
           }
         } catch {}
       }
+      if (!activeKey) {
+        activeKey = getResolvedBrevoApiKey();
+      }
 
-      // Préparation et validation des destinataires
-      const toList = (payload.recipients || [])
+      const finalSenderEmail = (payload.senderEmail || settings?.senderEmail || getResolvedBrevoSenderEmail() || 'eglisedunazareendedame@gmail.com').trim().toLowerCase();
+      const finalSenderName = payload.senderName || settings?.senderName || 'Église du Nazaréen de Damé';
+      const targetListId = parseInt(settings?.brevoListId || getResolvedBrevoListId() || '5', 10) || 5;
+
+      // 2. Préparation et validation des destinataires (EXCLUSION STRICTE DE L'EXPÉDITEUR)
+      let toList = (payload.recipients || [])
         .map(r => {
           if (typeof r === 'string') return { email: r.trim().toLowerCase() };
           return { email: r.email.trim().toLowerCase(), name: r.name || undefined };
         })
-        .filter(r => r.email && r.email.includes('@'));
+        .filter(r => r.email && r.email.includes('@') && r.email.toLowerCase() !== finalSenderEmail);
 
+      // Si aucun destinataire fourni ou filtré, récupérer automatiquement les abonnés réels
       if (toList.length === 0) {
-        return {
-          success: false,
-          message: 'Aucun destinataire avec une adresse email valide n’a été sélectionné.',
-          error: 'Destinataires manquants'
-        };
+        const allSubs = await this.getSubscribers();
+        toList = allSubs
+          .filter(s => s.isActive && s.email.toLowerCase().trim() !== finalSenderEmail)
+          .map(s => ({
+            email: s.email.trim().toLowerCase(),
+            name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || undefined
+          }));
       }
 
-      const finalSenderEmail = payload.senderEmail || settings?.senderEmail || 'eglisedunazareendedame@gmail.com';
-      const finalSenderName = payload.senderName || settings?.senderName || 'Église du Nazaréen de Damé';
-
-      // 2. Appel direct à l'API Brevo v3 (/v3/smtp/email) si la clé est présente
+      // 3. Appel direct à l'API Brevo v3 si la clé est présente
       if (activeKey && activeKey.startsWith('xkeysib-')) {
+        // A. Essayer d'abord la création et diffusion via l'API Campagnes Brevo (ciblant la Liste 5)
         try {
-          const directRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+          const campRes = await fetch('https://api.brevo.com/v3/emailCampaigns', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -374,61 +475,109 @@ export const newsletterService = {
               'accept': 'application/json'
             },
             body: JSON.stringify({
-              sender: { name: finalSenderName, email: finalSenderEmail },
-              to: toList,
+              name: `Annonce Damé - ${payload.subject.slice(0, 35)} - ${Date.now()}`,
               subject: payload.subject,
-              htmlContent: payload.htmlContent
+              sender: { name: finalSenderName, email: finalSenderEmail },
+              type: 'classic',
+              htmlContent: payload.htmlContent,
+              recipients: { listIds: [targetListId] }
             })
           });
 
-          // En cas de réponse HTTP 200, 201 ou 204
-          if (directRes.ok || directRes.status === 200 || directRes.status === 201 || directRes.status === 204) {
-            let messageId: string | undefined = undefined;
+          if (campRes.ok || campRes.status === 201) {
+            const campData = await campRes.json();
+            const campId = campData?.id;
+            if (campId) {
+              const sendNowRes = await fetch(`https://api.brevo.com/v3/emailCampaigns/${campId}/sendNow`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'api-key': activeKey,
+                  'accept': 'application/json'
+                }
+              });
+              if (sendNowRes.ok || sendNowRes.status === 204 || sendNowRes.status === 200) {
+                return {
+                  success: true,
+                  message: `Annonce diffusée avec succès à tous les abonnés de la liste Brevo #${targetListId} (${toList.length > 0 ? toList.length : 'tous les'} destinataire(s)) !`,
+                  sentCount: toList.length,
+                  brevoSent: true,
+                  brevoDetails: { campaignId: campId }
+                };
+              }
+            }
+          }
+        } catch (campErr: any) {
+          console.warn('[Brevo Campaign] Bascule vers envoi SMTP direct:', campErr);
+        }
+
+        // B. Envoi direct via l'API Brevo SMTP (/v3/smtp/email) vers toList
+        if (toList.length > 0) {
+          try {
+            const directRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'api-key': activeKey,
+                'accept': 'application/json'
+              },
+              body: JSON.stringify({
+                sender: { name: finalSenderName, email: finalSenderEmail },
+                to: toList,
+                subject: payload.subject,
+                htmlContent: payload.htmlContent
+              })
+            });
+
+            // En cas de réponse HTTP 200, 201 ou 204
+            if (directRes.ok || directRes.status === 200 || directRes.status === 201 || directRes.status === 204) {
+              let messageId: string | undefined = undefined;
+              const ct = directRes.headers.get('content-type') || '';
+              if (ct.includes('application/json')) {
+                try {
+                  const bData = await directRes.json();
+                  messageId = bData?.messageId;
+                } catch {}
+              }
+              return {
+                success: true,
+                message: `Annonce envoyée avec succès via l’API Brevo v3 (${toList.length} abonné(s) destinataire(s)) !`,
+                sentCount: toList.length,
+                brevoSent: true,
+                brevoDetails: messageId ? { messageId } : undefined
+              };
+            }
+
+            // En cas d'erreur de l'API Brevo
+            let errorMsg = `Erreur API Brevo (Code HTTP ${directRes.status}).`;
             const ct = directRes.headers.get('content-type') || '';
             if (ct.includes('application/json')) {
               try {
-                const bData = await directRes.json();
-                messageId = bData?.messageId;
+                const errData = await directRes.json();
+                if (errData?.message) {
+                  const rawMsg = errData.message;
+                  if (rawMsg.toLowerCase().includes('sender') || rawMsg.toLowerCase().includes('not valid')) {
+                    errorMsg = `L’adresse email expéditeur (${finalSenderEmail}) n’est pas encore vérifiée dans votre compte Brevo. Rendez-vous sur Brevo > Expéditeurs & Domaines pour la valider.`;
+                  } else if (directRes.status === 401 || rawMsg.toLowerCase().includes('key')) {
+                    errorMsg = 'Clé API Brevo invalide ou révoquée (Erreur 401). Veuillez vérifier votre clé API dans la configuration.';
+                  } else {
+                    errorMsg = `Brevo : ${rawMsg}`;
+                  }
+                }
               } catch {}
             }
             return {
-              success: true,
-              message: `Annonce envoyée avec succès via l’API Brevo v3 (${toList.length} destinataire(s)) !`,
-              sentCount: toList.length,
-              brevoSent: true,
-              brevoDetails: messageId ? { messageId } : undefined
+              success: false,
+              message: errorMsg,
+              error: errorMsg
             };
+          } catch (directErr: any) {
+            console.warn('[NewsletterService] Échec appel direct Brevo SMTP, essai via le proxy...', directErr);
           }
-
-          // En cas d'erreur de l'API Brevo
-          let errorMsg = `Erreur API Brevo (Code HTTP ${directRes.status}).`;
-          const ct = directRes.headers.get('content-type') || '';
-          if (ct.includes('application/json')) {
-            try {
-              const errData = await directRes.json();
-              if (errData?.message) {
-                const rawMsg = errData.message;
-                if (rawMsg.toLowerCase().includes('sender') || rawMsg.toLowerCase().includes('not valid')) {
-                  errorMsg = `L’adresse email expéditeur (${finalSenderEmail}) n’est pas encore vérifiée dans votre compte Brevo. Rendez-vous sur Brevo > Expéditeurs & Domaines pour la valider.`;
-                } else if (directRes.status === 401 || rawMsg.toLowerCase().includes('key')) {
-                  errorMsg = 'Clé API Brevo invalide ou révoquée (Erreur 401). Veuillez vérifier votre clé API dans la configuration.';
-                } else {
-                  errorMsg = `Brevo : ${rawMsg}`;
-                }
-              }
-            } catch {}
-          }
-          return {
-            success: false,
-            message: errorMsg,
-            error: errorMsg
-          };
-        } catch (directErr: any) {
-          console.warn('[NewsletterService] Échec appel direct Brevo SMTP, essai via le proxy...', directErr);
         }
       }
 
-      // 3. Fallback via le backend /api/newsletter/send
+      // 4. Fallback via le backend /api/newsletter/send
       const res = await fetch('/api/newsletter/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

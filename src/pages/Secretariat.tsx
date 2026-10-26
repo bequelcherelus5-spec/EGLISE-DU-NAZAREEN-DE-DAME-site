@@ -467,9 +467,11 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     setCampaignSending(true);
     try {
       const subscribers = await newsletterService.getSubscribers();
-      const recipients = subscribers.length > 0
-        ? subscribers.filter(s => s.isActive).map(s => s.email)
-        : ['eglisedunazareendedame@gmail.com'];
+      const senderClean = (brevoSenderEmail || 'eglisedunazareendedame@gmail.com').toLowerCase().trim();
+      // RÈGLE STRICTE : L'expéditeur (eglisedunazareendedame@gmail.com) est configuré UNIQUEMENT comme sender, jamais comme destinataire
+      const recipients = subscribers
+        .filter(s => s.isActive && s.email.toLowerCase().trim() !== senderClean)
+        .map(s => s.email);
 
       const res = await newsletterService.sendViaWorker({
         subject: campaignSubject,
@@ -486,7 +488,9 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
       });
 
       if (res.success) {
-        showToast('success', `Message d'information envoyé à ${recipients.length} destinataire(s) via Brevo !`);
+        showToast('success', res.message || `Message diffusé avec succès aux abonnés via Brevo !`);
+        setCampaignSubject('');
+        setCampaignContent('');
       } else {
         showToast('error', res.message || 'Échec de l’envoi de la campagne.');
       }
