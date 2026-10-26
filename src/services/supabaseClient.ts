@@ -37,9 +37,13 @@ function getResolvedSupabaseUrl(): string {
     const winEnv = cleanEnvVar((window as any).__ENV__?.VITE_SUPABASE_URL || (window as any).__ENV__?.SUPABASE_URL);
     if (winEnv) return formatSupabaseUrl(winEnv);
 
-    // 3. Configuration saisie manuellement ou sauvegardée dans le navigateur
+    // 3. Configuration de secours enregistrée dans localStorage (Secrétariat / Cloudflare)
     try {
-      const stored = localStorage.getItem('dame_vite_supabase_url') || localStorage.getItem('dame_supabase_url');
+      const stored = 
+        localStorage.getItem('dame_vite_supabase_url') || 
+        localStorage.getItem('dame_supabase_url') || 
+        localStorage.getItem('supabase_url') ||
+        localStorage.getItem('VITE_SUPABASE_URL');
       if (stored) return formatSupabaseUrl(stored);
     } catch {
       // Ignorer
@@ -59,9 +63,13 @@ function getResolvedSupabaseKey(): string {
     const winEnv = cleanEnvVar((window as any).__ENV__?.VITE_SUPABASE_ANON_KEY || (window as any).__ENV__?.SUPABASE_ANON_KEY);
     if (winEnv) return winEnv;
 
-    // 3. Configuration saisie manuellement ou sauvegardée dans le navigateur
+    // 3. Configuration de secours enregistrée dans localStorage (Secrétariat / Cloudflare)
     try {
-      const stored = localStorage.getItem('dame_vite_supabase_anon_key') || localStorage.getItem('dame_supabase_anon_key');
+      const stored = 
+        localStorage.getItem('dame_vite_supabase_anon_key') || 
+        localStorage.getItem('dame_supabase_anon_key') || 
+        localStorage.getItem('supabase_anon_key') ||
+        localStorage.getItem('VITE_SUPABASE_ANON_KEY');
       if (stored) return cleanEnvVar(stored);
     } catch {
       // Ignorer
@@ -91,6 +99,22 @@ function buildClient(url: string, key: string): SupabaseClient | null {
 }
 
 export let supabase: SupabaseClient | null = buildClient(activeUrl, activeAnonKey);
+
+export function getActiveSupabaseClient(): SupabaseClient | null {
+  if (supabase) return supabase;
+  const url = getResolvedSupabaseUrl();
+  const key = getResolvedSupabaseKey();
+  if (checkConfigured(url, key)) {
+    activeUrl = url;
+    activeAnonKey = key;
+    isSupabaseConfigured = true;
+    supabase = buildClient(url, key);
+    return supabase;
+  }
+  return null;
+}
+
+export default supabase;
 
 export interface CloudDbStatus {
   isConfigured: boolean;

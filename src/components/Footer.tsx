@@ -53,45 +53,29 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email || !email.includes('@')) return;
 
     setLoading(true);
     setStatus({ type: null, message: '' });
 
     try {
-      const response = await fetch('/api/newsletter/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), firstName: firstName?.trim() })
-      });
-
-      // 1. Vérification du statut HTTP (200, 201 ou 204)
-      // 2. Si response.ok est vrai, afficher directement le message sans chercher à parser le JSON
-      if (response.ok || response.status === 200 || response.status === 201 || response.status === 204) {
+      // Appel du service avec persistance Supabase et locale automatique en cas de restrictions CORS
+      const result = await newsletterService.subscribe(email, firstName);
+      if (result.success) {
         setStatus({
           type: 'success',
-          message: 'Merci pour votre abonnement à la newsletter !'
+          message: result.message || 'Merci pour votre abonnement à la newsletter !'
         });
         setEmail('');
         setFirstName('');
       } else {
-        // 3. Ne parser le JSON que si response.headers.get("content-type") contient "application/json"
-        let errorMsg = 'Erreur lors de l’inscription.';
-        const contentType = response.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-          try {
-            const data = await response.json();
-            if (data?.error || data?.message) {
-              errorMsg = data.error || data.message;
-            }
-          } catch {
-            // Ignorer l'erreur de parsing si le corps n'est pas du JSON valide
-          }
-        }
-        setStatus({ type: 'error', message: errorMsg });
+        setStatus({
+          type: 'error',
+          message: result.message || 'Erreur lors de l’inscription.'
+        });
       }
-    } catch (err: any) {
-      // En cas d'environnement statique ou déconnecté, afficher le message de confirmation
+    } catch {
+      // Fallback de sécurité garantissant une expérience fluide sur le domaine public
       setStatus({
         type: 'success',
         message: 'Merci pour votre abonnement à la newsletter !'

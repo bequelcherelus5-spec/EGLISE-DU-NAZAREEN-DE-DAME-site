@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
   const supabaseUrl = getEnv('VITE_SUPABASE_URL') || getEnv('SUPABASE_URL');
   const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || getEnv('SUPABASE_ANON_KEY');
   const adminSecurityKey = getEnv('VITE_ADMIN_SECURITY_KEY') || getEnv('ADMIN_SECURITY_KEY');
+  const brevoApiKey = getEnv('VITE_BREVO_API_KEY') || getEnv('BREVO_API_KEY');
 
   return {
     plugins: [react(), tailwindcss()],
@@ -32,6 +33,7 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
       'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
       'import.meta.env.VITE_ADMIN_SECURITY_KEY': JSON.stringify(adminSecurityKey),
+      'import.meta.env.VITE_BREVO_API_KEY': JSON.stringify(brevoApiKey),
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
