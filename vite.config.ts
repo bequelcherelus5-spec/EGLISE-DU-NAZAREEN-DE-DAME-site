@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => {
   const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || getEnv('SUPABASE_ANON_KEY');
   const adminSecurityKey = getEnv('VITE_ADMIN_SECURITY_KEY') || getEnv('ADMIN_SECURITY_KEY');
   const brevoApiKey = getEnv('VITE_BREVO_API_KEY') || getEnv('BREVO_API_KEY');
+  const brevoSenderEmail = getEnv('VITE_BREVO_SENDER_EMAIL') || getEnv('BREVO_SENDER_EMAIL');
+  const brevoListId = getEnv('VITE_BREVO_LIST_ID') || getEnv('BREVO_LIST_ID');
 
   return {
     plugins: [react(), tailwindcss()],
@@ -34,6 +36,8 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
       'import.meta.env.VITE_ADMIN_SECURITY_KEY': JSON.stringify(adminSecurityKey),
       'import.meta.env.VITE_BREVO_API_KEY': JSON.stringify(brevoApiKey),
+      'import.meta.env.VITE_BREVO_SENDER_EMAIL': JSON.stringify(brevoSenderEmail),
+      'import.meta.env.VITE_BREVO_LIST_ID': JSON.stringify(brevoListId),
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.

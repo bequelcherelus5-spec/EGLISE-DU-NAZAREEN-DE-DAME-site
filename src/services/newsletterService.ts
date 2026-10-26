@@ -39,7 +39,48 @@ export function getResolvedBrevoApiKey(): string {
     }
   }
 
+  console.warn('[Brevo] Avertissement : Variable VITE_BREVO_API_KEY non définie.');
   return '';
+}
+
+export function getResolvedBrevoSenderEmail(): string {
+  const meta = typeof import.meta !== 'undefined' && import.meta.env
+    ? (import.meta.env.VITE_BREVO_SENDER_EMAIL || (import.meta.env as any).BREVO_SENDER_EMAIL || '')
+    : '';
+  if (meta && typeof meta === 'string' && meta.includes('@')) return meta.trim();
+
+  if (typeof window !== 'undefined') {
+    const win = (window as any).__ENV__?.VITE_BREVO_SENDER_EMAIL;
+    if (win && typeof win === 'string' && win.includes('@')) return win.trim();
+    try {
+      const stored = localStorage.getItem('dame_brevo_config');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.senderEmail && parsed.senderEmail.includes('@')) return parsed.senderEmail.trim();
+      }
+    } catch {}
+  }
+  return 'eglisedunazareendedame@gmail.com';
+}
+
+export function getResolvedBrevoListId(): string {
+  const meta = typeof import.meta !== 'undefined' && import.meta.env
+    ? (import.meta.env.VITE_BREVO_LIST_ID || (import.meta.env as any).BREVO_LIST_ID || '')
+    : '';
+  if (meta && typeof meta === 'string' && meta.trim()) return meta.trim();
+
+  if (typeof window !== 'undefined') {
+    const win = (window as any).__ENV__?.VITE_BREVO_LIST_ID;
+    if (win && typeof win === 'string' && win.trim()) return win.trim();
+    try {
+      const stored = localStorage.getItem('dame_brevo_config');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.brevoListId) return String(parsed.brevoListId).trim();
+      }
+    } catch {}
+  }
+  return '5';
 }
 
 export interface SubscribeResponse {
@@ -468,13 +509,16 @@ export const newsletterService = {
     } catch {}
 
     const resolvedKey = getResolvedBrevoApiKey();
+    const resolvedSenderEmail = getResolvedBrevoSenderEmail();
+    const resolvedListId = getResolvedBrevoListId();
+
     if (resolvedKey) {
       return {
         hasApiKey: true,
         apiKeyPreview: resolvedKey.length > 8 ? resolvedKey.slice(0, 8) + '...' + resolvedKey.slice(-4) : '••••••••••••',
-        senderEmail: localParsed?.senderEmail || 'eglisedunazareendedame@gmail.com',
+        senderEmail: localParsed?.senderEmail || resolvedSenderEmail,
         senderName: localParsed?.senderName || 'Église du Nazaréen de Damé',
-        brevoListId: localParsed?.brevoListId || '5',
+        brevoListId: localParsed?.brevoListId || resolvedListId,
         isActive: true,
         updatedAt: localParsed?.updatedAt || new Date().toISOString()
       };
@@ -487,9 +531,9 @@ export const newsletterService = {
     return {
       hasApiKey: false,
       apiKeyPreview: '',
-      senderEmail: 'eglisedunazareendedame@gmail.com',
+      senderEmail: resolvedSenderEmail,
       senderName: 'Église du Nazaréen de Damé',
-      brevoListId: '5',
+      brevoListId: resolvedListId,
       isActive: false,
       updatedAt: new Date().toISOString()
     };

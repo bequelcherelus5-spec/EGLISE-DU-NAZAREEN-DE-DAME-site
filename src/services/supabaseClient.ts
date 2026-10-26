@@ -83,6 +83,13 @@ let activeUrl = getResolvedSupabaseUrl();
 let activeAnonKey = getResolvedSupabaseKey();
 export let isSupabaseConfigured = checkConfigured(activeUrl, activeAnonKey);
 
+if (!activeUrl) {
+  console.warn('[SupabaseClient] Avertissement : Variable VITE_SUPABASE_URL non fournie. Le système opère en persistance locale.');
+}
+if (!activeAnonKey) {
+  console.warn('[SupabaseClient] Avertissement : Variable VITE_SUPABASE_ANON_KEY non fournie.');
+}
+
 function buildClient(url: string, key: string): SupabaseClient | null {
   if (!checkConfigured(url, key)) return null;
   try {
