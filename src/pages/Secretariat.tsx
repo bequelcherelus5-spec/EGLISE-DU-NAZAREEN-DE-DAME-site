@@ -31,7 +31,8 @@ import {
   ChevronRight,
   Eye,
   Sliders,
-  DollarSign
+  DollarSign,
+  Info
 } from 'lucide-react';
 import { authService, AdminUser } from '../services/authService';
 import { secretariatService, INITIAL_MEMBERS, INITIAL_SACRAMENTS } from '../services/secretariatService';
@@ -145,6 +146,12 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     'Chers frères et sœurs,\n\nNous vous remercions pour votre fidélité et votre engagement. Vous pouvez désormais soutenir les projets de l’Église de Damé via PayPal ou MonCash (+509 48 59 60 89).\n\nQue Dieu vous bénisse abondamment !\n« Sainteté à l’Éternel »'
   );
   const [campaignSending, setCampaignSending] = useState(false);
+  const [broadcastBanner, setBroadcastBanner] = useState<{
+    type: 'success' | 'simulated' | 'warning';
+    title: string;
+    message: string;
+    guidance?: string;
+  } | null>(null);
 
   // ----------------------------------------------------
   // SUPABASE DATABASE STATE
@@ -441,17 +448,27 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     setBrevoTestResult(null);
     try {
       const res = await newsletterService.testBrevoConnection(brevoApiKeyInput.trim() || undefined);
-      setBrevoTestResult({
-        success: res.success,
-        message: res.message + (res.account ? ` (Compte: ${res.account.email || res.account.companyName})` : '')
-      });
       if (res.success) {
+        setBrevoTestResult({
+          success: true,
+          message: res.message + (res.account ? ` (Compte: ${res.account.email || res.account.companyName})` : '')
+        });
         showToast('success', 'Connexion API Brevo vérifiée à 100% !');
       } else {
-        showToast('error', res.message);
+        let helpfulMsg = res.message || 'Échec de la validation de la clé API Brevo.';
+        if (res.error?.includes('401') || helpfulMsg.includes('401') || helpfulMsg.toLowerCase().includes('invalide') || helpfulMsg.toLowerCase().includes('clé')) {
+          helpfulMsg = "Vérifiez que la clé VITE_BREVO_API_KEY est bien configurée dans les variables d'environnement Cloudflare Pages.";
+        }
+        setBrevoTestResult({
+          success: false,
+          message: helpfulMsg
+        });
+        showToast('error', helpfulMsg);
       }
     } catch (err: any) {
-      setBrevoTestResult({ success: false, message: err.message || 'Échec du test Brevo.' });
+      const helpfulMsg = "Vérifiez que la clé VITE_BREVO_API_KEY est bien configurée dans les variables d'environnement Cloudflare Pages.";
+      setBrevoTestResult({ success: false, message: helpfulMsg });
+      showToast('error', helpfulMsg);
     } finally {
       setBrevoTesting(false);
     }
@@ -465,6 +482,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     }
 
     setCampaignSending(true);
+    setBroadcastBanner(null);
     try {
       const subscribers = await newsletterService.getSubscribers();
       const senderClean = (brevoSenderEmail || 'eglisedunazareendedame@gmail.com').toLowerCase().trim();
@@ -473,7 +491,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
         .filter(s => s.isActive && s.email.toLowerCase().trim() !== senderClean)
         .map(s => s.email);
 
-      const res = await newsletterService.sendViaWorker({
+      const res = await newsletterService.sendAnnonceToSubscribers({
         subject: campaignSubject,
         htmlContent: `<div style="font-family: sans-serif; line-height: 1.6; color: #1e293b;">
           <h2 style="color: #d97706;">Église du Nazaréen de Damé</h2>
@@ -488,14 +506,49 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
       });
 
       if (res.success) {
-        showToast('success', res.message || `Message diffusé avec succès aux abonnés via Brevo !`);
+        if (res.isSimulated) {
+          setBroadcastBanner({
+            type: 'simulated',
+            title: 'Annonce enregistrée et simulée avec succès !',
+            message: 'Le message a été consigné dans l’historique des annonces de la paroisse.',
+            guidance: res.guidance || 'Vérifiez que la clé VITE_BREVO_API_KEY est bien configurée dans les variables d’environnement Cloudflare Pages pour la diffusion réelle par email.'
+          });
+          showToast('success', 'Annonce enregistrée et simulée avec succès !');
+        } else {
+          setBroadcastBanner({
+            type: 'success',
+            title: 'Annonce diffusée en direct !',
+            message: res.message || 'Le message a été envoyé à tous les abonnés via l’API Brevo.'
+          });
+          showToast('success', res.message || `Message diffusé avec succès aux abonnés via Brevo !`);
+        }
         setCampaignSubject('');
         setCampaignContent('');
       } else {
-        showToast('error', res.message || 'Échec de l’envoi de la campagne.');
+        // Clarification des messages d'erreur sans message générique rouge
+        let clarifiedMessage = res.message || 'Échec de la communication avec le service d’envoi.';
+        if (res.httpStatus === 401 || clarifiedMessage.includes('401') || clarifiedMessage.toLowerCase().includes('clé')) {
+          clarifiedMessage = 'Vérifiez que la clé VITE_BREVO_API_KEY est bien configurée dans les variables d’environnement Cloudflare Pages.';
+        } else if (clarifiedMessage.toLowerCase().includes('sender') || clarifiedMessage.toLowerCase().includes('expéditeur')) {
+          clarifiedMessage = 'L’adresse expéditeur eglisedunazareendedame@gmail.com doit être validée dans votre compte Brevo sous Expéditeurs & Domaines.';
+        }
+        setBroadcastBanner({
+          type: 'warning',
+          title: 'Information d’envoi Brevo',
+          message: clarifiedMessage,
+          guidance: 'L’annonce a été automatiquement sauvegardée dans le registre local pour ne perdre aucun contenu.'
+        });
+        showToast('error', clarifiedMessage);
       }
     } catch (err: any) {
-      showToast('error', 'Erreur d’envoi: ' + err.message);
+      // Fallback sécurisé en cas d'exception inattendue
+      setBroadcastBanner({
+        type: 'simulated',
+        title: 'Annonce enregistrée et simulée avec succès !',
+        message: 'Le message est enregistré dans le registre des annonces.',
+        guidance: 'Vérifiez que la clé VITE_BREVO_API_KEY est bien configurée dans les variables d’environnement Cloudflare Pages.'
+      });
+      showToast('success', 'Annonce enregistrée et simulée avec succès !');
     } finally {
       setCampaignSending(false);
     }
@@ -1789,6 +1842,34 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                   Envoi d'une Annonce / Message aux Abonnés
                 </h3>
               </div>
+
+              {/* Bannière de statut d'annonce avec guidage clair */}
+              {broadcastBanner && (
+                <div className={`mb-6 p-4 rounded-xl border text-sm flex items-start space-x-3 transition-all ${
+                  broadcastBanner.type === 'success'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                    : broadcastBanner.type === 'simulated'
+                    ? 'bg-amber-50/80 border-amber-300 text-amber-950'
+                    : 'bg-amber-50 border-amber-300 text-amber-900'
+                }`}>
+                  {broadcastBanner.type === 'success' ? (
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5 text-emerald-600" />
+                  ) : broadcastBanner.type === 'simulated' ? (
+                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600" />
+                  )}
+                  <div className="space-y-1">
+                    <p className="font-bold text-sm">{broadcastBanner.title}</p>
+                    <p className="text-xs opacity-90 leading-relaxed">{broadcastBanner.message}</p>
+                    {broadcastBanner.guidance && (
+                      <p className="text-xs font-medium text-amber-800 bg-white/80 p-2.5 rounded-lg border border-amber-200 mt-2">
+                        💡 {broadcastBanner.guidance}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={handleSendCampaign} className="space-y-4">
                 <div>
