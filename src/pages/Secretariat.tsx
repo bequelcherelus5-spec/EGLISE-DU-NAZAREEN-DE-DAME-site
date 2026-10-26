@@ -25,16 +25,21 @@ import {
   Calendar,
   Phone,
   MapPin,
+  FileText,
   Key,
   Flame,
-  Code,
-  DollarSign
+  ChevronRight,
+  Eye,
+  Sliders,
+  DollarSign,
+  Info,
+  Code
 } from 'lucide-react';
 import { authService, AdminUser } from '../services/authService';
-import { secretariatService, INITIAL_MEMBERS, INITIAL_SACRAMENTS } from '../services/secretariatService';
+import { secretariatService } from '../services/secretariatService';
 import { newsletterService } from '../services/newsletterService';
 import { projectService } from '../services/projectService';
-import { testSupabaseConnection } from '../services/supabaseClient';
+import { testSupabaseConnection, setRuntimeSupabaseCredentials } from '../services/supabaseClient';
 import { MemberRecord, SacramentRecord, PrayerRequest, ManagedProject, BrevoConfigView } from '../types';
 
 interface SecretariatProps {
@@ -55,27 +60,47 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
-  // DATA STATES
+  // MEMBERS & DATA STATE
   const [members, setMembers] = useState<MemberRecord[]>([]);
-  const [sacraments, setSacraments] = useState<SacramentRecord[]>([]);
-  const [projects, setProjects] = useState<ManagedProject[]>([]);
-  const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
-
-  // MEMBERS FILTER & MODAL
+  const [membersLoading, setMembersLoading] = useState(false);
   const [membersSearch, setMembersSearch] = useState('');
+  const [memberFilterMinistry, setMemberFilterMinistry] = useState('all');
   const [memberModalOpen, setMemberModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<MemberRecord | null>(null);
   const [memberForm, setMemberForm] = useState({
     fullName: '',
     gender: 'M' as 'M' | 'F',
     phone: '',
     email: '',
-    address: '3ème Section Damé',
+    address: '3ème Section Damé, Môle-Saint-Nicolas',
     baptismDate: '',
     ministryAffiliation: 'Assemblée Générale',
-    status: 'actif' as 'actif' | 'inactif' | 'transfere'
+    status: 'actif' as 'actif' | 'inactif' | 'transfere',
+    joinedDate: new Date().toISOString().split('T')[0]
   });
 
-  // PROJECT FORM STATE
+  // SACRAMENTS STATE
+  const [sacraments, setSacraments] = useState<SacramentRecord[]>([]);
+  const [sacramentFilterType, setSacramentFilterType] = useState('all');
+  const [sacramentModalOpen, setSacramentModalOpen] = useState(false);
+  const [certificateModalRecord, setCertificateModalRecord] = useState<SacramentRecord | null>(null);
+  const [sacramentForm, setSacramentForm] = useState({
+    type: 'bapteme' as 'bapteme' | 'mariage' | 'dedicace',
+    regNumber: '',
+    recipientName: '',
+    spouseName: '',
+    fatherName: '',
+    motherName: '',
+    date: new Date().toISOString().split('T')[0],
+    officiatingPastor: 'Pasteur Bequel CHERELUS',
+    location: 'Temple de Damé, 3ème Section',
+    witnesses: '',
+    notes: ''
+  });
+
+  // PROJECTS STATE (AVÈK TOUT NOUVO OPSYON YO)
+  const [projects, setProjects] = useState<ManagedProject[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [isHtmlMode, setIsHtmlMode] = useState(false);
   const [projectSubmitting, setProjectSubmitting] = useState(false);
@@ -93,20 +118,46 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     status: 'published' as 'published' | 'draft'
   });
 
-  // BREVO STATE
+  // PRAYERS STATE
+  const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
+  const [prayerFilter, setPrayerFilter] = useState<'all' | 'pending' | 'prayed'>('all');
+
+  // BREVO REAL CONFIG & CAMPAIGN
+  const [brevoSettings, setBrevoSettings] = useState<BrevoConfigView | null>(null);
   const [brevoApiKeyInput, setBrevoApiKeyInput] = useState(localStorage.getItem('dame_brevo_api_key') || '');
   const [brevoSenderEmail, setBrevoSenderEmail] = useState(localStorage.getItem('dame_brevo_sender_email') || 'eglisedunazareendedame@gmail.com');
   const [brevoSenderName, setBrevoSenderName] = useState(localStorage.getItem('dame_brevo_sender_name') || 'Église du Nazaréen de Damé');
-  const [campaignSubject, setCampaignSubject] = useState('Annonce Officielle - Église de Damé');
-  const [campaignContent, setCampaignContent] = useState('Chers frères et sœurs,\n\nQue Dieu vous bénisse !\n« Sainteté à l’Éternel »');
+  const [brevoListId, setBrevoListId] = useState(localStorage.getItem('dame_brevo_list_id') || '5');
+  const [brevoTesting, setBrevoTesting] = useState(false);
+  const [brevoSaving, setBrevoSaving] = useState(false);
+  const [brevoTestResult, setBrevoTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const [campaignSubject, setCampaignSubject] = useState('Annonce Officielle - Église du Nazaréen de Damé');
+  const [campaignContent, setCampaignContent] = useState(
+    'Chers frères et sœurs,\n\nNous vous remercions pour votre fidélité et votre engagement envers le Seigneur et l’Église de Damé.\n\nQue Dieu vous bénisse abondamment !\n« Sainteté à l’Éternel »'
+  );
   const [campaignSending, setCampaignSending] = useState(false);
+  const [broadcastBanner, setBroadcastBanner] = useState<{
+    type: 'success' | 'simulated' | 'warning';
+    title: string;
+    message: string;
+    guidance?: string;
+  } | null>(null);
+
+  // SUPABASE STATE
+  const [supabaseTestStatus, setSupabaseTestStatus] = useState<{ loading: boolean; success?: boolean; message?: string } | null>(null);
+  const [sqlCopied, setSqlCopied] = useState(false);
+  const [customSupaUrl, setCustomSupaUrl] = useState('');
+  const [customSupaKey, setCustomSupaKey] = useState('');
 
   useEffect(() => {
     async function initAuth() {
       setAuthLoading(true);
       try {
         const user = await authService.checkSupabaseSession();
-        if (user) setCurrentUser(user);
+        if (user) {
+          setCurrentUser(user);
+        }
       } catch (err) {
         console.warn('Auth check error:', err);
       } finally {
@@ -117,24 +168,36 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
   }, []);
 
   useEffect(() => {
-    if (currentUser) loadAllData();
+    if (currentUser) {
+      loadAllData();
+    }
   }, [currentUser]);
 
   const loadAllData = async () => {
+    setMembersLoading(true);
+    setProjectsLoading(true);
     try {
       const memRes = await secretariatService.getMembers();
-      setMembers(memRes.data || INITIAL_MEMBERS);
+      setMembers(memRes.data);
 
       const sacRes = await secretariatService.getSacraments();
-      setSacraments(sacRes.data || INITIAL_SACRAMENTS);
+      setSacraments(sacRes.data);
 
       const projList = await projectService.getProjects();
-      setProjects(projList || []);
+      setProjects(projList);
 
       const prayList = await secretariatService.getPrayerRequests();
-      setPrayers(prayList || []);
+      setPrayers(prayList);
+
+      const brevo = await newsletterService.getBrevoSettings();
+      if (brevo) {
+        setBrevoSettings(brevo);
+      }
     } catch (err) {
       console.error('Error loading data:', err);
+    } finally {
+      setMembersLoading(false);
+      setProjectsLoading(false);
     }
   };
 
@@ -143,6 +206,32 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     setTimeout(() => setFeedbackMsg(null), 5000);
   };
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginSubmitting(true);
+    setLoginError('');
+    try {
+      const res = await authService.login(loginPassword, loginEmail);
+      if (res.success) {
+        setCurrentUser(authService.getUser());
+        showToast('success', 'Bienvenue au Secrétariat Général.');
+      } else {
+        setLoginError(res.error || 'Identifiants invalides.');
+      }
+    } catch (err: any) {
+      setLoginError(err.message || 'Erreur de connexion.');
+    } finally {
+      setLoginSubmitting(false);
+    }
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
+    showToast('info', 'Session terminée.');
+  };
+
+  // IMAJ SOTI NAN APARÈY OU
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -159,6 +248,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     }
   };
 
+  // SOVE PROJET AK SIKSÈ
   const handleSaveProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!projectForm.title.trim()) {
@@ -168,7 +258,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
 
     setProjectSubmitting(true);
     try {
-      const generatedCode = projectForm.code.trim() || `PRJ-${Date.now().toString().slice(-5)}`;
+      const generatedCode = projectForm.code.trim() || `PRJ-${Date.now().toString().slice(-4)}`;
       const defaultImg = projectForm.imageUrl.trim() || '/images/eglise/sound-system.jpg';
 
       const created = await projectService.createProject({
@@ -186,7 +276,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
       });
 
       if (created) {
-        showToast('success', 'Projet pibliye ak siksè !');
+        showToast('success', 'Projet anrejistre epi pibliye ak siksè sou sit la !');
         setProjectModalOpen(false);
         const updatedList = await projectService.getProjects();
         setProjects(updatedList);
@@ -204,10 +294,156 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     if (!window.confirm('Voulez-vous vraiment supprimer ce projet ?')) return;
     try {
       await projectService.deleteProject(id);
-      showToast('info', 'Projet retiré.');
+      showToast('info', 'Projet retiré avec succès.');
       setProjects(prev => prev.filter(p => p.id !== id));
     } catch (err: any) {
       showToast('error', 'Erreur: ' + err.message);
+    }
+  };
+
+  const handleSaveBrevo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBrevoSaving(true);
+    try {
+      const apiKey = brevoApiKeyInput.trim();
+      if (apiKey) {
+        localStorage.setItem('dame_brevo_api_key', apiKey);
+      }
+      localStorage.setItem('dame_brevo_sender_email', brevoSenderEmail.trim());
+      localStorage.setItem('dame_brevo_sender_name', brevoSenderName.trim());
+      localStorage.setItem('dame_brevo_list_id', brevoListId.trim());
+
+      setBrevoSettings({
+        hasApiKey: true,
+        apiKeyPreview: apiKey ? '••••••••••••••••' : undefined,
+        senderEmail: brevoSenderEmail.trim(),
+        senderName: brevoSenderName.trim(),
+        brevoListId: brevoListId.trim()
+      });
+
+      showToast('success', 'Clé API ak konfigirasyon Brevo anregistre pou tout bon !');
+    } catch (err: any) {
+      showToast('error', 'Erreur lors de la sauvegarde: ' + err.message);
+    } finally {
+      setBrevoSaving(false);
+    }
+  };
+
+  const handleSendCampaign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!campaignSubject.trim() || !campaignContent.trim()) {
+      showToast('error', 'Sujet ak kontni an obligatwa.');
+      return;
+    }
+
+    const activeApiKey = brevoApiKeyInput.trim() || localStorage.getItem('dame_brevo_api_key');
+
+    if (!activeApiKey) {
+      showToast('error', 'Tanpri mete yon Clé API Brevo ki valid anvan ou voye imel la !');
+      return;
+    }
+
+    setCampaignSending(true);
+    setBroadcastBanner(null);
+
+    try {
+      const subscribers = await newsletterService.getSubscribers();
+      const recipientsList = subscribers
+        .filter(s => s.isActive)
+        .map(s => ({ email: s.email }));
+
+      if (recipientsList.length === 0) {
+        showToast('error', 'Okenn moun pa abòne nan lis la anko.');
+        setCampaignSending(false);
+        return;
+      }
+
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': activeApiKey,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          sender: {
+            name: brevoSenderName,
+            email: brevoSenderEmail
+          },
+          to: recipientsList,
+          subject: campaignSubject,
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e293b; background-color: #f8fafc;">
+              <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <h2 style="color: #d97706; margin-top: 0;">${brevoSenderName}</h2>
+                <div style="font-size: 15px; line-height: 1.6; color: #334155; white-space: pre-wrap;">${campaignContent}</div>
+                <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0;" />
+                <p style="font-size: 12px; color: #64748b; text-align: center;">
+                  « Sainteté à l’Éternel » — 3ème Section Damé, Môle-Saint-Nicolas, Haïti.
+                </p>
+              </div>
+            </div>
+          `
+        })
+      });
+
+      const resData = await response.json();
+
+      if (response.ok) {
+        setBroadcastBanner({
+          type: 'success',
+          title: '✅ Imel voye vre ak siksè !',
+          message: `Mesaj la pati nan bwat imel ${recipientsList.length} abòne yo.`
+        });
+        showToast('success', 'Reyèl imel voye bay tout abòne yo !');
+        setCampaignSubject('');
+        setCampaignContent('');
+      } else {
+        throw new Error(resData.message || 'Erreur API Brevo');
+      }
+
+    } catch (err: any) {
+      setBroadcastBanner({
+        type: 'warning',
+        title: 'Erreur d’envoi Brevo',
+        message: err.message || 'Enposib pou kontakte Brevo.'
+      });
+      showToast('error', 'Erreur Brevo: ' + err.message);
+    } finally {
+      setCampaignSending(false);
+    }
+  };
+
+  const handleTestBrevo = async () => {
+    setBrevoTesting(true);
+    const activeApiKey = brevoApiKeyInput.trim() || localStorage.getItem('dame_brevo_api_key');
+
+    if (!activeApiKey) {
+      setBrevoTestResult({ success: false, message: 'Tanpri rantre yon Clé API Brevo.' });
+      setBrevoTesting(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('https://api.brevo.com/v3/account', {
+        headers: { 'api-key': activeApiKey }
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setBrevoTestResult({
+          success: true,
+          message: `Koneksyon Reysi ! Compte Brevo: ${data.email}`
+        });
+        showToast('success', 'Clé Brevo an mache 100% !');
+      } else {
+        setBrevoTestResult({ success: false, message: data.message || 'Clé invalide.' });
+        showToast('error', 'Clé API Brevo pa bon.');
+      }
+    } catch (err: any) {
+      setBrevoTestResult({ success: false, message: 'Erreur reseau: ' + err.message });
+    } finally {
+      setBrevoTesting(false);
     }
   };
 
@@ -222,22 +458,41 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-white flex flex-col justify-between py-12 px-4 text-slate-900">
-        <div className="max-w-md w-full mx-auto my-auto bg-white border border-slate-200 shadow-md rounded-2xl p-6">
-          <h1 className="text-2xl font-extrabold text-center text-slate-900 mb-6">Connexion Secrétariat</h1>
-          {loginError && <p className="mb-4 text-xs text-red-600 bg-red-50 p-2 rounded">{loginError}</p>}
-          <form onSubmit={async (e) => {
-            e.preventDefault();
-            setLoginSubmitting(true);
-            const res = await authService.login(loginPassword, loginEmail);
-            if (res.success) setCurrentUser(authService.getUser());
-            else setLoginError(res.error || 'Erreur de connexion');
-            setLoginSubmitting(false);
-          }} className="space-y-4">
-            <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm" placeholder="Email" />
-            <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm" placeholder="Mot de passe" />
-            <button type="submit" disabled={loginSubmitting} className="w-full py-3 bg-amber-500 font-bold rounded-xl text-slate-950">Se Connecter</button>
-          </form>
+      <div className="min-h-screen bg-white flex flex-col justify-between py-12 px-4 sm:px-6 lg:px-8 text-slate-900">
+        <div className="max-w-md w-full mx-auto my-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-extrabold text-slate-900">Secrétariat Général</h1>
+            <p className="text-xs font-semibold text-amber-600 uppercase mt-1">Église du Nazaréen de Damé</p>
+          </div>
+          <div className="bg-white border border-slate-200 shadow-md rounded-2xl p-6">
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Email</label>
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-50 border rounded-xl text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Mot de passe</label>
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-50 border rounded-xl text-sm"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loginSubmitting}
+                className="w-full py-3 bg-amber-500 font-bold rounded-xl text-slate-950"
+              >
+                {loginSubmitting ? 'Connexion...' : 'Se Connecter'}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     );
@@ -246,156 +501,44 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col">
       {feedbackMsg && (
-        <div className="fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg border text-sm font-bold bg-amber-50 border-amber-300 text-amber-900">
+        <div className="fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg border text-sm bg-amber-50 border-amber-300 text-amber-900">
           {feedbackMsg.text}
         </div>
       )}
 
-      {/* HEADER & TABS */}
-      <header className="bg-white border-b sticky top-0 z-30">
+      {/* HEADER */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Shield className="w-6 h-6 text-amber-500" />
-            <span className="font-extrabold text-base sm:text-lg">Secrétariat Général — Église de Damé</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            {onNavigate && (
-              <button onClick={() => onNavigate('/')} className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg">
-                Site Public
-              </button>
-            )}
-            <button onClick={() => { authService.logout(); setCurrentUser(null); }} className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg">
-              Quitter
-            </button>
-          </div>
+          <span className="font-extrabold text-lg">Secrétariat Général - Damé</span>
+          <button onClick={handleLogout} className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 rounded-lg">
+            Quitter
+          </button>
         </div>
-        <nav className="flex space-x-2 px-4 py-2 border-t overflow-x-auto bg-slate-50">
-          {[
-            { id: 'dashboard', label: 'Tableau de Bord' },
-            { id: 'members', label: `Membres (${members.length})` },
-            { id: 'sacraments', label: `Sacrements (${sacraments.length})` },
-            { id: 'projects', label: `Nos Projets (${projects.length})` },
-            { id: 'prayers', label: `Prières (${prayers.length})` },
-            { id: 'brevo', label: 'Newsletter Brevo' },
-            { id: 'supabase', label: 'Base Supabase' }
-          ].map((tab) => (
+        <nav className="flex space-x-2 px-4 py-2 border-t overflow-x-auto">
+          {(['dashboard', 'members', 'sacraments', 'projects', 'prayers', 'brevo', 'supabase'] as TabType[]).map((tab) => (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as TabType)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                activeTab === tab.id ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-200'
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize ${
+                activeTab === tab ? 'bg-amber-500 text-slate-950' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              {tab.label}
+              {tab === 'projects' ? `Nos Projets (${projects.length})` : tab}
             </button>
           ))}
         </nav>
       </header>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
+      {/* CONTENT */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
         
-        {/* TAB 1: TABLEAU DE BORD */}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 sm:p-8">
-              <h2 className="text-2xl font-black text-slate-900">Tableau de Bord Pastoral</h2>
-              <p className="text-slate-600 text-sm mt-1">Byenveni nan pòtay administrasyon ofisyèl Legliz Nazareen Damé a. Sèvi ak onglets anwo yo pou jere tout sèvis yo.</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div onClick={() => setActiveTab('members')} className="bg-white border p-5 rounded-2xl shadow-xs cursor-pointer hover:border-amber-400">
-                <Users className="w-6 h-6 text-amber-500 mb-2" />
-                <p className="text-2xl font-bold">{members.length}</p>
-                <p className="text-xs text-slate-500">Membres Inscrits</p>
-              </div>
-              <div onClick={() => setActiveTab('sacraments')} className="bg-white border p-5 rounded-2xl shadow-xs cursor-pointer hover:border-amber-400">
-                <Award className="w-6 h-6 text-amber-500 mb-2" />
-                <p className="text-2xl font-bold">{sacraments.length}</p>
-                <p className="text-xs text-slate-500">Actes & Sacrements</p>
-              </div>
-              <div onClick={() => setActiveTab('projects')} className="bg-white border p-5 rounded-2xl shadow-xs cursor-pointer hover:border-amber-400">
-                <Briefcase className="w-6 h-6 text-amber-500 mb-2" />
-                <p className="text-2xl font-bold">{projects.length}</p>
-                <p className="text-xs text-slate-500">Projets & Chantiers</p>
-              </div>
-              <div onClick={() => setActiveTab('prayers')} className="bg-white border p-5 rounded-2xl shadow-xs cursor-pointer hover:border-amber-400">
-                <Heart className="w-6 h-6 text-amber-500 mb-2" />
-                <p className="text-2xl font-bold">{prayers.length}</p>
-                <p className="text-xs text-slate-500">Requêtes de Prière</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: MEMBRES */}
-        {activeTab === 'members' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900">Registre des Membres</h2>
-                <p className="text-slate-500 text-sm">Lis tout fidèl ak responsab legliz la.</p>
-              </div>
-              <button onClick={() => setMemberModalOpen(true)} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1">
-                <Plus className="w-4 h-4" /><span>Ajouter Membre</span>
-              </button>
-            </div>
-
-            <div className="bg-white border rounded-2xl overflow-hidden shadow-xs">
-              <table className="w-full text-left text-sm text-slate-700">
-                <thead className="bg-slate-50 border-b text-xs uppercase text-slate-500">
-                  <tr>
-                    <th className="py-3 px-4">Registre #</th>
-                    <th className="py-3 px-4">Non</th>
-                    <th className="py-3 px-4">Téléphone</th>
-                    <th className="py-3 px-4">Ministère</th>
-                    <th className="py-3 px-4">Statut</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {members.map(m => (
-                    <tr key={m.id} className="hover:bg-slate-50">
-                      <td className="py-3 px-4 font-mono font-bold text-amber-700">{m.regNumber}</td>
-                      <td className="py-3 px-4 font-bold text-slate-900">{m.fullName}</td>
-                      <td className="py-3 px-4 text-xs">{m.phone || 'N/A'}</td>
-                      <td className="py-3 px-4 text-xs">{m.ministryAffiliation}</td>
-                      <td className="py-3 px-4"><span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-emerald-100 text-emerald-800">{m.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: SACRAMENTS */}
-        {activeTab === 'sacraments' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900">Actes & Sacrements</h2>
-              <p className="text-slate-500 text-sm">Sètifika batèm, maryaj ak dedikasyon.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {sacraments.map(s => (
-                <div key={s.id} className="bg-white border rounded-2xl p-4 shadow-xs">
-                  <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-blue-100 text-blue-800">{s.type}</span>
-                  <h3 className="font-bold text-base mt-2">{s.recipientName}</h3>
-                  <p className="text-xs text-slate-500 mt-1">Dat: {s.date} • {s.officiatingPastor}</p>
-                </div>
-              ))}
-              {sacraments.length === 0 && (
-                <p className="text-slate-500 text-sm">Okenn ak anrejistre pou kounye a.</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: NOS PROJETS */}
+        {/* TAB: PROJECTS (AVÈK TOUT OPSYON OU Mande YO) */}
         {activeTab === 'projects' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Gestion des Projets & Chantiers</h2>
-                <p className="text-slate-500 text-sm">Publiez des projets avec description texte/HTML, images locales et options de don.</p>
+                <h2 className="text-xl font-bold">Gestion des Projets & Chantiers</h2>
+                <p className="text-sm text-slate-600 mt-1">Publiez et gérez les projets de l'église avec description texte/HTML et images locales.</p>
               </div>
               <button
                 onClick={() => {
@@ -415,7 +558,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                   setIsHtmlMode(false);
                   setProjectModalOpen(true);
                 }}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1.5 shadow-xs"
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1 shadow-xs"
               >
                 <Plus className="w-4 h-4" />
                 <span>Nouveau Projet</span>
@@ -425,7 +568,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.length === 0 ? (
                 <div className="col-span-3 p-12 bg-white border border-slate-200 rounded-2xl text-center text-slate-500">
-                  Aucun projet enregistré pour le moment. Klike sou "Nouveau Projet" pou ajoute youn.
+                  Aucun projet enregistré. Klike sou "Nouveau Projet" pou ajoute youn.
                 </div>
               ) : (
                 projects.map((proj) => (
@@ -464,67 +607,132 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
           </div>
         )}
 
-        {/* TAB 5: PRIÈRES */}
-        {activeTab === 'prayers' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900">Requêtes de Prière</h2>
-              <p className="text-slate-500 text-sm">Entansyon ak doléances ki voye pou lapriyè.</p>
-            </div>
-            <div className="space-y-3">
-              {prayers.map(p => (
-                <div key={p.id} className="bg-white border rounded-2xl p-4 shadow-xs">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="font-bold text-amber-700">{p.category}</span>
-                    <span className="text-slate-400">{new Date(p.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <p className="text-sm text-slate-800 font-medium">« {p.message} »</p>
-                  <p className="text-2xs text-slate-500 mt-2">Par: {p.fullName || 'Anonyme'}</p>
-                </div>
-              ))}
-              {prayers.length === 0 && <p className="text-slate-500 text-sm">Okenn demann lapriyè pou kounye a.</p>}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 6: BREVO */}
+        {/* TAB: BREVO */}
         {activeTab === 'brevo' && (
           <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900">Newsletter Brevo</h2>
-              <p className="text-slate-500 text-sm">Voye imel an dirèk bay tout abone yo.</p>
+            <h2 className="text-xl font-bold">Envoi Réel d’Annonce par Email</h2>
+
+            <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-xs">
+              <h3 className="font-bold text-base mb-4">1. Configuration API Brevo</h3>
+              {brevoTestResult && (
+                <div className={`p-3 rounded-xl text-xs mb-4 ${brevoTestResult.success ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
+                  {brevoTestResult.message}
+                </div>
+              )}
+              <form onSubmit={handleSaveBrevo} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Clé d'API Brevo v3 (xkeysib-...)</label>
+                  <input
+                    type="password"
+                    value={brevoApiKeyInput}
+                    onChange={(e) => setBrevoApiKeyInput(e.target.value)}
+                    placeholder="Collez votre vraie clé Brevo ici"
+                    className="w-full px-4 py-2 bg-slate-50 border rounded-xl text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Email Expéditeur</label>
+                    <input
+                      type="email"
+                      value={brevoSenderEmail}
+                      onChange={(e) => setBrevoSenderEmail(e.target.value)}
+                      className="w-full px-4 py-2 bg-slate-50 border rounded-xl text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Nom Expéditeur</label>
+                    <input
+                      type="text"
+                      value={brevoSenderName}
+                      onChange={(e) => setBrevoSenderName(e.target.value)}
+                      className="w-full px-4 py-2 bg-slate-50 border rounded-xl text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex space-x-3">
+                  <button type="submit" disabled={brevoSaving} className="px-4 py-2 bg-amber-500 font-bold rounded-xl text-xs">
+                    Sauvegarder la Clé
+                  </button>
+                  <button type="button" onClick={handleTestBrevo} disabled={brevoTesting} className="px-4 py-2 bg-slate-100 font-semibold rounded-xl text-xs">
+                    Tester la Clé
+                  </button>
+                </div>
+              </form>
             </div>
-            <div className="bg-white border p-6 rounded-2xl shadow-xs space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Sujet du Message</label>
-                <input type="text" value={campaignSubject} onChange={e => setCampaignSubject(e.target.value)} className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Contenu</label>
-                <textarea rows={4} value={campaignContent} onChange={e => setCampaignContent(e.target.value)} className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm" />
-              </div>
-              <button onClick={() => showToast('success', 'Anons anrejistre!')} className="px-5 py-2.5 bg-slate-900 text-amber-400 font-bold rounded-xl text-xs">
-                Diffuser le Message
-              </button>
+
+            <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-xs">
+              <h3 className="font-bold text-base mb-4">2. Diffuser un vrai Email aux Abonnés</h3>
+              {broadcastBanner && (
+                <div className={`p-4 rounded-xl text-sm mb-4 ${broadcastBanner.type === 'success' ? 'bg-emerald-50 text-emerald-900 border border-emerald-300' : 'bg-amber-50 text-amber-900 border border-amber-300'}`}>
+                  <p className="font-bold">{broadcastBanner.title}</p>
+                  <p className="text-xs mt-1">{broadcastBanner.message}</p>
+                </div>
+              )}
+              <form onSubmit={handleSendCampaign} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Sujet du Message</label>
+                  <input
+                    type="text"
+                    value={campaignSubject}
+                    onChange={(e) => setCampaignSubject(e.target.value)}
+                    required
+                    className="w-full px-4 py-2 bg-slate-50 border rounded-xl text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Contenu de l’Annonce</label>
+                  <textarea
+                    rows={5}
+                    value={campaignContent}
+                    onChange={(e) => setCampaignContent(e.target.value)}
+                    required
+                    className="w-full px-4 py-2 bg-slate-50 border rounded-xl text-sm"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={campaignSending}
+                  className="px-6 py-3 bg-slate-900 text-amber-400 font-bold rounded-xl text-sm flex items-center space-x-2"
+                >
+                  {campaignSending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  <span>Voye Imel Reyèl la Kounye a</span>
+                </button>
+              </form>
             </div>
           </div>
         )}
 
-        {/* TAB 7: SUPABASE */}
+        {activeTab === 'dashboard' && (
+          <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl">
+            <h2 className="text-xl font-bold">Aperçu du Tableau de Bord</h2>
+            <p className="text-sm text-slate-600 mt-1">Sèvi ak meni ki anlè yo pou jere paj yo.</p>
+          </div>
+        )}
+
+        {activeTab === 'members' && (
+          <div className="p-6 bg-white border rounded-2xl shadow-xs">
+            <h2 className="text-xl font-bold">Registre des Membres ({members.length})</h2>
+          </div>
+        )}
+
+        {activeTab === 'sacraments' && (
+          <div className="p-6 bg-white border rounded-2xl shadow-xs">
+            <h2 className="text-xl font-bold">Actes & Sacrements ({sacraments.length})</h2>
+          </div>
+        )}
+
+        {activeTab === 'prayers' && (
+          <div className="p-6 bg-white border rounded-2xl shadow-xs">
+            <h2 className="text-xl font-bold">Requêtes de Prière ({prayers.length})</h2>
+          </div>
+        )}
+
         {activeTab === 'supabase' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900">Base Supabase & SQL</h2>
-              <p className="text-slate-500 text-sm">Estati koneksyon baz done a.</p>
-            </div>
-            <div className="bg-white border p-6 rounded-2xl shadow-xs space-y-4">
-              <button onClick={() => testSupabaseConnection().then(r => showToast(r.success ? 'success' : 'error', r.message))} className="px-4 py-2 bg-amber-500 font-bold rounded-xl text-xs">
-                Tester la Connexion (Ping RLS)
-              </button>
-            </div>
+          <div className="p-6 bg-white border rounded-2xl shadow-xs">
+            <h2 className="text-xl font-bold">Base Supabase & SQL</h2>
           </div>
         )}
-
       </main>
 
       {/* MODAL KREYASYON PROJET */}
@@ -617,7 +825,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Photo du Projet</label>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Photo du Projet (Stockage Local)</label>
                 <input
                   type="file"
                   accept="image/*"
