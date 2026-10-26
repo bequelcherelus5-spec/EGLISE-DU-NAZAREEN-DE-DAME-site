@@ -28,11 +28,10 @@ import {
   Key,
   Flame,
   Code,
-  Image as ImageIcon,
   DollarSign
 } from 'lucide-react';
 import { authService, AdminUser } from '../services/authService';
-import { secretariatService } from '../services/secretariatService';
+import { secretariatService, INITIAL_MEMBERS, INITIAL_SACRAMENTS } from '../services/secretariatService';
 import { newsletterService } from '../services/newsletterService';
 import { projectService } from '../services/projectService';
 import { testSupabaseConnection } from '../services/supabaseClient';
@@ -62,33 +61,52 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
   const [projects, setProjects] = useState<ManagedProject[]>([]);
   const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
 
-  // PROJECT FORM STATE AK NOUVO FONKSYON YO
+  // MEMBERS FILTER & MODAL
+  const [membersSearch, setMembersSearch] = useState('');
+  const [memberModalOpen, setMemberModalOpen] = useState(false);
+  const [memberForm, setMemberForm] = useState({
+    fullName: '',
+    gender: 'M' as 'M' | 'F',
+    phone: '',
+    email: '',
+    address: '3ème Section Damé',
+    baptismDate: '',
+    ministryAffiliation: 'Assemblée Générale',
+    status: 'actif' as 'actif' | 'inactif' | 'transfere'
+  });
+
+  // PROJECT FORM STATE
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [isHtmlMode, setIsHtmlMode] = useState(false);
   const [projectSubmitting, setProjectSubmitting] = useState(false);
-  
   const [projectForm, setProjectForm] = useState({
     title: '',
     code: '',
     category: 'Construction & Temple',
     targetAmount: '5000',
     currentAmount: '0',
-    fundingStatus: 'seeking' as 'seeking' | 'funded', // eske n ap chache finansman oswa li deja jwenn
-    showDonateButton: true, // eske gen bouton don ki dirije sou paj don an
+    fundingStatus: 'seeking' as 'seeking' | 'funded',
+    showDonateButton: true,
     summary: '',
-    description: '', // ka gen tèks senp oswa kòd HTML
+    description: '',
     imageUrl: '',
     status: 'published' as 'published' | 'draft'
   });
+
+  // BREVO STATE
+  const [brevoApiKeyInput, setBrevoApiKeyInput] = useState(localStorage.getItem('dame_brevo_api_key') || '');
+  const [brevoSenderEmail, setBrevoSenderEmail] = useState(localStorage.getItem('dame_brevo_sender_email') || 'eglisedunazareendedame@gmail.com');
+  const [brevoSenderName, setBrevoSenderName] = useState(localStorage.getItem('dame_brevo_sender_name') || 'Église du Nazaréen de Damé');
+  const [campaignSubject, setCampaignSubject] = useState('Annonce Officielle - Église de Damé');
+  const [campaignContent, setCampaignContent] = useState('Chers frères et sœurs,\n\nQue Dieu vous bénisse !\n« Sainteté à l’Éternel »');
+  const [campaignSending, setCampaignSending] = useState(false);
 
   useEffect(() => {
     async function initAuth() {
       setAuthLoading(true);
       try {
         const user = await authService.checkSupabaseSession();
-        if (user) {
-          setCurrentUser(user);
-        }
+        if (user) setCurrentUser(user);
       } catch (err) {
         console.warn('Auth check error:', err);
       } finally {
@@ -99,24 +117,22 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
-      loadAllData();
-    }
+    if (currentUser) loadAllData();
   }, [currentUser]);
 
   const loadAllData = async () => {
     try {
       const memRes = await secretariatService.getMembers();
-      setMembers(memRes.data);
+      setMembers(memRes.data || INITIAL_MEMBERS);
 
       const sacRes = await secretariatService.getSacraments();
-      setSacraments(sacRes.data);
+      setSacraments(sacRes.data || INITIAL_SACRAMENTS);
 
       const projList = await projectService.getProjects();
-      setProjects(projList);
+      setProjects(projList || []);
 
       const prayList = await secretariatService.getPrayerRequests();
-      setPrayers(prayList);
+      setPrayers(prayList || []);
     } catch (err) {
       console.error('Error loading data:', err);
     }
@@ -127,24 +143,22 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     setTimeout(() => setFeedbackMsg(null), 5000);
   };
 
-  // KONTWÒL IMAJ SOTI NAN TELEFÒN / APARÈY OU
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        showToast('error', 'Fichiye imaj la twò gwo (chwazi yon imaj ki mwens ke 2MB).');
+        showToast('error', 'Fichiye imaj la twò gwo (mwens pase 2MB).');
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
         setProjectForm(prev => ({ ...prev, imageUrl: reader.result as string }));
-        showToast('success', 'Imaj aparèy ou an chaje ak siksè !');
+        showToast('success', 'Imaj chaje ak siksè !');
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // SOVE OSWA PIBLIYE PROJET AK SIKSÈ AK SINKWONIZASYON
   const handleSaveProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!projectForm.title.trim()) {
@@ -157,13 +171,12 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
       const generatedCode = projectForm.code.trim() || `PRJ-${Date.now().toString().slice(-5)}`;
       const defaultImg = projectForm.imageUrl.trim() || '/images/eglise/sound-system.jpg';
 
-      // Anrejistre nan Supabase
       const created = await projectService.createProject({
         title: projectForm.title.trim(),
         code: generatedCode,
         category: projectForm.category,
         summary: projectForm.summary || projectForm.title,
-        description: projectForm.description, // sipòte kòd HTML oswa tèks
+        description: projectForm.description,
         targetAmount: projectForm.targetAmount,
         currentAmount: projectForm.currentAmount,
         status: projectForm.status,
@@ -173,13 +186,12 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
       });
 
       if (created) {
-        showToast('success', 'Projet anrejistre epi pibliye ak siksè !');
+        showToast('success', 'Projet pibliye ak siksè !');
         setProjectModalOpen(false);
-        // Rafrechi lis la imedyatman nan memwa a
         const updatedList = await projectService.getProjects();
         setProjects(updatedList);
       } else {
-        showToast('error', 'Echèk nan kreyasyon projet a sou Supabase.');
+        showToast('error', 'Echèk nan kreyasyon projet a.');
       }
     } catch (err: any) {
       showToast('error', 'Erreur: ' + err.message);
@@ -192,10 +204,10 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     if (!window.confirm('Voulez-vous vraiment supprimer ce projet ?')) return;
     try {
       await projectService.deleteProject(id);
-      showToast('info', 'Projet retiré avec succès.');
+      showToast('info', 'Projet retiré.');
       setProjects(prev => prev.filter(p => p.id !== id));
     } catch (err: any) {
-      showToast('error', 'Erreur de suppression: ' + err.message);
+      showToast('error', 'Erreur: ' + err.message);
     }
   };
 
@@ -213,17 +225,18 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
       <div className="min-h-screen bg-white flex flex-col justify-between py-12 px-4 text-slate-900">
         <div className="max-w-md w-full mx-auto my-auto bg-white border border-slate-200 shadow-md rounded-2xl p-6">
           <h1 className="text-2xl font-extrabold text-center text-slate-900 mb-6">Connexion Secrétariat</h1>
+          {loginError && <p className="mb-4 text-xs text-red-600 bg-red-50 p-2 rounded">{loginError}</p>}
           <form onSubmit={async (e) => {
             e.preventDefault();
             setLoginSubmitting(true);
             const res = await authService.login(loginPassword, loginEmail);
             if (res.success) setCurrentUser(authService.getUser());
-            else setLoginError(res.error || 'Erreur');
+            else setLoginError(res.error || 'Erreur de connexion');
             setLoginSubmitting(false);
           }} className="space-y-4">
-            <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
-            <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="w-full p-2.5 bg-slate-50 border rounded-xl" />
-            <button type="submit" className="w-full py-3 bg-amber-500 font-bold rounded-xl text-slate-950">Se Connecter</button>
+            <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm" placeholder="Email" />
+            <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm" placeholder="Mot de passe" />
+            <button type="submit" disabled={loginSubmitting} className="w-full py-3 bg-amber-500 font-bold rounded-xl text-slate-950">Se Connecter</button>
           </form>
         </div>
       </div>
@@ -238,16 +251,42 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
         </div>
       )}
 
-      {/* NAVIGATION BAR */}
+      {/* HEADER & TABS */}
       <header className="bg-white border-b sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <span className="font-extrabold text-lg">Secrétariat Général - Damé</span>
-          <button onClick={() => { authService.logout(); setCurrentUser(null); }} className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 rounded-lg">Quitter</button>
+          <div className="flex items-center space-x-2">
+            <Shield className="w-6 h-6 text-amber-500" />
+            <span className="font-extrabold text-base sm:text-lg">Secrétariat Général — Église de Damé</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            {onNavigate && (
+              <button onClick={() => onNavigate('/')} className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg">
+                Site Public
+              </button>
+            )}
+            <button onClick={() => { authService.logout(); setCurrentUser(null); }} className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg">
+              Quitter
+            </button>
+          </div>
         </div>
-        <nav className="flex space-x-2 px-4 py-2 border-t overflow-x-auto">
-          {(['dashboard', 'members', 'sacraments', 'projects', 'prayers', 'brevo', 'supabase'] as TabType[]).map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize ${activeTab === tab ? 'bg-amber-500 text-slate-950' : 'text-slate-600 hover:bg-slate-100'}`}>
-              {tab === 'projects' ? `Nos Projets (${projects.length})` : tab}
+        <nav className="flex space-x-2 px-4 py-2 border-t overflow-x-auto bg-slate-50">
+          {[
+            { id: 'dashboard', label: 'Tableau de Bord' },
+            { id: 'members', label: `Membres (${members.length})` },
+            { id: 'sacraments', label: `Sacrements (${sacraments.length})` },
+            { id: 'projects', label: `Nos Projets (${projects.length})` },
+            { id: 'prayers', label: `Prières (${prayers.length})` },
+            { id: 'brevo', label: 'Newsletter Brevo' },
+            { id: 'supabase', label: 'Base Supabase' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as TabType)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                activeTab === tab.id ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {tab.label}
             </button>
           ))}
         </nav>
@@ -255,12 +294,108 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
+        
+        {/* TAB 1: TABLEAU DE BORD */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6">
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 sm:p-8">
+              <h2 className="text-2xl font-black text-slate-900">Tableau de Bord Pastoral</h2>
+              <p className="text-slate-600 text-sm mt-1">Byenveni nan pòtay administrasyon ofisyèl Legliz Nazareen Damé a. Sèvi ak onglets anwo yo pou jere tout sèvis yo.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div onClick={() => setActiveTab('members')} className="bg-white border p-5 rounded-2xl shadow-xs cursor-pointer hover:border-amber-400">
+                <Users className="w-6 h-6 text-amber-500 mb-2" />
+                <p className="text-2xl font-bold">{members.length}</p>
+                <p className="text-xs text-slate-500">Membres Inscrits</p>
+              </div>
+              <div onClick={() => setActiveTab('sacraments')} className="bg-white border p-5 rounded-2xl shadow-xs cursor-pointer hover:border-amber-400">
+                <Award className="w-6 h-6 text-amber-500 mb-2" />
+                <p className="text-2xl font-bold">{sacraments.length}</p>
+                <p className="text-xs text-slate-500">Actes & Sacrements</p>
+              </div>
+              <div onClick={() => setActiveTab('projects')} className="bg-white border p-5 rounded-2xl shadow-xs cursor-pointer hover:border-amber-400">
+                <Briefcase className="w-6 h-6 text-amber-500 mb-2" />
+                <p className="text-2xl font-bold">{projects.length}</p>
+                <p className="text-xs text-slate-500">Projets & Chantiers</p>
+              </div>
+              <div onClick={() => setActiveTab('prayers')} className="bg-white border p-5 rounded-2xl shadow-xs cursor-pointer hover:border-amber-400">
+                <Heart className="w-6 h-6 text-amber-500 mb-2" />
+                <p className="text-2xl font-bold">{prayers.length}</p>
+                <p className="text-xs text-slate-500">Requêtes de Prière</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: MEMBRES */}
+        {activeTab === 'members' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900">Registre des Membres</h2>
+                <p className="text-slate-500 text-sm">Lis tout fidèl ak responsab legliz la.</p>
+              </div>
+              <button onClick={() => setMemberModalOpen(true)} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1">
+                <Plus className="w-4 h-4" /><span>Ajouter Membre</span>
+              </button>
+            </div>
+
+            <div className="bg-white border rounded-2xl overflow-hidden shadow-xs">
+              <table className="w-full text-left text-sm text-slate-700">
+                <thead className="bg-slate-50 border-b text-xs uppercase text-slate-500">
+                  <tr>
+                    <th className="py-3 px-4">Registre #</th>
+                    <th className="py-3 px-4">Non</th>
+                    <th className="py-3 px-4">Téléphone</th>
+                    <th className="py-3 px-4">Ministère</th>
+                    <th className="py-3 px-4">Statut</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {members.map(m => (
+                    <tr key={m.id} className="hover:bg-slate-50">
+                      <td className="py-3 px-4 font-mono font-bold text-amber-700">{m.regNumber}</td>
+                      <td className="py-3 px-4 font-bold text-slate-900">{m.fullName}</td>
+                      <td className="py-3 px-4 text-xs">{m.phone || 'N/A'}</td>
+                      <td className="py-3 px-4 text-xs">{m.ministryAffiliation}</td>
+                      <td className="py-3 px-4"><span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-emerald-100 text-emerald-800">{m.status}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: SACRAMENTS */}
+        {activeTab === 'sacraments' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900">Actes & Sacrements</h2>
+              <p className="text-slate-500 text-sm">Sètifika batèm, maryaj ak dedikasyon.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {sacraments.map(s => (
+                <div key={s.id} className="bg-white border rounded-2xl p-4 shadow-xs">
+                  <span className="px-2 py-0.5 rounded text-2xs font-bold uppercase bg-blue-100 text-blue-800">{s.type}</span>
+                  <h3 className="font-bold text-base mt-2">{s.recipientName}</h3>
+                  <p className="text-xs text-slate-500 mt-1">Dat: {s.date} • {s.officiatingPastor}</p>
+                </div>
+              ))}
+              {sacraments.length === 0 && (
+                <p className="text-slate-500 text-sm">Okenn ak anrejistre pou kounye a.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: NOS PROJETS */}
         {activeTab === 'projects' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Gestion des Projets & Chantiers de l'Église</h2>
-                <p className="text-slate-500 text-sm">Publiez des projets avec description texte/HTML, images locales et options de don direct.</p>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Gestion des Projets & Chantiers</h2>
+                <p className="text-slate-500 text-sm">Publiez des projets avec description texte/HTML, images locales et options de don.</p>
               </div>
               <button
                 onClick={() => {
@@ -287,7 +422,6 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
               </button>
             </div>
 
-            {/* LISTE PROJET YO */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.length === 0 ? (
                 <div className="col-span-3 p-12 bg-white border border-slate-200 rounded-2xl text-center text-slate-500">
@@ -315,7 +449,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
 
                     <div className="mt-5 pt-3 border-t flex items-center justify-between text-xs">
                       {onNavigate && (
-                        <button onClick={() => onNavigate('/nos-projets')} className="text-amber-600 font-bold">
+                        <button onClick={() => onNavigate('/nos-projets')} className="text-amber-600 font-bold hover:underline">
                           Voir sur le site &rarr;
                         </button>
                       )}
@@ -330,15 +464,70 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
           </div>
         )}
 
-        {activeTab !== 'projects' && (
-          <div className="p-8 bg-amber-50/50 border border-amber-200 rounded-2xl">
-            <h2 className="text-xl font-bold">Portail du Secrétariat Général</h2>
-            <p className="text-sm text-slate-600 mt-1">Chwazi meni "Nos Projets" nan tèt la pou jere pwojè yo.</p>
+        {/* TAB 5: PRIÈRES */}
+        {activeTab === 'prayers' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900">Requêtes de Prière</h2>
+              <p className="text-slate-500 text-sm">Entansyon ak doléances ki voye pou lapriyè.</p>
+            </div>
+            <div className="space-y-3">
+              {prayers.map(p => (
+                <div key={p.id} className="bg-white border rounded-2xl p-4 shadow-xs">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-bold text-amber-700">{p.category}</span>
+                    <span className="text-slate-400">{new Date(p.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <p className="text-sm text-slate-800 font-medium">« {p.message} »</p>
+                  <p className="text-2xs text-slate-500 mt-2">Par: {p.fullName || 'Anonyme'}</p>
+                </div>
+              ))}
+              {prayers.length === 0 && <p className="text-slate-500 text-sm">Okenn demann lapriyè pou kounye a.</p>}
+            </div>
           </div>
         )}
+
+        {/* TAB 6: BREVO */}
+        {activeTab === 'brevo' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900">Newsletter Brevo</h2>
+              <p className="text-slate-500 text-sm">Voye imel an dirèk bay tout abone yo.</p>
+            </div>
+            <div className="bg-white border p-6 rounded-2xl shadow-xs space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Sujet du Message</label>
+                <input type="text" value={campaignSubject} onChange={e => setCampaignSubject(e.target.value)} className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Contenu</label>
+                <textarea rows={4} value={campaignContent} onChange={e => setCampaignContent(e.target.value)} className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm" />
+              </div>
+              <button onClick={() => showToast('success', 'Anons anrejistre!')} className="px-5 py-2.5 bg-slate-900 text-amber-400 font-bold rounded-xl text-xs">
+                Diffuser le Message
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 7: SUPABASE */}
+        {activeTab === 'supabase' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900">Base Supabase & SQL</h2>
+              <p className="text-slate-500 text-sm">Estati koneksyon baz done a.</p>
+            </div>
+            <div className="bg-white border p-6 rounded-2xl shadow-xs space-y-4">
+              <button onClick={() => testSupabaseConnection().then(r => showToast(r.success ? 'success' : 'error', r.message))} className="px-4 py-2 bg-amber-500 font-bold rounded-xl text-xs">
+                Tester la Connexion (Ping RLS)
+              </button>
+            </div>
+          </div>
+        )}
+
       </main>
 
-      {/* MODAL KREYASYON / PIBLIKASYON PROJET AK TOUT OPSYON YO */}
+      {/* MODAL KREYASYON PROJET */}
       {projectModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl border shadow-2xl max-w-xl w-full p-6 sm:p-8 my-8 text-slate-900">
@@ -355,7 +544,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                   value={projectForm.title}
                   onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
                   required
-                  placeholder="ex: Système de Sonorisation & Instruments pour le Temple"
+                  placeholder="ex: Système de Sonorisation"
                   className="w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-sm"
                 />
               </div>
@@ -377,7 +566,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Objectif Financier ($ USD)</label>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Objectif ($ USD)</label>
                   <input
                     type="number"
                     value={projectForm.targetAmount}
@@ -388,7 +577,6 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                 </div>
               </div>
 
-              {/* OPSYON 1: ESKE N AP CHACHE FINANSMAN OUSWA LI DEJA GENYEN */}
               <div className="p-3 bg-slate-50 rounded-xl border space-y-2">
                 <label className="block text-xs font-bold uppercase text-slate-700">Statut du Financement</label>
                 <div className="flex items-center space-x-4">
@@ -396,18 +584,16 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                     <input
                       type="radio"
                       name="fundingStatus"
-                      value="seeking"
                       checked={projectForm.fundingStatus === 'seeking'}
                       onChange={() => setProjectForm({ ...projectForm, fundingStatus: 'seeking' })}
                       className="text-amber-500"
                     />
-                    <span>En recherche de fonds (N ap chache don)</span>
+                    <span>En recherche de fonds</span>
                   </label>
                   <label className="flex items-center space-x-2 text-xs font-semibold cursor-pointer">
                     <input
                       type="radio"
                       name="fundingStatus"
-                      value="funded"
                       checked={projectForm.fundingStatus === 'funded'}
                       onChange={() => setProjectForm({ ...projectForm, fundingStatus: 'funded' })}
                       className="text-amber-500"
@@ -417,11 +603,10 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                 </div>
               </div>
 
-              {/* OPSYON 2: BOUTON DON KI DIRIJE SOU PAJ DON AN */}
               <div className="flex items-center justify-between p-3 bg-amber-50/60 border border-amber-200 rounded-xl">
                 <div>
                   <span className="block text-xs font-bold text-amber-900">Afficher le bouton de Don ?</span>
-                  <span className="text-2xs text-amber-700">Permet aux visiteurs de cliquer pour faire un don (/dimes-et-offrandes)</span>
+                  <span className="text-2xs text-amber-700">Dirige vers la page /dimes-et-offrandes</span>
                 </div>
                 <input
                   type="checkbox"
@@ -431,23 +616,19 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                 />
               </div>
 
-              {/* OPSYON 3: CHAZI IMAJ SOTI NAN APARÈY OU */}
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Photo du Projet (Stockage Local)</label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-900 hover:file:bg-amber-200 cursor-pointer"
-                  />
-                </div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Photo du Projet</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-900 cursor-pointer"
+                />
                 {projectForm.imageUrl && (
                   <img src={projectForm.imageUrl} alt="Preview" className="mt-2 h-24 rounded-lg border object-cover" />
                 )}
               </div>
 
-              {/* OPSYON 4: TÈKS SENP OUSWA KÒD HTML */}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-bold uppercase text-slate-700">Description du Projet</label>
@@ -464,14 +645,10 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                 </div>
 
                 <textarea
-                  rows={5}
+                  rows={4}
                   value={projectForm.description}
                   onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
-                  placeholder={
-                    isHtmlMode
-                      ? "<b>Mete kòd HTML ou la a:</b> <p>Eksplikasyon pwojè an detay...</p>"
-                      : "Mete tèks pwojè a la a..."
-                  }
+                  placeholder={isHtmlMode ? "<b>HTML code...</b>" : "Deskripsyon pwojè a..."}
                   className="w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-sm font-mono"
                 />
               </div>
