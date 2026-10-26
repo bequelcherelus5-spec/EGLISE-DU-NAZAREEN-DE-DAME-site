@@ -415,29 +415,33 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
   };
 
   // ----------------------------------------------------
-  // BREVO ACTIONS
+  // BREVO ACTIONS (MODIFIÉ POUR LOCALSTORAGE SANS ERREUR SERVEUR)
   // ----------------------------------------------------
   const handleSaveBrevo = async (e: React.FormEvent) => {
     e.preventDefault();
     setBrevoSaving(true);
     try {
-      const res = await newsletterService.saveBrevoSettings({
-        apiKey: brevoApiKeyInput.trim() || undefined,
+      // Sauvegarde 100% autonome dans localStorage pour Cloudflare Pages
+      const keyToSave = brevoApiKeyInput.trim();
+      if (keyToSave) {
+        localStorage.setItem('dame_brevo_api_key', keyToSave);
+      }
+      localStorage.setItem('dame_brevo_sender_email', brevoSenderEmail.trim());
+      localStorage.setItem('dame_brevo_sender_name', brevoSenderName.trim());
+      localStorage.setItem('dame_brevo_list_id', brevoListId.trim());
+
+      setBrevoSettings({
+        hasApiKey: Boolean(keyToSave || localStorage.getItem('dame_brevo_api_key')),
+        apiKeyPreview: keyToSave ? '••••••••••••••••' : (localStorage.getItem('dame_brevo_api_key') ? '••••••••••••••••' : undefined),
         senderEmail: brevoSenderEmail.trim(),
         senderName: brevoSenderName.trim(),
         brevoListId: brevoListId.trim()
       });
 
-      if (res.success) {
-        showToast('success', 'Configuration Brevo enregistrée.');
-        const updated = await newsletterService.getBrevoSettings();
-        if (updated) setBrevoSettings(updated);
-        setBrevoApiKeyInput('');
-      } else {
-        showToast('error', res.message || 'Erreur d’enregistrement Brevo.');
-      }
+      showToast('success', 'Configuration enregistrée localement avec succès !');
+      setBrevoApiKeyInput('');
     } catch (err: any) {
-      showToast('error', err.message);
+      showToast('error', 'Erreur de sauvegarde locale: ' + err.message);
     } finally {
       setBrevoSaving(false);
     }
@@ -447,7 +451,8 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     setBrevoTesting(true);
     setBrevoTestResult(null);
     try {
-      const res = await newsletterService.testBrevoConnection(brevoApiKeyInput.trim() || undefined);
+      const activeKey = brevoApiKeyInput.trim() || localStorage.getItem('dame_brevo_api_key') || undefined;
+      const res = await newsletterService.testBrevoConnection(activeKey);
       if (res.success) {
         setBrevoTestResult({
           success: true,
@@ -486,10 +491,11 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     try {
       const subscribers = await newsletterService.getSubscribers();
       const senderClean = (brevoSenderEmail || 'eglisedunazareendedame@gmail.com').toLowerCase().trim();
-      // RÈGLE STRICTE : L'expéditeur (eglisedunazareendedame@gmail.com) est configuré UNIQUEMENT comme sender, jamais comme destinataire
       const recipients = subscribers
         .filter(s => s.isActive && s.email.toLowerCase().trim() !== senderClean)
         .map(s => s.email);
+
+      const activeKey = brevoApiKeyInput.trim() || localStorage.getItem('dame_brevo_api_key') || undefined;
 
       const res = await newsletterService.sendAnnonceToSubscribers({
         subject: campaignSubject,
@@ -502,7 +508,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
         recipients,
         senderEmail: brevoSenderEmail,
         senderName: brevoSenderName,
-        apiKey: brevoApiKeyInput.trim() || undefined
+        apiKey: activeKey
       });
 
       if (res.success) {
@@ -525,7 +531,6 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
         setCampaignSubject('');
         setCampaignContent('');
       } else {
-        // Clarification des messages d'erreur sans message générique rouge
         let clarifiedMessage = res.message || 'Échec de la communication avec le service d’envoi.';
         if (res.httpStatus === 401 || clarifiedMessage.includes('401') || clarifiedMessage.toLowerCase().includes('clé')) {
           clarifiedMessage = 'Vérifiez que la clé VITE_BREVO_API_KEY est bien configurée dans les variables d’environnement Cloudflare Pages.';
@@ -541,7 +546,6 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
         showToast('error', clarifiedMessage);
       }
     } catch (err: any) {
-      // Fallback sécurisé en cas d'exception inattendue
       setBroadcastBanner({
         type: 'simulated',
         title: 'Annonce enregistrée et simulée avec succès !',
