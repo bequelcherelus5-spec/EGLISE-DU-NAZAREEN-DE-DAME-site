@@ -167,6 +167,7 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
             {projects.map((proj) => {
               const hasImages = proj.images && proj.images.length > 0;
               const banner = hasImages ? proj.images[0] : null;
+              const isHtml = proj.htmlContent || proj.description?.includes('<');
 
               return (
                 <div
@@ -174,7 +175,6 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
                   className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col justify-between"
                 >
                   <div className="space-y-4">
-                    {/* Project Image */}
                     {banner ? (
                       <div className="h-48 overflow-hidden bg-slate-100 relative group">
                         <img 
@@ -222,9 +222,17 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
                         </p>
                       )}
 
-                      <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                        {proj.description}
-                      </p>
+                      {/* Rendu HTML ou Texte sécurisé */}
+                      {isHtml ? (
+                        <div 
+                          className="text-xs text-slate-600 line-clamp-3 leading-relaxed prose prose-sm max-w-none overflow-hidden"
+                          dangerouslySetInnerHTML={{ __html: proj.htmlContent || proj.description }}
+                        />
+                      ) : (
+                        <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                          {proj.description}
+                        </p>
+                      )}
 
                       <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                         <span className="flex items-center space-x-1">
@@ -265,7 +273,7 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
       {/* DETAIL MODAL FOR SELECTED PROJECT */}
       {selectedProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-10 shadow-2xl border border-slate-200 space-y-6 max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-10 shadow-2xl border border-slate-200 space-y-6 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b pb-4">
               <div className="flex items-center space-x-2">
                 <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
@@ -285,7 +293,7 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
               </button>
             </div>
 
-            {selectedProject.images && selectedProject.images.length > 0 && (
+            {selectedProject.images && selectedProject.images.length > 0 && !selectedProject.htmlContent?.includes('<style>') && (
               <div className="rounded-2xl overflow-hidden bg-slate-900 max-h-80">
                 <img 
                   src={selectedProject.images[0]} 
@@ -311,15 +319,16 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-800 leading-relaxed whitespace-pre-line">
-              {selectedProject.description}
-            </div>
-
-            {selectedProject.htmlContent && (
+            {/* Rendu HTML Complet ou Texte Normal dans la Modale */}
+            {selectedProject.htmlContent || selectedProject.description?.includes('<') ? (
               <div 
-                className="prose prose-sm max-w-none text-slate-700 pt-4 border-t border-slate-100"
-                dangerouslySetInnerHTML={{ __html: selectedProject.htmlContent }}
+                className="prose prose-sm max-w-none text-slate-700 pt-2 overflow-x-auto"
+                dangerouslySetInnerHTML={{ __html: selectedProject.htmlContent || selectedProject.description }}
               />
+            ) : (
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-800 leading-relaxed whitespace-pre-line">
+                {selectedProject.description}
+              </div>
             )}
 
             {/* Additional Project Photos */}
@@ -385,7 +394,6 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
               </button>
             </div>
 
-            {/* Onglets Choix du mode de soutien */}
             <div className="flex items-center gap-2 border-b pb-2">
               <button
                 type="button"
@@ -413,7 +421,6 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
               </button>
             </div>
 
-            {/* TAB PAYPAL DIRECT */}
             {supportTab === 'paypal' && (
               <div className="space-y-4 pt-1 animate-in fade-in">
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
@@ -452,7 +459,6 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
               </div>
             )}
 
-            {/* TAB FORMULAIRE */}
             {supportTab === 'form' && (
               sent ? (
                 <div className="py-8 text-center space-y-2">
