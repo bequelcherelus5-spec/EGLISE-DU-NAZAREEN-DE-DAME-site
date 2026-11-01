@@ -56,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
     { path: '/leson-biblik', label: t('nav_lessons', 'Lekòl Dimanch'), icon: BookOpen },
     { path: '/projets', label: t('nav_projects', 'Nos Projets'), icon: HeartHandshake },
     { path: '/faire-un-don', label: t('nav_donations', 'Faire un Don'), icon: HeartHandshake },
-    { path: '/medias', label: t('nav_media', 'Médias & Prédications'), icon: Tv },
+    { path: '/media', label: t('nav_media', 'Media'), icon: Tv },
     { path: '/jeux-bibliques', label: t('nav_bible_games', 'Jeux Bibliques'), icon: Trophy },
     { path: '/faq', label: t('nav_faq', 'FAQ'), icon: HelpCircle },
     { path: '/contact', label: t('nav_contact', 'Contact'), icon: Mail },
@@ -223,6 +223,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                     src={churchSealImg} 
                     alt="Sceau Officiel Église du Nazaréen de Damé" 
                     className="w-full h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/eglise/sceau-officiel.svg';
+                    }}
                   />
                 </div>
               </div>

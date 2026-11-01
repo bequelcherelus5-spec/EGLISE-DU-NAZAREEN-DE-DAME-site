@@ -96,8 +96,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 p-0.5 shadow-lg flex-shrink-0">
-                <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                  <Church className="w-6 h-6 text-amber-400" />
+                <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center p-1 overflow-hidden">
+                  <img
+                    src="/images/eglise/sceau-officiel.svg"
+                    alt="Sceau Officiel"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
               </div>
               <div>
@@ -181,8 +185,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
-                <button onClick={() => onNavigate('/medias')} className="hover:text-amber-300 transition">
-                  Prédications, Vidéos &amp; Galerie Photos
+                <button onClick={() => onNavigate('/media')} className="hover:text-amber-300 transition">
+                  Media
                 </button>
               </li>
               <li>

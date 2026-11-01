@@ -104,3 +104,43 @@
   writing-mode: horizontal-tb !important;
   direction: ltr !important;
 }
+
+/* =========================================================
+   EXTANSYON TRADIKSYON 100% ENVIZIB (INVISIBLE TRANSLATION)
+   Zero bannière, zero barre Google, zero décalage de page
+   ========================================================= */
+.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-tooltip,
+.goog-tooltip:hover,
+.goog-te-spinner-pos {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+#google_translate_element {
+  display: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+.skiptranslate:not(.church-lang-switcher) {
+  display: none !important;
+}
+

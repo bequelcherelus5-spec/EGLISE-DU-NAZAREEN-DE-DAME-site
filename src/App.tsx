@@ -100,6 +100,7 @@ export default function App() {
         return <Events onNavigate={navigateTo} />;
       case '/projets':
         return <Projects onNavigate={navigateTo} />;
+      case '/media':
       case '/medias':
         return <Media onNavigate={navigateTo} />;
       case '/priere':

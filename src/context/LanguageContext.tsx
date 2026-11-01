@@ -36,7 +36,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'nav_testimonies': 'Temwayaj Gras Bondye',
     'nav_lessons': 'Lekòl Dimanch & Leson',
     'nav_projects': 'Nos Projets',
-    'nav_media': 'Medya & Prèch',
+    'nav_media': 'Media',
     'nav_bible_games': 'Jwèt Biblik',
     'nav_contact': 'Kontak',
     'nav_secretariat': 'Sekretarya',
@@ -90,7 +90,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'nav_testimonies': 'Témoignages de Foi',
     'nav_lessons': 'École du Dimanche & Leçons',
     'nav_projects': 'Projets (CDEJ HA 0926)',
-    'nav_media': 'Médias & Prédications',
+    'nav_media': 'Media',
     'nav_bible_games': 'Jeux Bibliques',
     'nav_contact': 'Contact',
     'nav_secretariat': 'Secrétariat',
@@ -143,7 +143,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'nav_testimonies': 'Testimonios de Fe',
     'nav_lessons': 'Escuela Dominical y Lecciones',
     'nav_projects': 'Proyectos (CDEJ HA 0926)',
-    'nav_media': 'Medios y Prédicas',
+    'nav_media': 'Media',
     'nav_bible_games': 'Juegos Bíblicos',
     'nav_contact': 'Contacto',
     'nav_secretariat': 'Secretaría',
@@ -196,7 +196,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'nav_testimonies': 'Faith Testimonies',
     'nav_lessons': 'Sunday School & Lessons',
     'nav_projects': 'Projects (CDEJ HA 0926)',
-    'nav_media': 'Media & Sermons',
+    'nav_media': 'Media',
     'nav_bible_games': 'Bible Games',
     'nav_contact': 'Contact',
     'nav_secretariat': 'Secretariat',
@@ -438,24 +438,43 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
       localStorage.setItem('dame_selected_lang', lang);
       document.documentElement.lang = lang;
 
-      // Google Translate cookie setting
+      // Google Translate cookie setting across scopes
       const domain = window.location.hostname;
-      document.cookie = `googtrans=/fr/${lang}; path=/;`;
-      document.cookie = `googtrans=/fr/${lang}; path=/; domain=${domain}`;
+      const rootDomain = domain.replace(/^www\./, '');
 
-      // Trigger translate on DOM nodes
-      setTimeout(() => translateDOM(lang), 50);
-
-      // Attempt Google Translate combo trigger if available
-      try {
-        const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
-        if (combo) {
-          combo.value = lang;
-          combo.dispatchEvent(new Event('change'));
+      if (lang === 'fr') {
+        // Pour le français, supprimer le cookie de traduction Google
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain};`;
+        if (domain.includes('.')) {
+          document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${rootDomain};`;
         }
-      } catch (e) {
-        console.warn('Google translate combo sync error:', e);
+      } else {
+        document.cookie = `googtrans=/fr/${lang}; path=/;`;
+        document.cookie = `googtrans=/fr/${lang}; path=/; domain=${domain};`;
+        if (domain.includes('.')) {
+          document.cookie = `googtrans=/fr/${lang}; path=/; domain=.${rootDomain};`;
+        }
       }
+
+      // Trigger translate on DOM nodes immediately
+      setTimeout(() => translateDOM(lang), 30);
+
+      // Trigger Google Translate combo element
+      const triggerGoogleCombo = (attempts = 0) => {
+        try {
+          const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+          if (combo) {
+            combo.value = lang === 'fr' ? '' : lang;
+            combo.dispatchEvent(new Event('change'));
+          } else if (attempts < 8) {
+            setTimeout(() => triggerGoogleCombo(attempts + 1), 200);
+          }
+        } catch (e) {
+          console.warn('Google translate combo sync:', e);
+        }
+      };
+      triggerGoogleCombo();
 
       window.dispatchEvent(new CustomEvent('church-language-changed', { detail: { lang } }));
     }

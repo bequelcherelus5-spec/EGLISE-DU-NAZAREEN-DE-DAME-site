@@ -68,6 +68,7 @@ export interface ProjectImpact {
     label: string;
     value: string | number;
     icon: string;
+    sublabel?: string;
   }[];
   pillars: {
     title: string;
@@ -78,7 +79,7 @@ export interface ProjectImpact {
 export interface MediaItem {
   id: string;
   title: string;
-  type: 'sermon_audio' | 'sermon_video' | 'podcast' | 'gallery_photo';
+  type: 'sermon_audio' | 'sermon_video' | 'podcast' | 'gallery_photo' | 'video' | 'audio' | 'image';
   speaker?: string;
   reference?: string;
   date: string;
@@ -87,7 +88,10 @@ export interface MediaItem {
   duration?: string;
   category?: string;
   description?: string;
+  created_at?: string;
 }
+
+export type { ChurchMedia } from '../services/mediaService';
 
 export interface ChurchPost {
   id: string;
@@ -192,6 +196,7 @@ export interface ManagedProject {
   code?: string;
   partner?: string;
   category: string;
+  summary?: string;
   description: string;
   htmlContent?: string;
   images: string[];

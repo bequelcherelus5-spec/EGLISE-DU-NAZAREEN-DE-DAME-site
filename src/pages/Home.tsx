@@ -341,19 +341,26 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
               </h2>
 
               <p className="text-sm text-slate-300 leading-relaxed">
-                Le <strong>Centre de Développement de l’Enfant et du Jeune (CDEJ HA 0926)</strong> est le projet social actif de l’Église du Nazaréen de Damé. En partenariat avec Compassion International, nous délivrons plus de 265 enfants et familles de la 3ème Section Damé de la précarité au nom de Jésus.
+                Le <strong>Centre de Développement de l’Enfant et du Jeune (CDEJ HA 0926)</strong> est le projet social actif de l’Église du Nazaréen de Damé. En partenariat avec Compassion International, nous accompagnons plus de 200 enfants parrainés, organisons des cliniques mobiles chaque année pour plus de 200 bénéficiaires, animons des clubs et formations chaque mercredi, vendredi et samedi, et réunissons les familles au Club des Parents chaque dernier vendredi du mois.
               </p>
 
               {/* Statistics Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-                {OFFICIAL_PROJECT_CDEJ.metrics.slice(0, 6).map((m, idx) => (
-                  <div key={idx} className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                    <span className="block text-xl font-extrabold text-amber-400 font-serif">
-                      {m.value}
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-medium">
-                      {m.label}
-                    </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                {OFFICIAL_PROJECT_CDEJ.metrics.map((m, idx) => (
+                  <div key={idx} className="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 flex flex-col justify-between">
+                    <div>
+                      <span className="block text-lg sm:text-xl font-extrabold text-amber-400 font-serif leading-tight">
+                        {m.value}
+                      </span>
+                      <span className="text-xs text-white font-bold block mt-1">
+                        {m.label}
+                      </span>
+                    </div>
+                    {m.sublabel && (
+                      <span className="text-[11px] text-amber-300/80 font-medium block mt-1">
+                        {m.sublabel}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

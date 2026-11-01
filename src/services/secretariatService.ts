@@ -484,8 +484,22 @@ CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
     first_name TEXT,
     last_name TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    brevo_contact_id BIGINT,
     subscribed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 6. Table des Médias (Vidéos, Audios, Photos)
+CREATE TABLE IF NOT EXISTS public.media_items (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    type VARCHAR(20) NOT NULL DEFAULT 'video',
+    url TEXT NOT NULL,
+    thumbnail TEXT,
+    description TEXT,
+    category TEXT DEFAULT 'Culte d''Adoration',
+    speaker TEXT DEFAULT 'Pasteur Bequel CHERELUS',
+    duration TEXT,
+    date TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ====================================================================
@@ -499,41 +513,43 @@ ALTER TABLE public.sacraments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.prayer_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.media_items ENABLE ROW LEVEL SECURITY;
 
--- Politiques pour les Membres (Accès authentifié et clé anon autorisés)
+-- Politiques pour les Membres
 DROP POLICY IF EXISTS "Membres lecture autorisée" ON public.members;
 CREATE POLICY "Membres lecture autorisée" ON public.members FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "Membres écriture autorisée" ON public.members;
 CREATE POLICY "Membres écriture autorisée" ON public.members FOR ALL USING (true);
 
 -- Politiques pour les Sacrements
 DROP POLICY IF EXISTS "Sacrements lecture autorisée" ON public.sacraments;
 CREATE POLICY "Sacrements lecture autorisée" ON public.sacraments FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "Sacrements écriture autorisée" ON public.sacraments;
 CREATE POLICY "Sacrements écriture autorisée" ON public.sacraments FOR ALL USING (true);
 
 -- Politiques pour les Projets
 DROP POLICY IF EXISTS "Projets lecture publique" ON public.projects;
 CREATE POLICY "Projets lecture publique" ON public.projects FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "Projets écriture autorisée" ON public.projects;
 CREATE POLICY "Projets écriture autorisée" ON public.projects FOR ALL USING (true);
 
 -- Politiques pour les Requêtes de prière
 DROP POLICY IF EXISTS "Prières insertion publique" ON public.prayer_requests;
 CREATE POLICY "Prières insertion publique" ON public.prayer_requests FOR INSERT WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Prières lecture autorisée" ON public.prayer_requests;
 CREATE POLICY "Prières lecture autorisée" ON public.prayer_requests FOR ALL USING (true);
 
 -- Politiques pour la Newsletter
 DROP POLICY IF EXISTS "Newsletter inscription publique" ON public.newsletter_subscribers;
 CREATE POLICY "Newsletter inscription publique" ON public.newsletter_subscribers FOR INSERT WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Newsletter gestion autorisée" ON public.newsletter_subscribers;
 CREATE POLICY "Newsletter gestion autorisée" ON public.newsletter_subscribers FOR ALL USING (true);
+
+-- Politiques pour les Médias
+DROP POLICY IF EXISTS "Médias lecture publique" ON public.media_items;
+CREATE POLICY "Médias lecture publique" ON public.media_items FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Médias gestion secrétariat" ON public.media_items;
+CREATE POLICY "Médias gestion secrétariat" ON public.media_items FOR ALL USING (true);
 `;
   }
 };

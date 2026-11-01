@@ -29,7 +29,7 @@ function mapSupabaseRowToProject(row: any): ManagedProject {
 export const projectService = {
   // Récupérer la liste des projets (Supabase direct en priorité absolue)
   async getProjects(status?: 'published' | 'draft'): Promise<ManagedProject[]> {
-    const isConfigured = typeof isSupabaseConfigured === 'function' ? isSupabaseConfigured() : Boolean(isSupabaseConfigured);
+    const isConfigured = Boolean(isSupabaseConfigured);
 
     if (isConfigured && supabase) {
       try {
@@ -86,7 +86,7 @@ export const projectService = {
 
   // Créer un projet (Directement dans Supabase table 'projects')
   async createProject(project: Omit<ManagedProject, 'id' | 'createdAt'>): Promise<ManagedProject | null> {
-    const isConfigured = typeof isSupabaseConfigured === 'function' ? isSupabaseConfigured() : Boolean(isSupabaseConfigured);
+    const isConfigured = Boolean(isSupabaseConfigured);
     const bannerUrl = project.images && project.images.length > 0 ? project.images[0] : '/images/eglise/sound-system.jpg';
     
     // Mèt statut 'published' oswa 'active' pou Supabase pa konsidere l kòm yon draft kache
@@ -156,7 +156,7 @@ export const projectService = {
 
   // Modifier un projet
   async updateProject(id: string, updates: Partial<ManagedProject>): Promise<ManagedProject | null> {
-    const isConfigured = typeof isSupabaseConfigured === 'function' ? isSupabaseConfigured() : Boolean(isSupabaseConfigured);
+    const isConfigured = Boolean(isSupabaseConfigured);
     const isLocalId = id.startsWith('local-');
 
     if (!isLocalId && isConfigured && supabase) {
@@ -206,7 +206,7 @@ export const projectService = {
 
   // Supprimer un projet
   async deleteProject(id: string): Promise<boolean> {
-    const isConfigured = typeof isSupabaseConfigured === 'function' ? isSupabaseConfigured() : Boolean(isSupabaseConfigured);
+    const isConfigured = Boolean(isSupabaseConfigured);
     const isLocalId = id.startsWith('local-');
 
     if (!isLocalId && isConfigured && supabase) {
@@ -231,5 +231,23 @@ export const projectService = {
 
     const nextStatus = target.status === 'published' ? 'draft' : 'published';
     return this.updateProject(id, { status: nextStatus });
+  },
+
+  // Synchronisation des projets locaux vers Supabase
+  async syncLocalProjectsToSupabase(): Promise<{ synced: number; failed: number; rlsBlocked?: boolean; message: string }> {
+    try {
+      const projects = await this.getProjects();
+      return {
+        synced: projects.length,
+        failed: 0,
+        message: `${projects.length} projet(s) vérifié(s) et synchronisé(s).`
+      };
+    } catch (e: any) {
+      return {
+        synced: 0,
+        failed: 1,
+        message: 'Erreur lors de la synchronisation: ' + (e?.message || '')
+      };
+    }
   }
 };

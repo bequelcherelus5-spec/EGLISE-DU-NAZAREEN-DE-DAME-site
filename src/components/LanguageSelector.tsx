@@ -26,7 +26,7 @@ export const LanguageSelector: React.FC<{ compact?: boolean }> = ({ compact = fa
   const activeOption = SUPPORTED_LANGUAGES.find((l) => l.code === currentLang) || SUPPORTED_LANGUAGES[1];
 
   return (
-    <div className="relative inline-block text-left" ref={containerRef}>
+    <div className="relative inline-block text-left church-lang-switcher" ref={containerRef}>
       {/* Trigger Button */}
       <button
         type="button"
@@ -36,8 +36,9 @@ export const LanguageSelector: React.FC<{ compact?: boolean }> = ({ compact = fa
             ? 'px-2.5 py-1 text-xs bg-slate-800 text-slate-200 border-slate-700 hover:border-amber-400'
             : 'px-3 py-1 text-xs bg-slate-900/80 text-amber-300 border-amber-500/30 hover:border-amber-400 hover:bg-slate-900 shadow-sm'
         }`}
-        title="Changer de langue / Chwazi lang"
+        title="Changer de langue / Tradui sit la"
       >
+        <Globe className="w-3 h-3 text-amber-400" />
         <span className="text-xs sm:text-sm leading-none">{activeOption.flag}</span>
         <span className="font-bold text-[10px] sm:text-[11px] tracking-wide uppercase">
           {compact ? activeOption.code.toUpperCase() : activeOption.nativeLabel}

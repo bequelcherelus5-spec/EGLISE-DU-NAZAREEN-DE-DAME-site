@@ -264,33 +264,51 @@ Le programme intègre quatre dimensions fondamentales :
 4. Dimension Socio-émotionnelle : Protection de l'enfance, activités sportives, développement de l'estime de soi et mentorat chrétien.`,
   status: 'active',
   targetBeneficiaries: 300,
-  reachedBeneficiaries: 265,
-  location: "Complexe de l\x27Ãglise Ã  DamÃ©, Commune de MÃ´le-Saint-Nicolas, HaÃ¯ti",
+  reachedBeneficiaries: 200,
+  location: "Complexe de l'Église à Damé, Commune de Môle-Saint-Nicolas, Haïti",
   bannerImage: '/images/projets/cdej-compassion.svg',
   metrics: [
-    { label: 'Enfants Parrainés Actifs', value: '265', icon: 'Users' },
-    { label: 'Visites Médicales / An', value: '530+', icon: 'HeartPulse' },
-    { label: 'Repas Nutritionnels Servis', value: '18 000+', icon: 'Utensils' },
-    { label: 'Kits Scolaires Distribués', value: '100%', icon: 'GraduationCap' },
-    { label: 'Formations Bibliques Hebdo', value: '52', icon: 'BookOpen' },
-    { label: 'Familles Damé Soutenues', value: '210+', icon: 'Home' }
+    { 
+      label: 'Enfants Parrainés', 
+      value: '+200', 
+      sublabel: 'Timoun Parène aktif',
+      icon: 'Users' 
+    },
+    { 
+      label: 'Clinique Mobile / An', 
+      value: '+200', 
+      sublabel: 'Klinik mobil chak ane pou +200 moun',
+      icon: 'HeartPulse' 
+    },
+    { 
+      label: 'Formations & Clubs', 
+      value: 'Mèkredi, Vandredi & Samdi', 
+      sublabel: 'Chak semèn pou timoun yo',
+      icon: 'BookOpen' 
+    },
+    { 
+      label: 'Club des Parents (Klib Paran)', 
+      value: 'Chak Dènye Vandredi', 
+      sublabel: 'Dènye vandredi nan chak mwa',
+      icon: 'Home' 
+    }
   ],
   pillars: [
     {
-      title: 'Nutrition & Santé Préventive',
-      desc: 'Distribution régulière de nourriture nutritive, suivi pédiatrique continu, dépistage précoce et traitement médical pour chaque enfant inscrit.'
+      title: 'Parrainage d’Enfants (+200 Bénéficiaires)',
+      desc: 'Plus de 200 enfants parrainés de la 3ème Section Damé bénéficiant d’un soutien holistique : spirituel, éducatif, nutritionnel et social.'
     },
     {
-      title: 'Soutien Pédagogique et Scolaire',
-      desc: 'Paiement des frais de scolarité, remise d’uniformes, livres et matériel didactique pour garantir un taux de réussite exemplaire.'
+      title: 'Cliniques Mobiles Annuelles (+200)',
+      desc: 'Organisation régulière de cliniques mobiles chaque année pour apporter des soins médicaux, bilans pédiatriques et dépistage à plus de 200 personnes.'
     },
     {
-      title: 'Développement Spirituel & Moral',
-      desc: 'Étude assidue des Saintes Écritures, mémorisation des versets, participation à la chorale des enfants et modèle de sainteté de vie.'
+      title: 'Clubs & Formations (Mercredi, Vendredi & Samedi)',
+      desc: 'Activités pédagogiques, enseignement de la foi chrétienne, chants et ateliers pratiques pour les enfants chaque mercredi, vendredi et samedi.'
     },
     {
-      title: 'Formation Professionnelle des Jeunes',
-      desc: 'Ateliers d’artisanat, couture, informatique pratique et compétences manuelles pour favoriser l’autonomie économique durable.'
+      title: 'Club des Parents (Dernier Vendredi du Mois)',
+      desc: 'Rencontre mensuelle de formation et de dialogue avec les parents chaque dernier vendredi du mois pour l’encadrement harmonieux des familles.'
     }
   ]
 };

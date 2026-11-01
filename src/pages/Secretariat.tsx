@@ -27,12 +27,20 @@ import {
   MapPin,
   Key,
   Flame,
-  Code
+  Code,
+  Tv,
+  Video,
+  Headphones,
+  Image as ImageIcon,
+  Play,
+  Upload,
+  Link as LinkIcon
 } from 'lucide-react';
 import { authService, AdminUser } from '../services/authService';
 import { secretariatService, INITIAL_MEMBERS, INITIAL_SACRAMENTS } from '../services/secretariatService';
 import { newsletterService } from '../services/newsletterService';
 import { projectService } from '../services/projectService';
+import { mediaService, ChurchMedia, parseVideoUrl, readFileAsDataUrl } from '../services/mediaService';
 import { testSupabaseConnection, setRuntimeSupabaseCredentials } from '../services/supabaseClient';
 import { MemberRecord, SacramentRecord, PrayerRequest, ManagedProject, BrevoConfigView } from '../types';
 
@@ -41,7 +49,7 @@ interface SecretariatProps {
   isSubdomain?: boolean;
 }
 
-type TabType = 'dashboard' | 'members' | 'sacraments' | 'projects' | 'prayers' | 'brevo' | 'supabase';
+type TabType = 'dashboard' | 'members' | 'sacraments' | 'projects' | 'media' | 'prayers' | 'brevo' | 'supabase';
 
 export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomain = false }) => {
   // ----------------------------------------------------
@@ -123,6 +131,26 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
   });
 
   // ----------------------------------------------------
+  // MEDIA (VIDEOS, AUDIOS, PHOTOS) STATE
+  // ----------------------------------------------------
+  const [mediaItems, setMediaItems] = useState<ChurchMedia[]>([]);
+  const [mediaFilterType, setMediaFilterType] = useState<'all' | 'video' | 'audio' | 'image'>('all');
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [mediaSubmitting, setMediaSubmitting] = useState(false);
+  const [mediaFileUploading, setMediaFileUploading] = useState(false);
+  const [mediaForm, setMediaForm] = useState({
+    type: 'video' as 'video' | 'audio' | 'image',
+    title: '',
+    speaker: 'Pasteur Bequel CHERELUS',
+    category: 'Culte d’Adoration',
+    url: '',
+    thumbnail: '',
+    duration: '',
+    description: '',
+    date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  });
+
+  // ----------------------------------------------------
   // PRAYERS STATE
   // ----------------------------------------------------
   const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
@@ -193,6 +221,9 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
 
       const prayList = await secretariatService.getPrayerRequests();
       setPrayers(prayList || []);
+
+      const mediaList = await mediaService.getAllMedia();
+      setMediaItems(mediaList || []);
 
       const brevo = await newsletterService.getBrevoSettings();
       if (brevo) setBrevoSettings(brevo);
@@ -390,6 +421,110 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     }
   };
 
+  // MEDIA (VIDEOS, AUDIOS, PHOTOS) ACTIONS
+  const handleSaveMedia = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mediaForm.title.trim()) {
+      showToast('error', 'Veuillez entrer un titre pour ce média.');
+      return;
+    }
+    if (!mediaForm.url.trim()) {
+      showToast('error', 'Veuillez renseigner un lien (YouTube, Facebook) ou importer un fichier.');
+      return;
+    }
+
+    setMediaSubmitting(true);
+    try {
+      let finalThumb = mediaForm.thumbnail.trim();
+      if (mediaForm.type === 'video') {
+        const info = parseVideoUrl(mediaForm.url);
+        if (!finalThumb || finalThumb.includes('sceau-officiel')) {
+          finalThumb = info.thumbnailUrl;
+        }
+      } else if (!finalThumb) {
+        finalThumb = mediaForm.type === 'audio' 
+          ? '/images/eglise/sceau-officiel.svg' 
+          : mediaForm.url;
+      }
+
+      const res = await mediaService.saveMedia({
+        title: mediaForm.title.trim(),
+        type: mediaForm.type,
+        url: mediaForm.url.trim(),
+        thumbnail: finalThumb,
+        speaker: mediaForm.speaker.trim() || 'Pasteur Bequel CHERELUS',
+        category: mediaForm.category.trim() || 'Culte d’Adoration',
+        duration: mediaForm.duration.trim(),
+        description: mediaForm.description.trim(),
+        date: mediaForm.date || new Date().toLocaleDateString('fr-FR')
+      });
+
+      if (res.success) {
+        showToast('success', 'Média publié avec succès sur le site et le secrétariat !');
+        setMediaModalOpen(false);
+        const updated = await mediaService.getAllMedia();
+        setMediaItems(updated);
+      } else {
+        showToast('error', res.error || 'Erreur lors de la publication du média.');
+      }
+    } catch (err: any) {
+      showToast('error', 'Erreur: ' + err.message);
+    } finally {
+      setMediaSubmitting(false);
+    }
+  };
+
+  const handleDeleteMedia = async (id: string, title: string) => {
+    if (!window.confirm(`Voulez-vous vraiment supprimer le média "${title}" ?`)) return;
+    try {
+      await mediaService.deleteMedia(id);
+      showToast('info', 'Média supprimé avec succès.');
+      setMediaItems(prev => prev.filter(m => m.id !== id));
+    } catch (err: any) {
+      showToast('error', 'Erreur: ' + err.message);
+    }
+  };
+
+  const handleMediaUrlChange = (urlVal: string) => {
+    const trimmed = urlVal.trim();
+    if (trimmed.includes('youtube.com') || trimmed.includes('youtu.be')) {
+      const info = parseVideoUrl(trimmed);
+      setMediaForm(prev => ({
+        ...prev,
+        url: trimmed,
+        type: 'video',
+        thumbnail: info.thumbnailUrl
+      }));
+    } else {
+      setMediaForm(prev => ({ ...prev, url: urlVal }));
+    }
+  };
+
+  const handleMediaFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setMediaFileUploading(true);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const isImg = file.type.startsWith('image/');
+      const isAud = file.type.startsWith('audio/');
+      
+      setMediaForm(prev => ({
+        ...prev,
+        url: dataUrl,
+        type: isImg ? 'image' : (isAud ? 'audio' : prev.type),
+        thumbnail: isImg ? dataUrl : (prev.thumbnail || '/images/eglise/sceau-officiel.svg'),
+        title: prev.title || file.name.replace(/\.[^/.]+$/, '')
+      }));
+      showToast('success', `Fichier "${file.name}" chargé avec succès !`);
+    } catch (err) {
+      showToast('error', 'Erreur lors de la lecture du fichier.');
+    } finally {
+      setMediaFileUploading(false);
+    }
+  };
+
   // PRAYER ACTIONS
   const handleTogglePrayer = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'pending' ? 'prayed' : 'pending';
@@ -412,10 +547,12 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
 
       setBrevoSettings({
         hasApiKey: true,
-        apiKeyPreview: apiKey ? '••••••••••••••••' : undefined,
+        apiKeyPreview: apiKey ? '••••••••••••••••' : 'Non configurée',
         senderEmail: brevoSenderEmail.trim(),
         senderName: brevoSenderName.trim(),
-        brevoListId: brevoListId.trim()
+        brevoListId: brevoListId.trim(),
+        isActive: true,
+        updatedAt: new Date().toISOString()
       });
       showToast('success', 'Configuration Brevo enregistrée !');
     } catch (err: any) {
@@ -610,6 +747,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
               { id: 'members', icon: Users, label: `Membres (${members.length})` },
               { id: 'sacraments', icon: Award, label: `Sacrements (${sacraments.length})` },
               { id: 'projects', icon: Briefcase, label: `Nos Projets (${projects.length})` },
+              { id: 'media', icon: Tv, label: `Media (${mediaItems.length})` },
               { id: 'prayers', icon: Heart, label: `Prières (${prayers.length})` },
               { id: 'brevo', icon: Send, label: 'Newsletter Brevo' },
               { id: 'supabase', icon: Database, label: 'Base Supabase' }
@@ -640,28 +778,54 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
               <div>
                 <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-amber-200 text-amber-900 mb-2">Session Active • {currentUser.name}</span>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Espace Pastoral & Administratif</h2>
-                <p className="text-slate-600 text-sm mt-1">Gérez avec rigueur les membres, actes pastoraux, projets et communications.</p>
+                <p className="text-slate-600 text-sm mt-1">Gérez avec rigueur les membres, actes pastoraux, projets, médias et communications.</p>
               </div>
-              <button onClick={() => handleOpenMemberModal()} className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-sm shadow-xs">
-                + Nouveau Membre
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button 
+                  onClick={() => {
+                    setMediaForm({
+                      type: 'video',
+                      title: '',
+                      speaker: 'Pasteur Bequel CHERELUS',
+                      category: 'Culte d’Adoration',
+                      url: '',
+                      thumbnail: '',
+                      duration: '',
+                      description: '',
+                      date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                    });
+                    setMediaModalOpen(true);
+                  }} 
+                  className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-sm shadow-xs flex items-center space-x-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Publier un Média</span>
+                </button>
+                <button onClick={() => handleOpenMemberModal()} className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm shadow-xs">
+                  + Nouveau Membre
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              <div onClick={() => setActiveTab('members')} className="bg-white border rounded-2xl p-6 shadow-xs cursor-pointer hover:border-amber-400">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div onClick={() => setActiveTab('members')} className="bg-white border rounded-2xl p-5 shadow-xs cursor-pointer hover:border-amber-400">
                 <span className="text-xs font-bold uppercase text-slate-500">Membres</span>
-                <p className="text-3xl font-black text-slate-900 mt-2">{members.length}</p>
+                <p className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{members.length}</p>
               </div>
-              <div onClick={() => setActiveTab('sacraments')} className="bg-white border rounded-2xl p-6 shadow-xs cursor-pointer hover:border-amber-400">
+              <div onClick={() => setActiveTab('sacraments')} className="bg-white border rounded-2xl p-5 shadow-xs cursor-pointer hover:border-amber-400">
                 <span className="text-xs font-bold uppercase text-slate-500">Sacrements</span>
-                <p className="text-3xl font-black text-slate-900 mt-2">{sacraments.length}</p>
+                <p className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{sacraments.length}</p>
               </div>
-              <div onClick={() => setActiveTab('projects')} className="bg-white border rounded-2xl p-6 shadow-xs cursor-pointer hover:border-amber-400">
+              <div onClick={() => setActiveTab('projects')} className="bg-white border rounded-2xl p-5 shadow-xs cursor-pointer hover:border-amber-400">
                 <span className="text-xs font-bold uppercase text-slate-500">Projets</span>
-                <p className="text-3xl font-black text-slate-900 mt-2">{projects.length}</p>
+                <p className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{projects.length}</p>
               </div>
-              <div onClick={() => setActiveTab('prayers')} className="bg-white border rounded-2xl p-6 shadow-xs cursor-pointer hover:border-amber-400">
+              <div onClick={() => setActiveTab('media')} className="bg-white border rounded-2xl p-5 shadow-xs cursor-pointer hover:border-amber-400">
+                <span className="text-xs font-bold uppercase text-slate-500">Media (Vidéo/Audio/Foto)</span>
+                <p className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{mediaItems.length}</p>
+              </div>
+              <div onClick={() => setActiveTab('prayers')} className="bg-white border rounded-2xl p-5 shadow-xs cursor-pointer hover:border-amber-400">
                 <span className="text-xs font-bold uppercase text-slate-500">Prières</span>
-                <p className="text-3xl font-black text-slate-900 mt-2">{prayers.length}</p>
+                <p className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{prayers.length}</p>
               </div>
             </div>
           </div>
@@ -790,6 +954,137 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB: MEDIA (VIDEOS, AUDIOS, PHOTOS) */}
+        {activeTab === 'media' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Médiathèque &amp; Diffusion Multimédia</h2>
+                <p className="text-slate-500 text-sm">
+                  Publiez et gérez des vidéos (YouTube, Facebook), des fichiers audio et des photos de galerie. Synchronisé avec la page publique Media.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setMediaForm({
+                    type: 'video',
+                    title: '',
+                    speaker: 'Pasteur Bequel CHERELUS',
+                    category: 'Culte d’Adoration',
+                    url: '',
+                    thumbnail: '',
+                    duration: '',
+                    description: '',
+                    date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                  });
+                  setMediaModalOpen(true);
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1.5 shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Publier un Média</span>
+              </button>
+            </div>
+
+            {/* Filter pills */}
+            <div className="flex flex-wrap gap-2 pt-1">
+              {[
+                { id: 'all', label: `Tout (${mediaItems.length})` },
+                { id: 'video', label: `Vidéos (${mediaItems.filter(m => m.type === 'video').length})` },
+                { id: 'audio', label: `Audios & Prêches (${mediaItems.filter(m => m.type === 'audio').length})` },
+                { id: 'image', label: `Galerie Photos (${mediaItems.filter(m => m.type === 'image').length})` },
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setMediaFilterType(f.id as any)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    mediaFilterType === f.id
+                      ? 'bg-amber-500 text-slate-950 shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Media Items Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {mediaItems.filter(m => mediaFilterType === 'all' || m.type === mediaFilterType).length === 0 ? (
+                <div className="col-span-3 p-12 bg-white border border-slate-200 rounded-2xl text-center text-slate-500 space-y-2">
+                  <Tv className="w-10 h-10 mx-auto text-slate-300" />
+                  <p className="font-semibold text-slate-700">Aucun média dans cette catégorie.</p>
+                  <p className="text-xs text-slate-500">Cliquez sur « + Publier un Média » pour ajouter une vidéo, un audio ou une photo.</p>
+                </div>
+              ) : (
+                mediaItems
+                  .filter(m => mediaFilterType === 'all' || m.type === mediaFilterType)
+                  .map((item) => (
+                    <div key={item.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+                      <div>
+                        {/* Thumbnail */}
+                        <div className="relative aspect-video bg-slate-950 rounded-xl overflow-hidden mb-3 border">
+                          <img
+                            src={item.thumbnail || '/images/eglise/sceau-officiel.svg'}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/images/eglise/sceau-officiel.svg';
+                            }}
+                          />
+                          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-2xs font-bold uppercase bg-slate-900/90 text-amber-300 backdrop-blur-xs border border-amber-500/30">
+                            {item.type}
+                          </span>
+                          {item.duration && (
+                            <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/75 text-white text-2xs font-mono">
+                              {item.duration}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Category & Date */}
+                        <div className="flex items-center justify-between text-2xs text-slate-500 mb-1.5">
+                          <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                            {item.category}
+                          </span>
+                          <span>{item.date}</span>
+                        </div>
+
+                        {/* Title & Speaker */}
+                        <h3 className="font-bold text-base text-slate-900 line-clamp-2">{item.title}</h3>
+                        {item.speaker && (
+                          <p className="text-xs text-slate-600 font-medium mt-1">
+                            Auteur/Pasteur : {item.speaker}
+                          </p>
+                        )}
+                        {item.description && (
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-2">{item.description}</p>
+                        )}
+                      </div>
+
+                      {/* Card Footer Actions */}
+                      <div className="mt-4 pt-3 border-t flex items-center justify-between text-xs">
+                        {onNavigate && (
+                          <button onClick={() => onNavigate('/media')} className="text-amber-600 font-bold hover:underline flex items-center space-x-1">
+                            <span>Voir sur la page Media</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteMedia(item.id, item.title)}
+                          className="text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition"
+                          title="Supprimer ce média"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
               )}
             </div>
           </div>
@@ -1041,6 +1336,230 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                 <button type="button" onClick={() => setProjectModalOpen(false)} className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Annuler</button>
                 <button type="submit" disabled={projectSubmitting} className="px-5 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl shadow-xs">
                   {projectSubmitting ? 'Enregistrement...' : 'Publier le Projet'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: PUBLICATION MEDIA (VIDEOS, AUDIOS, PHOTOS & EASY IMPORT) */}
+      {mediaModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-xl w-full p-6 sm:p-8 my-8 text-slate-900">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Publier un Média</h3>
+                <p className="text-2xs text-slate-500">Ajoutez une vidéo YouTube/Facebook, un sermon audio ou une photo de galerie.</p>
+              </div>
+              <button
+                onClick={() => setMediaModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-xl px-2"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveMedia} className="space-y-4">
+              {/* Type Switcher */}
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Type de Média</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'video', label: '🎬 Vidéo', desc: 'YouTube, FB, MP4' },
+                    { id: 'audio', label: '🎵 Audio', desc: 'Prédication, MP3' },
+                    { id: 'image', label: '🖼️ Image', desc: 'Photo de Galerie' }
+                  ].map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        setMediaForm(prev => ({
+                          ...prev,
+                          type: t.id as any,
+                          category: t.id === 'video' ? 'Culte d’Adoration' : (t.id === 'audio' ? 'Prédication Pastorale' : 'Galerie Photos')
+                        }));
+                      }}
+                      className={`p-2.5 rounded-xl border text-center transition ${
+                        mediaForm.type === t.id
+                          ? 'border-amber-500 bg-amber-50 text-amber-900 font-bold ring-2 ring-amber-400'
+                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="text-xs">{t.label}</div>
+                      <div className="text-[10px] text-slate-500">{t.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Easy Import Tool Box */}
+              <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-2xl space-y-2.5">
+                <div className="flex items-center space-x-1.5 text-xs font-bold text-amber-900">
+                  <Upload className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Zouti Enpòtasyon Fasil (Enpòte Fichye oswa Lyen)</span>
+                </div>
+
+                {/* File picker for Image / Audio */}
+                <div>
+                  <label className="block text-2xs font-semibold text-amber-900 mb-1">
+                    {mediaForm.type === 'image' 
+                      ? 'Chwazi yon Foto nan aparèy ou :' 
+                      : (mediaForm.type === 'audio' ? 'Chwazi yon Odyo MP3 nan aparèy ou :' : 'Chwazi yon Fichye lokal (opsyonèl) :')}
+                  </label>
+                  <input
+                    type="file"
+                    accept={mediaForm.type === 'image' ? 'image/*' : (mediaForm.type === 'audio' ? 'audio/*' : 'image/*,audio/*,video/*')}
+                    onChange={handleMediaFileUpload}
+                    className="w-full text-xs text-slate-600 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-200 file:text-amber-900 cursor-pointer"
+                  />
+                  {mediaFileUploading && <p className="text-2xs text-amber-700 mt-1">Chargement du fichier en cours...</p>}
+                </div>
+
+                {/* Video URL or source link */}
+                <div>
+                  <label className="block text-2xs font-semibold text-amber-900 mb-1">
+                    Oswa Kole yon Lyen (YouTube, Facebook, MP3, etc.) :
+                  </label>
+                  <div className="relative">
+                    <LinkIcon className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="url"
+                      value={mediaForm.url}
+                      onChange={(e) => handleMediaUrlChange(e.target.value)}
+                      placeholder={
+                        mediaForm.type === 'video'
+                          ? "https://www.youtube.com/watch?v=... oswa facebook.com/..."
+                          : (mediaForm.type === 'audio' ? "https://.../sermon.mp3" : "https://.../image.jpg")
+                      }
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-amber-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Titre du Média *</label>
+                <input
+                  type="text"
+                  value={mediaForm.title}
+                  onChange={(e) => setMediaForm({ ...mediaForm, title: e.target.value })}
+                  required
+                  placeholder="ex: Culte d’Action de Grâces et Louange"
+                  className="w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Speaker / Preacher */}
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Auteur / Prédicateur</label>
+                  <input
+                    type="text"
+                    value={mediaForm.speaker}
+                    onChange={(e) => setMediaForm({ ...mediaForm, speaker: e.target.value })}
+                    placeholder="Pasteur Bequel CHERELUS"
+                    className="w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-sm"
+                  />
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Catégorie</label>
+                  <select
+                    value={mediaForm.category}
+                    onChange={(e) => setMediaForm({ ...mediaForm, category: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-sm"
+                  >
+                    <option value="Culte d’Adoration">Culte d’Adoration</option>
+                    <option value="Prédication Pastorale">Prédication Pastorale</option>
+                    <option value="Louange & Adoration">Louange &amp; Adoration</option>
+                    <option value="Jeunesse (JNI)">Jeunesse (JNI)</option>
+                    <option value="Ministère des Dames">Ministère des Dames</option>
+                    <option value="Enfants & École du Dimanche">Enfants &amp; École du Dimanche</option>
+                    <option value="Projets Sociaux (CDEJ)">Projets Sociaux (CDEJ)</option>
+                    <option value="Histoire & Témoignages">Histoire &amp; Témoignages</option>
+                    <option value="Galerie Photos">Galerie Photos</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Duration */}
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Durée (ex: 45 min)</label>
+                  <input
+                    type="text"
+                    value={mediaForm.duration}
+                    onChange={(e) => setMediaForm({ ...mediaForm, duration: e.target.value })}
+                    placeholder="ex: 1h 15 min"
+                    className="w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-sm"
+                  />
+                </div>
+
+                {/* Date */}
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Date</label>
+                  <input
+                    type="text"
+                    value={mediaForm.date}
+                    onChange={(e) => setMediaForm({ ...mediaForm, date: e.target.value })}
+                    placeholder="ex: 15 Octobre 2026"
+                    className="w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Thumbnail Preview */}
+              {mediaForm.thumbnail && (
+                <div>
+                  <label className="block text-2xs font-bold uppercase text-slate-600 mb-1">Aperçu Vignette / Image :</label>
+                  <img
+                    src={mediaForm.thumbnail}
+                    alt="Aperçu"
+                    className="h-20 w-auto rounded-lg border object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/eglise/sceau-officiel.svg';
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  value={mediaForm.description}
+                  onChange={(e) => setMediaForm({ ...mediaForm, description: e.target.value })}
+                  placeholder="Yon ti deskripsyon sou videyo, odyo oswa foto a..."
+                  className="w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-sm"
+                />
+              </div>
+
+              {/* Modal Actions */}
+              <div className="pt-4 flex items-center justify-end space-x-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setMediaModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={mediaSubmitting}
+                  className="px-5 py-2.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl shadow-xs flex items-center space-x-1.5"
+                >
+                  {mediaSubmitting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Publication...</span>
+                    </>
+                  ) : (
+                    <span>Publier le Média</span>
+                  )}
                 </button>
               </div>
             </form>
