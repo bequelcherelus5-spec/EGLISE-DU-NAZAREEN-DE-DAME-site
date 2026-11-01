@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   OFFICIAL_CHURCH_INFO, 
   OFFICIAL_MINISTRIES, 
   OFFICIAL_SERVICES, 
-  OFFICIAL_PROJECT_CDEJ, 
-  OFFICIAL_MEDIA 
+  OFFICIAL_PROJECT_CDEJ 
 } from '../data/churchData';
+import { mediaService, ChurchMedia } from '../services/mediaService';
 import { SEOHead } from '../components/SEOHead';
 import { DonationSection } from '../components/DonationSection';
 import churchSealImg from '../assets/images/regenerated_image_1792011564270.x-icon';
@@ -37,6 +37,13 @@ interface HomeProps {
 }
 
 export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
+  const [latestMedia, setLatestMedia] = useState<ChurchMedia[]>([]);
+
+  useEffect(() => {
+    mediaService.getAllMedia().then((items) => {
+      setLatestMedia(items);
+    }).catch(() => {});
+  }, []);
   return (
     <div className="space-y-16 pb-16">
       <SEOHead 
@@ -446,80 +453,106 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
         </div>
       </section>
 
-      {/* 6. DERNIÈRES PRÉDICATIONS & PODCASTS */}
+      {/* 6. DERNIÈRES PRÉDICATIONS & MÉDIAS */}
       <section className="bg-slate-100 py-12 border-y border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-amber-600">
-                Podcasts Officiels &amp; Édification
+                Médiathèque Officielle &amp; Édification
               </span>
               <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900">
-                Podcasts Nazaréens &amp; Prédications
+                Vidéos, Prédications &amp; Photos de Culte
               </h2>
             </div>
             <button
-              onClick={() => onNavigate('/medias')}
+              onClick={() => onNavigate('/media')}
               className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center space-x-1"
             >
-              <span>Tous les podcasts &amp; médias</span>
+              <span>Accéder à la Médiathèque</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {OFFICIAL_MEDIA.slice(0, 3).map((item) => (
-              <div key={item.id} className="bg-white rounded-2xl overflow-hidden shadow-md border border-slate-200 flex flex-col justify-between">
-                <div>
-                  <div className="h-44 bg-slate-900 relative flex items-center justify-center overflow-hidden">
-                    <img
-                      src={item.thumbnail}
-                      alt={item.title}
-                      className="w-full h-full object-cover opacity-80"
-                    />
-                    <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-lg">
-                        <Play className="w-5 h-5 ml-0.5 fill-current" />
+          {latestMedia.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {latestMedia.slice(0, 3).map((item) => (
+                <div key={item.id} className="bg-white rounded-2xl overflow-hidden shadow-md border border-slate-200 flex flex-col justify-between">
+                  <div>
+                    <div className="h-44 bg-slate-900 relative flex items-center justify-center overflow-hidden">
+                      <img
+                        src={item.thumbnail || '/images/eglise/sceau-officiel.png'}
+                        alt={item.title}
+                        className="w-full h-full object-cover opacity-80"
+                      />
+                      <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-lg">
+                          <Play className="w-5 h-5 ml-0.5 fill-current" />
+                        </div>
                       </div>
+                      {item.duration && (
+                        <span className="absolute bottom-2 right-2 bg-slate-950/80 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded">
+                          {item.duration}
+                        </span>
+                      )}
                     </div>
-                    {item.duration && (
-                      <span className="absolute bottom-2 right-2 bg-slate-950/80 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded">
-                        {item.duration}
+
+                    <div className="p-5">
+                      <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wide">
+                        {item.category || item.type}
                       </span>
-                    )}
+                      <h3 className="font-serif font-bold text-slate-900 text-base mt-1 line-clamp-2">
+                        {item.title}
+                      </h3>
+                      {item.speaker && (
+                        <p className="text-xs text-slate-600 mt-1 font-medium">
+                          Orateur / Auteur : {item.speaker}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="p-5">
-                    <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wide">
-                      {item.category || item.type}
-                    </span>
-                    <h3 className="font-serif font-bold text-slate-900 text-base mt-1 line-clamp-2">
-                      {item.title}
-                    </h3>
-                    {item.speaker && (
-                      <p className="text-xs text-slate-600 mt-1 font-medium">
-                        Orateur : {item.speaker}
-                      </p>
-                    )}
-                    {item.reference && (
-                      <p className="text-xs text-slate-500 italic mt-0.5">
-                        Réf. : {item.reference}
-                      </p>
-                    )}
+                  <div className="p-5 pt-0">
+                    <button
+                      onClick={() => onNavigate('/media')}
+                      className="w-full py-2 rounded-lg text-xs font-bold bg-slate-900 text-amber-300 hover:bg-slate-800 transition flex items-center justify-center space-x-2"
+                    >
+                      <span>Consulter le Média</span>
+                    </button>
                   </div>
                 </div>
-
-                <div className="p-5 pt-0">
-                  <button
-                    onClick={() => onNavigate('/medias')}
-                    className="w-full py-2 rounded-lg text-xs font-bold bg-slate-900 text-amber-300 hover:bg-slate-800 transition flex items-center justify-center space-x-2"
-                  >
-                    <span>Écouter &amp; Regarder</span>
-                  </button>
-                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-8 sm:p-10 text-center border border-slate-200/80 shadow-sm max-w-2xl mx-auto space-y-4">
+              <div className="w-14 h-14 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
+                <Play className="w-6 h-6 ml-0.5" />
               </div>
-            ))}
-          </div>
+              <div className="space-y-1">
+                <h3 className="font-serif text-lg font-bold text-slate-900">
+                  Médiathèque de l’Église de Damé
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  L'espace de diffusion est configuré et prêt. Retrouvez ici les enregistrements des cultes, vidéos, audios et photos dès leur publication officielle depuis le Secrétariat.
+                </p>
+              </div>
+              <div className="pt-2 flex flex-wrap justify-center gap-3">
+                <button
+                  onClick={() => onNavigate('/media')}
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 shadow-md transition"
+                >
+                  Ouvrir la page Media
+                </button>
+                <button
+                  onClick={() => onNavigate('/secretariat')}
+                  className="px-5 py-2.5 rounded-xl bg-slate-900 text-amber-300 font-bold text-xs hover:bg-slate-800 transition flex items-center space-x-1.5"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Publier depuis le Secrétariat</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

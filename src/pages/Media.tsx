@@ -248,12 +248,33 @@ export const Media: React.FC<MediaProps> = ({ onNavigate }) => {
             <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs text-slate-500 font-medium">Chargement des médias officiels...</p>
           </div>
+        ) : items.length === 0 ? (
+          <div className="bg-white rounded-3xl p-10 sm:p-14 text-center border border-slate-200/80 shadow-sm max-w-xl mx-auto space-y-4">
+            <div className="w-16 h-16 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600 shadow-inner">
+              <Tv className="w-8 h-8" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-serif text-xl font-bold text-slate-900">Médiathèque Prête</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Aucun média n’a encore été publié. Vous pouvez publier facilement des vidéos YouTube ou Facebook, des prédications audios et des photos depuis l’espace Secrétariat.
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                onClick={() => onNavigate('/secretariat')}
+                className="inline-flex items-center space-x-2 px-6 py-3 rounded-xl bg-amber-500 text-slate-950 text-xs sm:text-sm font-extrabold hover:bg-amber-400 shadow-md transition"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Publier un premier média</span>
+              </button>
+            </div>
+          </div>
         ) : filteredItems.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 space-y-3">
             <Tv className="w-12 h-12 text-slate-300 mx-auto" />
-            <h3 className="font-serif text-lg font-bold text-slate-800">Aucun média trouvé</h3>
+            <h3 className="font-serif text-lg font-bold text-slate-800">Aucun résultat</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Aucun contenu ne correspond à vos filtres actuels. Réinitialisez la recherche ou publiez un média depuis le Secrétariat.
+              Aucun média ne correspond à vos filtres de recherche actuels.
             </p>
             <button
               onClick={() => { setSearchQuery(''); setSelectedCategory('all'); setActiveTab('all'); }}

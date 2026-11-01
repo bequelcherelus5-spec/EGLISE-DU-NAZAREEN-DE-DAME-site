@@ -14,99 +14,31 @@ export interface ChurchMedia {
   created_at?: string;
 }
 
-const LOCAL_STORAGE_KEY = 'dame_church_media_v1';
+const LOCAL_STORAGE_KEY = 'dame_church_media_v2';
 
-// Media initiaux officiels de l'Église du Nazaréen de Damé
-export const INITIAL_CHURCH_MEDIA: ChurchMedia[] = [
-  {
-    id: 'media-vid-1',
-    title: 'Culte d’Adoration & Célébration de la Moisson',
-    type: 'video',
-    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // URL YouTube officielle
-    thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
-    description: 'Replay officiel du grand culte d’adoration avec la direction pastorale du Pasteur Bequel CHERELUS. Chants traditionnels en créole et français, prière et communion fraternelle.',
-    category: 'Culte d’Adoration',
-    speaker: 'Pasteur Bequel CHERELUS',
-    date: 'Dimanche 18 Octobre 2026',
-    duration: '1h 35 min',
-    created_at: new Date('2026-10-18T10:00:00Z').toISOString()
-  },
-  {
-    id: 'media-vid-2',
-    title: 'Rassemblement de la Jeunesse Nazaréenne (JNI)',
-    type: 'video',
-    url: 'https://youtube.com/@eglisedunazareendame',
-    thumbnail: '/images/evenements/evenement-badge.svg',
-    description: 'Programme dynamique des jeunes de Damé : chorale de jeunesse, poèmes, chants d’ensemble et exhortation spirituelle.',
-    category: 'Jeunesse (JNI)',
-    speaker: 'Comité JNI & Pasteur Bequel CHERELUS',
-    date: 'Samedi 10 Octobre 2026',
-    duration: '45 min',
-    created_at: new Date('2026-10-10T16:00:00Z').toISOString()
-  },
-  {
-    id: 'media-aud-1',
-    title: 'La Puissance de la Sanctification dans un Monde en Mutation',
-    type: 'audio',
-    url: 'https://archive.org/download/sample-audio-church/sermon_nazareen_dame_1.mp3',
-    thumbnail: '/images/eglise/sceau-officiel.svg',
-    description: 'Prédication pastorale puissante sur l’appel à la sainteté de vie selon Hébreux 12:14. Enseignement clair pour fortifier l’âme des croyants de Damé.',
-    category: 'Prédication Pastorale',
-    speaker: 'Pasteur Bequel CHERELUS',
-    date: 'Dimanche 11 Octobre 2026',
-    duration: '38 min',
-    created_at: new Date('2026-10-11T09:30:00Z').toISOString()
-  },
-  {
-    id: 'media-aud-2',
-    title: 'Bâtir un Foyer et une Famille selon le Cœur de Dieu',
-    type: 'audio',
-    url: 'https://archive.org/download/sample-audio-church/sermon_nazareen_dame_2.mp3',
-    thumbnail: '/images/ministeres/ministere-badge.svg',
-    description: 'Étude biblique pratique sur la responsabilité des parents dans la transmission de la foi chrétienne aux générations montantes (Proverbes 22:6).',
-    category: 'Famille & Foyer',
-    speaker: 'Pasteur Bequel CHERELUS',
-    date: 'Dimanche 4 Octobre 2026',
-    duration: '42 min',
-    created_at: new Date('2026-10-04T09:30:00Z').toISOString()
-  },
-  {
-    id: 'media-img-1',
-    title: 'Sceau Officiel et Devise de l’Église de Damé',
-    type: 'image',
-    url: '/images/eglise/sceau-officiel.svg',
-    thumbnail: '/images/eglise/sceau-officiel.svg',
-    description: 'L’emblème officiel de l’Église du Nazaréen de Damé proclamant la devise sainte : « Sainteté à l’Éternel » depuis sa fondation en 1979.',
-    category: 'Archives & Emblèmes',
-    speaker: 'Église du Nazaréen',
-    date: 'Archives Historiques',
-    created_at: new Date('2026-01-01T00:00:00Z').toISOString()
-  },
-  {
-    id: 'media-img-2',
-    title: 'Complexe du Centre CDEJ HA 0926 & École Nazareth',
-    type: 'image',
-    url: '/images/projets/cdej-compassion.svg',
-    thumbnail: '/images/projets/cdej-compassion.svg',
-    description: 'Bâtiment du Centre de Développement de l’Enfant et du Jeune (CDEJ HA 0926) en partenariat avec Compassion International à la 3ème Section Damé.',
-    category: 'Projets Sociaux (CDEJ)',
-    speaker: 'Compassion & Église de Damé',
-    date: 'Octobre 2026',
-    created_at: new Date('2026-10-01T08:00:00Z').toISOString()
-  },
-  {
-    id: 'media-img-3',
-    title: 'Pasteur Principal Bequel CHERELUS',
-    type: 'image',
-    url: '/images/pasteur/pasteur-cherelus.svg',
-    thumbnail: '/images/pasteur/pasteur-cherelus.svg',
-    description: 'Portrait pastoral du Pasteur Bequel CHERELUS, pasteur titulaire dirigeant la congrégation avec fidélité depuis 2003.',
-    category: 'Direction Pastorale',
-    speaker: 'Pasteur Bequel CHERELUS',
-    date: 'Année 2026',
-    created_at: new Date('2026-01-15T10:00:00Z').toISOString()
-  }
-];
+// Liste initiale vide : seuls les contenus explicitement publiés par l'utilisateur sont affichés
+export const INITIAL_CHURCH_MEDIA: ChurchMedia[] = [];
+
+// Fonction utilitaire pour éliminer tout média de test ou d'exemple antérieur
+export const isSampleOrDummyMedia = (item: { id?: string; url?: string; title?: string }): boolean => {
+  if (!item) return false;
+  const id = item.id || '';
+  const url = item.url || '';
+  const title = item.title || '';
+  return (
+    id === 'media-vid-1' ||
+    id === 'media-vid-2' ||
+    id === 'media-aud-1' ||
+    id === 'media-aud-2' ||
+    id === 'media-img-1' ||
+    id === 'media-img-2' ||
+    id === 'media-img-3' ||
+    url.includes('dQw4w9WgXcQ') ||
+    url.includes('sample-audio-church') ||
+    title.includes('Célébration de la Moisson') ||
+    title.includes('Puissance de la Sanctification dans un Monde en Mutation')
+  );
+};
 
 /**
  * Détection et extraction des liens vidéo YouTube, Facebook et directs
@@ -192,35 +124,41 @@ class MediaService {
           .from('media_items')
           .select('*')
           .order('created_at', { ascending: false });
-
         if (!error && Array.isArray(data) && data.length > 0) {
-          loadedItems = data.map((d: any) => ({
-            id: d.id,
-            title: d.title || 'Média sans titre',
-            type: (d.type || 'video') as 'video' | 'audio' | 'image',
-            url: d.url || '',
-            thumbnail: d.thumbnail || '/images/eglise/sceau-officiel.svg',
-            description: d.description || '',
-            category: d.category || 'Culte d’Adoration',
-            speaker: d.speaker || 'Pasteur Bequel CHERELUS',
-            date: d.date || new Date().toLocaleDateString('fr-FR'),
-            duration: d.duration || '',
-            created_at: d.created_at || new Date().toISOString()
-          }));
+          loadedItems = data
+            .map((d: any) => ({
+              id: d.id,
+              title: d.title || 'Média sans titre',
+              type: (d.type || 'video') as 'video' | 'audio' | 'image',
+              url: d.url || '',
+              thumbnail: d.thumbnail || '/images/eglise/sceau-officiel.png',
+              description: d.description || '',
+              category: d.category || 'Culte d’Adoration',
+              speaker: d.speaker || 'Pasteur Bequel CHERELUS',
+              date: d.date || new Date().toLocaleDateString('fr-FR'),
+              duration: d.duration || '',
+              created_at: d.created_at || new Date().toISOString()
+            }))
+            .filter((item: ChurchMedia) => !isSampleOrDummyMedia(item));
         }
       } catch (err) {
         console.warn('MediaService: Erreur de lecture Supabase, bascule sur le cache local:', err);
       }
     }
 
-    // 2. Si rien dans Supabase, lire depuis localStorage
-    if (loadedItems.length === 0 && typeof window !== 'undefined') {
+    // 2. Si rien dans Supabase, lire depuis localStorage (en purgeant la clé v1 obsolète)
+    if (typeof window !== 'undefined') {
       try {
-        const local = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (local) {
-          const parsed = JSON.parse(local);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            loadedItems = parsed;
+        // Nettoyage de l'ancien cache contenant des données de test
+        localStorage.removeItem('dame_church_media_v1');
+        
+        if (loadedItems.length === 0) {
+          const local = localStorage.getItem(LOCAL_STORAGE_KEY);
+          if (local) {
+            const parsed = JSON.parse(local);
+            if (Array.isArray(parsed)) {
+              loadedItems = parsed.filter(item => !isSampleOrDummyMedia(item));
+            }
           }
         }
       } catch {
@@ -228,18 +166,7 @@ class MediaService {
       }
     }
 
-    // 3. Si toujours vide, initialiser avec la médiathèque officielle
-    if (loadedItems.length === 0) {
-      loadedItems = [...INITIAL_CHURCH_MEDIA];
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(loadedItems));
-        } catch {
-          // Ignorer
-        }
-      }
-    }
-
+    // 3. Ne réinjecter AUCUN faux média : si vide, la médiathèque reste propre à 100%
     return loadedItems;
   }
 
@@ -329,6 +256,32 @@ class MediaService {
         }
       } catch (err) {
         console.warn('MediaService: Exception suppression Supabase:', err);
+      }
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Efface l'ensemble des médias stockés pour repartir d'une base totalement vierge
+   */
+  async clearAllMedia(): Promise<{ success: boolean }> {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('dame_church_media_v1');
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
+        window.dispatchEvent(new CustomEvent('church-media-updated', { detail: { media: [] } }));
+      } catch (err) {
+        console.warn('Erreur purge locale:', err);
+      }
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('media_items').delete().neq('id', '___keep_none___');
+      } catch (err) {
+        console.warn('Supabase clear items:', err);
       }
     }
 

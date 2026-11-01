@@ -485,6 +485,17 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     }
   };
 
+  const handleClearAllMedia = async () => {
+    if (!window.confirm("Voulez-vous vraiment effacer tous les médias de la médiathèque ? Cette action remettra la médiathèque totalement à zéro.")) return;
+    try {
+      await mediaService.clearAllMedia();
+      setMediaItems([]);
+      showToast('info', 'Médiathèque vidée avec succès. Elle est désormais totalement propre.');
+    } catch (err: any) {
+      showToast('error', 'Erreur lors du vidage: ' + err.message);
+    }
+  };
+
   const handleMediaUrlChange = (urlVal: string) => {
     const trimmed = urlVal.trim();
     if (trimmed.includes('youtube.com') || trimmed.includes('youtu.be')) {
@@ -969,26 +980,38 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
                   Publiez et gérez des vidéos (YouTube, Facebook), des fichiers audio et des photos de galerie. Synchronisé avec la page publique Media.
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  setMediaForm({
-                    type: 'video',
-                    title: '',
-                    speaker: 'Pasteur Bequel CHERELUS',
-                    category: 'Culte d’Adoration',
-                    url: '',
-                    thumbnail: '',
-                    duration: '',
-                    description: '',
-                    date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-                  });
-                  setMediaModalOpen(true);
-                }}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1.5 shadow-xs"
-              >
-                <Plus className="w-4 h-4" />
-                <span>+ Publier un Média</span>
-              </button>
+              <div className="flex items-center space-x-2">
+                {mediaItems.length > 0 && (
+                  <button
+                    onClick={handleClearAllMedia}
+                    className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-xl text-xs flex items-center space-x-1.5 border border-red-200 transition"
+                    title="Vider tous les médias pour repartir à zéro"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Vider tout</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setMediaForm({
+                      type: 'video',
+                      title: '',
+                      speaker: 'Pasteur Bequel CHERELUS',
+                      category: 'Culte d’Adoration',
+                      url: '',
+                      thumbnail: '',
+                      duration: '',
+                      description: '',
+                      date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                    });
+                    setMediaModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1.5 shadow-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Publier un Média</span>
+                </button>
+              </div>
             </div>
 
             {/* Filter pills */}
