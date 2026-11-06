@@ -28,6 +28,7 @@ import { LanguageSelector } from './LanguageSelector';
 import { useLanguage } from '../context/LanguageContext';
 import { isSecretariatSubdomain } from '../utils/subdomain';
 import churchSealImg from '../assets/images/regenerated_image_1792011564270.x-icon';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface NavbarProps {
   currentPath: string;
@@ -201,8 +202,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 </a>
               </div>
 
-              {/* Sélecteur de langue en haut sur Desktop uniquement (sur mobile, il est dans la barre principale) */}
-              <div className="hidden sm:block pl-2 border-l border-slate-800">
+              {/* Sélecteur de langue et bouton Installer App */}
+              <div className="hidden sm:flex items-center space-x-2 pl-2 border-l border-slate-800">
+                <PWAInstallButton variant="nav" />
                 <LanguageSelector compact />
               </div>
             </div>
@@ -473,6 +475,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
 
           {/* Boutons d'Action Rapide dans le tiroir mobile */}
           <div className="pt-4 mt-3 border-t border-slate-800/80 space-y-2.5">
+            <div className="flex justify-center pb-1">
+              <PWAInstallButton variant="nav" />
+            </div>
             <button
               onClick={() => handleNav('/faire-un-don')}
               className="w-full flex items-center justify-center space-x-2 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-md hover:brightness-110 active:scale-[0.99] transition"

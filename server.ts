@@ -4,6 +4,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { GoogleGenAI, Type } from '@google/genai';
 
 dotenv.config();
 
@@ -15,6 +16,16 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 const isProd = process.env.NODE_ENV === 'production';
 
 app.use(express.json());
+
+// Gemini AI Client Setup (Server-side)
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+  httpOptions: {
+    headers: {
+      'User-Agent': 'aistudio-build',
+    },
+  },
+});
 
 // Supabase Client Setup (Server-side)
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
@@ -116,6 +127,20 @@ const RADIO_FILE = path.join(__dirname, 'data', 'radio.json');
 const TESTIMONIES_FILE = path.join(__dirname, 'data', 'testimonies.json');
 const FAQ_FILE = path.join(__dirname, 'data', 'faq.json');
 const BREVO_SETTINGS_FILE = path.join(__dirname, 'data', 'brevo_settings.json');
+const DAILY_VERSE_FILE = path.join(__dirname, 'data', 'daily_verse.json');
+
+export interface DailyVerse {
+  date: string;
+  generatedAt: string;
+  source: string;
+  reference: string;
+  verse_ht: string;
+  verse_fr: string;
+  reflection_ht: string;
+  reflection_fr: string;
+  prayer_ht: string;
+  prayer_fr: string;
+}
 
 export interface StoredFAQ {
   id: string;
@@ -2092,6 +2117,166 @@ app.delete('/api/faq/:id', (req: Request, res: Response) => {
     list = list.filter(f => f.id !== id);
     saveStoredFAQ(list);
     res.json({ success: true, message: 'Question FAQ supprimée.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+// 8.5. VERSÈ JOUNEN AN (CHAK 24 TAN) / DAILY VERSE VIA GEMINI AI
+// ==========================================
+const FALLBACK_BIBLE_VERSES = [
+  {
+    reference: "Ebre 12:14 / Hébreux 12:14",
+    verse_ht: "Chèche viv anpè ak tout moun, epi mennen yon lavi ki apa nèt pou Bondye; paske san sa, pèsonn p'ap wè Granmèt la.",
+    verse_fr: "Recherchez la paix avec tous, et la sanctification, sans laquelle personne ne verra le Seigneur.",
+    reflection_ht: "Lapè ak sentete se de fondasyon lafwa nazaréèn nou an. Lè nou mache nan renmen ak obeyisans, Prezans Bondye briye nan tout kominote Damé a.",
+    reflection_fr: "La paix et la sainteté sont au cœur de notre foi. En marchant dans l'amour et l'obéissance, la lumière du Christ rayonne dans notre communauté.",
+    prayer_ht: "Senyè, mete lapè ou nan kè m jodi a epi ede m viv yon vi ki fè w plezi. Amèn.",
+    prayer_fr: "Seigneur, remplis mon cœur de Ta paix et sanctifie ma vie pour Ta seule gloire. Amen."
+  },
+  {
+    reference: "Filipyen 4:13 / Philippiens 4:13",
+    verse_ht: "Mwen kapab fè tout bagay grasa Kris la ki ban m fòs.",
+    verse_fr: "Je puis tout par celui qui me fortifie.",
+    reflection_ht: "Kèlkeswa defi oswa difikilte w ap rankontre jodi a, sonje se pa sou pwòp fòs ou pou w konte, men se sou pouvwa san limit Jezi Kris.",
+    reflection_fr: "Quelles que soient les épreuves que vous traversez aujourd'hui, rappelez-vous que votre force réside dans la grâce inépuisable du Christ.",
+    prayer_ht: "Jezi, mwen remèt ou tout feblès mwen yo. Ranpli m ak kouraj ou pou m venk jodi a. Amèn.",
+    prayer_fr: "Jésus, je Te remets mes faiblesses. Revêts-moi de Ta puissance pour triompher aujourd'hui. Amen."
+  },
+  {
+    reference: "Pwovèb 3:5-6 / Proverbes 3:5-6",
+    verse_ht: "Mete tout konfyans ou nan Seyè a; pa konte sou sa ou menm ou konnen. Chèche konnen volonte l nan tout sa w'ap fè, l'a louvri chemen an devan ou.",
+    verse_fr: "Confie-toi en l'Éternel de tout ton cœur, et ne t'appuie pas sur ta sagesse; reconnais-le dans toutes tes voies, et il aplanira tes sentiers.",
+    reflection_ht: "Lè nou abandone plan nou nan men Bondye, Li mennen nou nan chemen lapè ak benediksyon menm lè chemen an sanble difisil.",
+    reflection_fr: "Lorsque nous nous en remettons pleinement à Dieu, Il dirige chacun de nos pas avec sagesse et bonté paternelle.",
+    prayer_ht: "Papa ki nan syèl la, gide tout desizyon m jodi a pou m ka toujou rete nan volonte w. Amèn.",
+    prayer_fr: "Père céleste, conduis mes pas et mes décisions aujourd'hui pour Ta gloire. Amen."
+  },
+  {
+    reference: "Ezayi 40:31 / Ésaïe 40:31",
+    verse_ht: "Men, moun ki mete konfyans yo nan Seyè a ap jwenn fòs renouvle; y'ap vole wo tankou malfini; y'ap kouri san yo pa bouke; y'ap mache san yo pa febli.",
+    verse_fr: "Mais ceux qui se confient en l'Éternel renouvellent leur force. Ils prennent le vol comme les aigles; ils courent, et ne se lassent point; ils marchent, et ne se fatiguent point.",
+    reflection_ht: "Lafwa nou nan Senyè a se yon sous fòs ki pa janm seche. Pran kouraj, favè Bondye ap pote w pi wo pase tout eprèv.",
+    reflection_fr: "La confiance en Dieu renouvelle notre vigueur intérieure. Gardez courage, Sa grâce vous soutient jour après jour.",
+    prayer_ht: "Senyè, renouvle fòs mwen ak espwa mwen pou jounen sa a. Amèn.",
+    prayer_fr: "Seigneur, renouvelle ma force et mon espérance en ce jour. Amen."
+  },
+  {
+    reference: "Sòm 23:1 / Psaume 23:1",
+    verse_ht: "Seyè a se gadò mwen, mwen p'ap janm manke anyen.",
+    verse_fr: "L'Éternel est mon berger: je ne manquerai de rien.",
+    reflection_ht: "Bon Bèje a konnen tout bezwen w. Li la avèk ou nan chak moman, li pwoteje w epi li beni fanmi w nan kominote Damé a.",
+    reflection_fr: "Le Bon Berger prend soin de chacun de vos besoins. Sa paix et Sa bienveillance vous accompagnent fidèlement.",
+    prayer_ht: "Granmèt, mèsi paske w se bon bèje m. Mwen repoze anba pwoteksyon w. Amèn.",
+    prayer_fr: "Éternel, merci d'être mon berger bienveillant. Je m'abandonne entre Tes mains. Amen."
+  }
+];
+
+async function generateDailyVerseWithAI(): Promise<DailyVerse> {
+  const today = new Date().toISOString().split('T')[0];
+
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      const prompt = `You are a pastor and biblical teacher for the Église du Nazaréen de Damé (Haiti). The church was founded in 1979 by Saurel ALCINÉ, directed by Pastor Bequel CHERELUS, with motto "Sainteté à l'Éternel" (Biblical Holiness).
+Generate an inspiring Christian daily Bible verse for today (${today}) with its reference, a brief spiritual reflection (30 to 45 words), and a one-sentence prayer.
+Provide the text in both Haitian Creole (Kreyòl Ayisyen) and French (Français).
+Select an inspiring passage from the Gospels, Epistles, Psalms, or Prophets focusing on grace, peace, holiness, family, hope, or perseverance.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          systemInstruction: "You are an edifying Christian Bible scholar and holiness preacher providing daily spiritual food in Haitian Creole and French for the Church of the Nazarene in Damé, Haiti.",
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              reference: { type: Type.STRING, description: "Book chapter:verse in Creole / French" },
+              verse_ht: { type: Type.STRING, description: "The Bible verse in Haitian Creole" },
+              verse_fr: { type: Type.STRING, description: "The Bible verse in French (Louis Segond style)" },
+              reflection_ht: { type: Type.STRING, description: "Short meditation in Haitian Creole (30-45 words)" },
+              reflection_fr: { type: Type.STRING, description: "Short meditation in French (30-45 words)" },
+              prayer_ht: { type: Type.STRING, description: "Short prayer in Haitian Creole" },
+              prayer_fr: { type: Type.STRING, description: "Short prayer in French" }
+            },
+            required: ["reference", "verse_ht", "verse_fr", "reflection_ht", "reflection_fr", "prayer_ht", "prayer_fr"]
+          }
+        }
+      });
+
+      const parsed = JSON.parse(response.text || '{}');
+      if (parsed.reference && parsed.verse_ht) {
+        return {
+          date: today,
+          generatedAt: new Date().toISOString(),
+          source: 'gemini-3.8-flash',
+          ...parsed
+        };
+      }
+    } catch (err) {
+      console.warn('[Gemini Daily Verse] Generation fallback to curated holiness archive:', err);
+    }
+  }
+
+  // Fallback to curated archives based on day of year for variety
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = (now.getTime() - start.getTime()) + ((start.getTimezoneOffset() - now.getTimezoneOffset()) * 60 * 1000);
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+  const idx = Math.abs(dayOfYear) % FALLBACK_BIBLE_VERSES.length;
+
+  return {
+    date: today,
+    generatedAt: new Date().toISOString(),
+    source: 'curated_holiness_archive',
+    ...FALLBACK_BIBLE_VERSES[idx]
+  };
+}
+
+app.get('/api/daily-verse', async (req: Request, res: Response) => {
+  try {
+    ensureDataDir();
+    const today = new Date().toISOString().split('T')[0];
+    let verse: DailyVerse | null = null;
+
+    if (fs.existsSync(DAILY_VERSE_FILE)) {
+      try {
+        const stored = JSON.parse(fs.readFileSync(DAILY_VERSE_FILE, 'utf-8'));
+        if (stored && stored.date === today && stored.reference) {
+          verse = stored;
+        }
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    if (!verse) {
+      verse = await generateDailyVerseWithAI();
+      try {
+        fs.writeFileSync(DAILY_VERSE_FILE, JSON.stringify(verse, null, 2), 'utf-8');
+      } catch (e) {
+        console.warn('Cannot write daily verse file:', e);
+      }
+    }
+
+    res.json({ success: true, verse });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/daily-verse/refresh', async (req: Request, res: Response) => {
+  try {
+    ensureDataDir();
+    const verse = await generateDailyVerseWithAI();
+    try {
+      fs.writeFileSync(DAILY_VERSE_FILE, JSON.stringify(verse, null, 2), 'utf-8');
+    } catch (e) {
+      console.warn('Cannot write daily verse file:', e);
+    }
+    res.json({ success: true, message: 'Nouvo vèsè jounen an pwodui avèk siksè !', verse });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

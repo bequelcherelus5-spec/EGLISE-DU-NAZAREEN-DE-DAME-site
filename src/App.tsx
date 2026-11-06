@@ -29,6 +29,7 @@ import { Testimonies } from './pages/Testimonies';
 import { Donations } from './pages/Donations';
 import { isSecretariatSubdomain } from './utils/subdomain';
 import { ArrowUp, ShieldCheck, ExternalLink, Lock } from 'lucide-react';
+import { PWAInstallButton } from './components/PWAInstallButton';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState<string>(() => {
@@ -218,6 +219,9 @@ export default function App() {
 
         {/* 24/7 Web Radio Player Floating (Option Radio) */}
         <RadioPlayer />
+
+        {/* Floating PWA Mobile Install Prompt */}
+        <PWAInstallButton variant="floating" />
 
         {/* Back to Top Floating Button */}
         {showScrollTop && (

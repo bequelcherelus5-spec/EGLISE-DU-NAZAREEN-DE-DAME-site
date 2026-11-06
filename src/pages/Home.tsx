@@ -8,6 +8,7 @@ import {
 import { mediaService, ChurchMedia } from '../services/mediaService';
 import { SEOHead } from '../components/SEOHead';
 import { DonationSection } from '../components/DonationSection';
+import { DailyVerseWidget } from '../components/DailyVerseWidget';
 import churchSealImg from '../assets/images/regenerated_image_1792011564270.x-icon';
 import { 
   Calendar, 
@@ -268,6 +269,9 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
           </div>
         </div>
       </section>
+
+      {/* 2.5. VÈSÈ JOUNEN AN (CHAK 24 TAN) & MEDITASYON PASTORAL */}
+      <DailyVerseWidget />
 
       {/* 3. MOT DE BIENVENUE DU PASTEUR PRINCIPAL */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
