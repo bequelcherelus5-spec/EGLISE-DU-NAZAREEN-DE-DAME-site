@@ -657,11 +657,12 @@ async function fetchAllSubscribers(): Promise<Subscriber[]> {
     if (s.email) map.set(s.email.toLowerCase(), s);
   }
 
-  // 2. From Brevo API contacts
+  // 2. From Brevo API contacts (List ID #5)
   const activeKey = brevoConfig.apiKey || process.env.BREVO_API_KEY;
   if (activeKey && activeKey.startsWith('xkeysib-')) {
     try {
-      const bRes = await fetch('https://api.brevo.com/v3/contacts?limit=100', {
+      const listIdNum = parseInt(brevoConfig.brevoListId || process.env.VITE_BREVO_LIST_ID || process.env.BREVO_LIST_ID || '5', 10) || 5;
+      const bRes = await fetch(`https://api.brevo.com/v3/contacts/lists/${listIdNum}/contacts?limit=500&sort=desc`, {
         headers: { 'api-key': activeKey, accept: 'application/json' }
       });
       if (bRes.ok) {

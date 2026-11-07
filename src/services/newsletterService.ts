@@ -104,7 +104,7 @@ export interface SendCampaignResponse {
 }
 
 export const newsletterService = {
-  // Inscription publique avec fallback Supabase & LocalStorage (parfaitement compatible domaine public www.eglisedunazareendedame.org et restrictions CORS)
+  // Inscription publique avec appel direct Brevo (List ID 5), fallback et persistance Supabase (table subscribers & newsletter_subscribers) + LocalStorage
   async subscribe(email: string, firstName?: string, lastName?: string): Promise<SubscribeResponse> {
     const cleanEmail = email.trim().toLowerCase();
     const cleanFn = firstName?.trim() || '';
@@ -114,7 +114,7 @@ export const newsletterService = {
       return { success: false, message: 'Veuillez saisir une adresse email valide.' };
     }
 
-    // Fonction de persistance de secours (LocalStorage + Supabase table 'newsletter_subscribers')
+    // 1. Sauvegarde et persistance immédiate (Supabase + localStorage)
     const persistLocallyAndSupabase = async () => {
       // A. Sauvegarde locale garantie dans localStorage
       try {
@@ -131,14 +131,31 @@ export const newsletterService = {
             subscribedAt: new Date().toISOString()
           });
           localStorage.setItem('dame_local_subscribers', JSON.stringify(list));
+          localStorage.setItem('dame_subscribers', JSON.stringify(list));
         }
       } catch (e) {
         console.warn('[Newsletter] Erreur sauvegarde locale:', e);
       }
 
-      // B. Synchronisation directe dans la table Supabase 'newsletter_subscribers'
+      // B. Synchronisation dans Supabase (dans 'subscribers' et 'newsletter_subscribers')
       const client = getActiveSupabaseClient() || supabase;
       if (client) {
+        // Table 'subscribers'
+        try {
+          await client
+            .from('subscribers')
+            .upsert([
+              {
+                email: cleanEmail,
+                first_name: cleanFn || null,
+                last_name: cleanLn || null,
+                is_active: true,
+                subscribed_at: new Date().toISOString()
+              }
+            ], { onConflict: 'email' });
+        } catch {}
+
+        // Table 'newsletter_subscribers'
         try {
           await client
             .from('newsletter_subscribers')
@@ -151,127 +168,174 @@ export const newsletterService = {
                 subscribed_at: new Date().toISOString()
               }
             ], { onConflict: 'email' });
-        } catch (e) {
-          console.warn('[Newsletter] Exception insertion Supabase:', e);
-        }
-      }
-
-      // C. Si une clé API Brevo est disponible en direct, ajouter le contact dans Brevo et l'associer à la Liste 5
-      const brevoKey = getResolvedBrevoApiKey();
-      if (brevoKey) {
-        try {
-          const targetListId = parseInt(getResolvedBrevoListId() || '5', 10) || 5;
-          const brevoContactRes = await fetch('https://api.brevo.com/v3/contacts', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'api-key': brevoKey,
-              accept: 'application/json'
-            },
-            body: JSON.stringify({
-              email: cleanEmail,
-              attributes: {
-                PRENOM: cleanFn || undefined,
-                NOM: cleanLn || undefined
-              },
-              listIds: [targetListId],
-              updateEnabled: true
-            })
-          });
-
-          // Si le contact existait déjà ou pour garantir l'appartenance à la Liste 5
-          if (!brevoContactRes.ok) {
-            try {
-              await fetch(`https://api.brevo.com/v3/contacts/lists/${targetListId}/contacts/add`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'api-key': brevoKey,
-                  accept: 'application/json'
-                },
-                body: JSON.stringify({ emails: [cleanEmail] })
-              });
-            } catch {}
-          }
         } catch {}
       }
     };
 
+    // Toujours persister en local et Supabase
+    await persistLocallyAndSupabase();
+
+    // 2. Appel direct à l'API Brevo v3 (List ID 5)
+    const brevoKey = getResolvedBrevoApiKey();
+    let brevoSuccess = false;
+
+    if (brevoKey && brevoKey.startsWith('xkeysib-')) {
+      try {
+        const brevoPayload: any = {
+          email: cleanEmail,
+          listIds: [5],
+          updateEnabled: true
+        };
+        if (cleanFn) {
+          brevoPayload.attributes = {
+            FIRSTNAME: cleanFn,
+            PRENOM: cleanFn
+          };
+          if (cleanLn) {
+            brevoPayload.attributes.LASTNAME = cleanLn;
+            brevoPayload.attributes.NOM = cleanLn;
+          }
+        }
+
+        const brevoRes = await fetch('https://api.brevo.com/v3/contacts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'api-key': brevoKey,
+            'accept': 'application/json'
+          },
+          body: JSON.stringify(brevoPayload)
+        });
+
+        if (brevoRes.ok || brevoRes.status === 200 || brevoRes.status === 201 || brevoRes.status === 204) {
+          brevoSuccess = true;
+        } else {
+          // Si le contact existait déjà ou pour forcer son rattachement à la liste 5
+          try {
+            const addToListRes = await fetch('https://api.brevo.com/v3/contacts/lists/5/contacts/add', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'api-key': brevoKey,
+                'accept': 'application/json'
+              },
+              body: JSON.stringify({ emails: [cleanEmail] })
+            });
+            if (addToListRes.ok || addToListRes.status === 204 || addToListRes.status === 200) {
+              brevoSuccess = true;
+            }
+          } catch {}
+        }
+      } catch (brevoErr) {
+        console.warn('[Brevo Direct] Erreur lors de l’appel API Brevo contacts:', brevoErr);
+      }
+    }
+
+    // 3. Appel au serveur backend si présent (pour environnement dev / Node)
     try {
-      const response = await fetch('/api/newsletter/subscribe', {
+      await fetch('/api/newsletter/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, firstName: cleanFn, lastName: cleanLn })
       });
+    } catch {}
 
-      // 1. Si response.ok est vrai (200, 201 ou 204), succès confirmé
-      if (response.ok || response.status === 200 || response.status === 201 || response.status === 204) {
-        await persistLocallyAndSupabase();
-        return {
-          success: true,
-          message: 'Merci pour votre abonnement à la newsletter !',
-          isNew: true
-        };
-      }
-
-      // 2. Si l'API retourne un statut non-200 (ex: 404 sur Cloudflare Pages statique), basculer sur le fallback Supabase & Local
-      await persistLocallyAndSupabase();
-      return {
-        success: true,
-        message: 'Merci pour votre abonnement à la newsletter !',
-        isNew: true
-      };
-    } catch {
-      // 3. En cas de blocage CORS ou échec de réseau sur le domaine public www.eglisedunazareendedame.org
-      await persistLocallyAndSupabase();
-      return { 
-        success: true, 
-        message: 'Merci pour votre abonnement à la newsletter !', 
-        isNew: true 
-      };
-    }
+    return {
+      success: true,
+      message: 'Mèsi pou enskripsyon ou nan bilten nouvel Legliz la !',
+      isNew: true,
+      syncedWithBrevo: brevoSuccess
+    };
   },
 
-  // Admin : Récupérer les abonnés réels (agrégation /api, Supabase 'newsletter_subscribers', et local)
+  // Admin : Récupérer les abonnés réels depuis la Liste ID #5 de Brevo avec fallback Supabase & Local
   async getSubscribers(query = ''): Promise<NewsletterSubscriber[]> {
     const subscribersMap = new Map<string, NewsletterSubscriber>();
+    const brevoKey = getResolvedBrevoApiKey();
+    let brevoLoaded = false;
 
-    // 1. Tenter via /api/newsletter/subscribers
-    try {
-      const res = await fetch(`/api/newsletter/subscribers?q=${encodeURIComponent(query)}`);
-      if (res.ok) {
-        const contentType = res.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
+    // 1. Appel API Brevo pour récupérer les contacts réels de la Liste ID 5
+    if (brevoKey && brevoKey.startsWith('xkeysib-')) {
+      try {
+        const listId = 5;
+        // API Brevo: GET /v3/contacts/lists/{listId}/contacts
+        const res = await fetch(`https://api.brevo.com/v3/contacts/lists/${listId}/contacts?limit=500&sort=desc`, {
+          method: 'GET',
+          headers: {
+            'api-key': brevoKey,
+            'accept': 'application/json'
+          }
+        });
+
+        if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data)) {
-            for (const s of data) {
-              if (s && s.email) {
-                subscribersMap.set(s.email.toLowerCase().trim(), {
-                  id: s.id || 'sub-' + s.email,
-                  email: s.email.toLowerCase().trim(),
-                  firstName: s.firstName || '',
-                  lastName: s.lastName || '',
-                  isActive: s.isActive !== false,
-                  subscribedAt: s.subscribedAt || new Date().toISOString()
+          const contacts = data?.contacts || [];
+          if (Array.isArray(contacts)) {
+            brevoLoaded = true;
+            for (const c of contacts) {
+              if (c && c.email) {
+                const emailClean = c.email.toLowerCase().trim();
+                const fn = c.attributes?.FIRSTNAME || c.attributes?.PRENOM || '';
+                const ln = c.attributes?.LASTNAME || c.attributes?.NOM || '';
+                subscribersMap.set(emailClean, {
+                  id: 'brevo-' + (c.id || emailClean),
+                  email: emailClean,
+                  firstName: fn,
+                  lastName: ln,
+                  isActive: !c.emailBlacklisted,
+                  subscribedAt: c.createdAt || new Date().toISOString()
                 });
               }
             }
           }
         }
+      } catch (err) {
+        console.warn('[Newsletter] Erreur récupération contacts liste #5 Brevo:', err);
       }
-    } catch {}
+    }
 
-    // 2. Récupérer depuis Supabase (table 'newsletter_subscribers')
+    // 2. Si l'API Brevo en direct n'était pas disponible ou a échoué (ex: pas de clé en localStorage), tenter via le backend /api/newsletter/subscribers
+    if (!brevoLoaded) {
+      try {
+        const res = await fetch(`/api/newsletter/subscribers?q=${encodeURIComponent(query)}`);
+        if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              for (const s of data) {
+                if (s && s.email) {
+                  const emailClean = s.email.toLowerCase().trim();
+                  if (!subscribersMap.has(emailClean)) {
+                    subscribersMap.set(emailClean, {
+                      id: s.id || 'sub-' + emailClean,
+                      email: emailClean,
+                      firstName: s.firstName || '',
+                      lastName: s.lastName || '',
+                      isActive: s.isActive !== false,
+                      subscribedAt: s.subscribedAt || new Date().toISOString()
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+
+    // 3. Compléter avec Supabase (tables 'subscribers' et 'newsletter_subscribers')
     const client = getActiveSupabaseClient() || supabase;
     if (client) {
+      // Table 'subscribers'
       try {
-        let qb = client.from('newsletter_subscribers').select('*');
+        let qb1 = client.from('subscribers').select('*');
         if (query) {
-          qb = qb.or(`email.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%`);
+          qb1 = qb1.or(`email.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%`);
         }
-        const { data, error } = await qb;
-        if (!error && Array.isArray(data)) {
-          for (const row of data) {
+        const { data: data1 } = await qb1;
+        if (Array.isArray(data1)) {
+          for (const row of data1) {
             const email = (row.email || '').toLowerCase().trim();
             if (email && !subscribersMap.has(email)) {
               subscribersMap.set(email, {
@@ -285,12 +349,34 @@ export const newsletterService = {
             }
           }
         }
-      } catch (e) {
-        console.warn('[Newsletter] Fallback Supabase getSubscribers:', e);
-      }
+      } catch {}
+
+      // Table 'newsletter_subscribers'
+      try {
+        let qb2 = client.from('newsletter_subscribers').select('*');
+        if (query) {
+          qb2 = qb2.or(`email.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%`);
+        }
+        const { data: data2 } = await qb2;
+        if (Array.isArray(data2)) {
+          for (const row of data2) {
+            const email = (row.email || '').toLowerCase().trim();
+            if (email && !subscribersMap.has(email)) {
+              subscribersMap.set(email, {
+                id: row.id ? String(row.id) : 'supa-' + email,
+                email,
+                firstName: row.first_name || '',
+                lastName: row.last_name || '',
+                isActive: row.active ?? row.is_active ?? true,
+                subscribedAt: row.created_at || row.subscribed_at || new Date().toISOString()
+              });
+            }
+          }
+        }
+      } catch {}
     }
 
-    // 3. Récupérer depuis localStorage
+    // 4. Compléter avec localStorage (backup)
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem('dame_local_subscribers') || localStorage.getItem('dame_subscribers');

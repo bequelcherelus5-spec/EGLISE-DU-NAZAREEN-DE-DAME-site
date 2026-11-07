@@ -42,7 +42,7 @@ import { newsletterService } from '../services/newsletterService';
 import { projectService } from '../services/projectService';
 import { mediaService, ChurchMedia, parseVideoUrl, readFileAsDataUrl } from '../services/mediaService';
 import { testSupabaseConnection, setRuntimeSupabaseCredentials } from '../services/supabaseClient';
-import { MemberRecord, SacramentRecord, PrayerRequest, ManagedProject, BrevoConfigView } from '../types';
+import { MemberRecord, SacramentRecord, PrayerRequest, ManagedProject, BrevoConfigView, NewsletterSubscriber } from '../types';
 
 interface SecretariatProps {
   onNavigate?: (path: string) => void;
@@ -168,6 +168,9 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
   const [brevoSaving, setBrevoSaving] = useState(false);
   const [brevoTestResult, setBrevoTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
+  const [subscribersLoading, setSubscribersLoading] = useState(false);
+
   const [campaignSubject, setCampaignSubject] = useState('Annonce Officielle - Église du Nazaréen de Damé');
   const [campaignContent, setCampaignContent] = useState(
     'Chers frères et sœurs,\n\nNous vous remercions pour votre fidélité et votre engagement envers le Seigneur et l’Église de Damé.\n\nQue Dieu vous bénisse abondamment !\n« Sainteté à l’Éternel »'
@@ -227,8 +230,22 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
 
       const brevo = await newsletterService.getBrevoSettings();
       if (brevo) setBrevoSettings(brevo);
+
+      await loadSubscribers();
     } catch (err) {
       console.error('Error loading data:', err);
+    }
+  };
+
+  const loadSubscribers = async () => {
+    setSubscribersLoading(true);
+    try {
+      const subs = await newsletterService.getSubscribers();
+      setSubscribers(subs || []);
+    } catch (e) {
+      console.warn('Erreur chargement abonnés:', e);
+    } finally {
+      setSubscribersLoading(false);
     }
   };
 
@@ -554,20 +571,28 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
       if (apiKey) localStorage.setItem('dame_brevo_api_key', apiKey);
       localStorage.setItem('dame_brevo_sender_email', brevoSenderEmail.trim());
       localStorage.setItem('dame_brevo_sender_name', brevoSenderName.trim());
-      localStorage.setItem('dame_brevo_list_id', brevoListId.trim());
+      localStorage.setItem('dame_brevo_list_id', brevoListId.trim() || '5');
+
+      await newsletterService.saveBrevoSettings({
+        apiKey,
+        senderEmail: brevoSenderEmail.trim(),
+        senderName: brevoSenderName.trim(),
+        brevoListId: brevoListId.trim() || '5'
+      });
 
       setBrevoSettings({
-        hasApiKey: true,
+        hasApiKey: Boolean(apiKey),
         apiKeyPreview: apiKey ? '••••••••••••••••' : 'Non configurée',
         senderEmail: brevoSenderEmail.trim(),
         senderName: brevoSenderName.trim(),
-        brevoListId: brevoListId.trim(),
+        brevoListId: brevoListId.trim() || '5',
         isActive: true,
         updatedAt: new Date().toISOString()
       });
-      showToast('success', 'Configuration Brevo enregistrée !');
+      showToast('success', 'Konfigirasyon Brevo anrejistre avèk siksè !');
+      await loadSubscribers();
     } catch (err: any) {
-      showToast('error', 'Erreur: ' + err.message);
+      showToast('error', 'Erè: ' + err.message);
     } finally {
       setBrevoSaving(false);
     }
@@ -578,24 +603,22 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
     setBrevoTestResult(null);
     const activeApiKey = brevoApiKeyInput.trim() || localStorage.getItem('dame_brevo_api_key');
     if (!activeApiKey) {
-      setBrevoTestResult({ success: false, message: 'Veuillez entrer une clé API Brevo.' });
+      setBrevoTestResult({ success: false, message: 'Veuillez entrer une clé API Brevo (xkeysib-...).' });
       setBrevoTesting(false);
       return;
     }
     try {
-      const res = await fetch('https://api.brevo.com/v3/account', {
-        headers: { 'api-key': activeApiKey }
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setBrevoTestResult({ success: true, message: `Connexion Réussie ! Compte: ${data.email}` });
-        showToast('success', 'Clé Brevo validée !');
+      const res = await newsletterService.testBrevoConnection(activeApiKey);
+      if (res.success) {
+        setBrevoTestResult({ success: true, message: `Koneksyon Reysi ! ${res.message}` });
+        showToast('success', 'Clé Brevo valide !');
+        await loadSubscribers();
       } else {
-        setBrevoTestResult({ success: false, message: data.message || 'Clé invalide.' });
-        showToast('error', 'Clé invalide.');
+        setBrevoTestResult({ success: false, message: res.message || 'Clé Brevo invalide.' });
+        showToast('error', res.message || 'Clé invalide.');
       }
     } catch (err: any) {
-      setBrevoTestResult({ success: false, message: 'Erreur réseau: ' + err.message });
+      setBrevoTestResult({ success: false, message: 'Erè rezo: ' + err.message });
     } finally {
       setBrevoTesting(false);
     }
@@ -1155,8 +1178,74 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
 
               <hr className="my-6" />
 
+              {/* LISTE RÉELLE DES ABONNÉS BREVO LISTE #5 */}
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900 flex items-center space-x-2">
+                      <Users className="w-5 h-5 text-amber-500" />
+                      <span>Abonnés Réels de la Liste Brevo #5 ({subscribers.length})</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Contacts réels synchronisés directement depuis la Liste ID #5 de Brevo et sauvegardés dans Supabase &amp; LocalStorage.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadSubscribers}
+                    disabled={subscribersLoading}
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${subscribersLoading ? 'animate-spin text-amber-500' : ''}`} />
+                    <span>Actualiser Liste #5</span>
+                  </button>
+                </div>
+
+                {subscribersLoading ? (
+                  <div className="py-8 text-center text-xs text-slate-500">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto text-amber-500 mb-2" />
+                    <p>Chargement des abonnés de la Liste Brevo #5...</p>
+                  </div>
+                ) : subscribers.length === 0 ? (
+                  <div className="p-6 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-500 space-y-1">
+                    <Mail className="w-8 h-8 mx-auto text-slate-300" />
+                    <p className="font-semibold text-slate-700">Aucun abonné pour le moment dans la Liste #5</p>
+                    <p>Les nouveaux abonnés inscrits sur le site public apparaîtront ici automatiquement.</p>
+                  </div>
+                ) : (
+                  <div className="border border-slate-200 rounded-xl overflow-hidden">
+                    <div className="max-h-60 overflow-y-auto divide-y divide-slate-100">
+                      {subscribers.map((sub, idx) => (
+                        <div key={sub.id || idx} className="p-3 flex items-center justify-between text-xs hover:bg-slate-50 transition">
+                          <div className="min-w-0 flex-1 pr-2">
+                            <span className="font-bold text-slate-900 block truncate">{sub.email}</span>
+                            {(sub.firstName || sub.lastName) && (
+                              <span className="text-[11px] text-slate-500 block truncate">
+                                {[sub.firstName, sub.lastName].filter(Boolean).join(' ')}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2 flex-shrink-0">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              sub.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {sub.isActive ? 'Actif' : 'Inactif'}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">
+                              {sub.subscribedAt ? new Date(sub.subscribedAt).toLocaleDateString('fr-HT') : ''}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <hr className="my-6" />
+
               <form onSubmit={handleSendCampaign} className="space-y-4">
-                <h3 className="font-bold text-base">Diffuser un Message aux Abonnés</h3>
+                <h3 className="font-bold text-base">Diffuser un Message aux Abonnés ({subscribers.filter(s => s.isActive).length} actifs)</h3>
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Sujet</label>
                   <input type="text" value={campaignSubject} onChange={e => setCampaignSubject(e.target.value)} required className="w-full px-4 py-2 bg-slate-50 border rounded-xl text-sm" />
