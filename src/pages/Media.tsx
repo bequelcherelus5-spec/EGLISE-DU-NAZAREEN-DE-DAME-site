@@ -249,24 +249,121 @@ export const Media: React.FC<MediaProps> = ({ onNavigate }) => {
             <p className="text-xs text-slate-500 font-medium">Chargement des médias officiels...</p>
           </div>
         ) : items.length === 0 ? (
-          <div className="bg-white rounded-3xl p-10 sm:p-14 text-center border border-slate-200/80 shadow-sm max-w-xl mx-auto space-y-4">
-            <div className="w-16 h-16 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600 shadow-inner">
-              <Tv className="w-8 h-8" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-serif text-xl font-bold text-slate-900">Médiathèque Prête</h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Aucun média n’a encore été publié. Vous pouvez publier facilement des vidéos YouTube ou Facebook, des prédications audios et des photos depuis l’espace Secrétariat.
-              </p>
-            </div>
-            <div className="pt-2">
-              <button
-                onClick={() => onNavigate('/secretariat')}
-                className="inline-flex items-center space-x-2 px-6 py-3 rounded-xl bg-amber-500 text-slate-950 text-xs sm:text-sm font-extrabold hover:bg-amber-400 shadow-md transition"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Publier un premier média</span>
-              </button>
+          <div className="space-y-10">
+            {/* Pastoral Message & Media Center Overview */}
+            <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200/80 shadow-md space-y-6">
+              <div className="max-w-3xl space-y-3">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 inline-block">
+                  Centre Audiovisuel &amp; Ministère de la Parole
+                </span>
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900">
+                  Prédications, Enseignements &amp; Archives Liturgiques de Damé
+                </h2>
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  Bienvenue dans l’espace audiovisuel officiel de l’<strong>Église du Nazaréen de Damé</strong>. Sous la conduite pastorale du <strong>Pasteur Bequel CHERELUS</strong>, notre congrégation proclame la pure doctrine biblique de la sainteté de cœur et de vie (Hébreux 12:14), tout en partageant avec les fidèles d’Haïti et de la diaspora les prédications inspirées, les chants d’adoration de nos chorales et les témoignages de la grâce divine.
+                </p>
+              </div>
+
+              {/* 3 Pillars of Media Ministry */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center font-bold">
+                    <Tv className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <h3 className="font-serif font-bold text-slate-900 text-sm">
+                    Diffusion des Cultes du Dimanche
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Les cultes d’adoration et de louange célébrés chaque dimanche matin de 08h00 à 11h30 à Damé sont captés pour édifier les foyers chrétiens, les membres éloignés et la communauté chrétienne internationale.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-700 flex items-center justify-center font-bold">
+                    <Headphones className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <h3 className="font-serif font-bold text-slate-900 text-sm">
+                    Prédications Audio &amp; Études
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Des messages audio théologiques centrés sur la sanctification chrétienne, l’espérance en Christ et l’éthique nazaréenne, disponibles pour une écoute méditative à tout moment.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-700 flex items-center justify-center font-bold">
+                    <ImageIcon className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <h3 className="font-serif font-bold text-slate-900 text-sm">
+                    Mémoire Visuelle &amp; Projets
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Photographies des baptêmes par immersion, des célébrations de jeunesse JNI, des réunions du Ministère des Dames et des activités humanitaires du projet CDEJ HA 0926.
+                  </p>
+                </div>
+              </div>
+
+              {/* Pastoral Themes & Scripture Guide */}
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-50 via-white to-amber-50 border border-amber-200 space-y-3">
+                <h4 className="font-serif font-bold text-amber-900 text-base">
+                  Thèmes Majeurs de la Prédication à l’Église du Nazaréen de Damé
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-700">
+                  <div className="space-y-1">
+                    <p className="font-bold text-slate-900">1. La Sanctification Entière (1 Thessaloniciens 5:23-24)</p>
+                    <p className="text-slate-600">
+                      L’œuvre de l’Esprit de Dieu qui purifie le cœur du croyant, le rendant capable d’aimer Dieu de tout son cœur et son prochain comme lui-même.
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-bold text-slate-900">2. La Fidélité et la Persévérance dans l’Épreuve (Jacques 1:12)</p>
+                    <p className="text-slate-600">
+                      Encouragements adressés à la congrégation de Damé pour demeurer fermes dans la foi chrétienne en toutes circonstances.
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-bold text-slate-900">3. La Compassion &amp; le Service Chrétien (Matthieu 25:40)</p>
+                    <p className="text-slate-600">
+                      L’incarnation pratique de l’Évangile par le soutien aux 200+ enfants parrainés et aux familles vulnérables du Nord-Ouest d’Haïti.
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-bold text-slate-900">4. La Transmission de la Foi aux Nouvelles Générations (Proverbes 22:6)</p>
+                    <p className="text-slate-600">
+                      Formation biblique approfondie dans les écoles du dimanche, les clubs d'enfants et les séminaires pour la jeunesse JNI.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Official YouTube Channel CTA */}
+              <div className="flex flex-col sm:flex-row items-center justify-between p-6 rounded-2xl bg-slate-900 text-white gap-4">
+                <div className="space-y-1 text-center sm:text-left">
+                  <p className="font-serif font-bold text-base text-amber-300">
+                    Abonnez-vous à notre Chaîne YouTube Officielle
+                  </p>
+                  <p className="text-xs text-slate-300">
+                    Retrouvez les diffusions en direct, les cantiques d’adoration et les interventions du Pasteur Bequel CHERELUS.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href={OFFICIAL_CHURCH_INFO.social.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center space-x-2 shadow-lg"
+                  >
+                    <Youtube className="w-4 h-4" />
+                    <span>Visiter YouTube</span>
+                  </a>
+                  <button
+                    onClick={() => onNavigate('/contact')}
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition border border-slate-700"
+                  >
+                    <span>Contacter l’équipe média</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         ) : filteredItems.length === 0 ? (

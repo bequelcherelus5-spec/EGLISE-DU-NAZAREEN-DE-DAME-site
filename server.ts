@@ -2299,6 +2299,8 @@ app.get('/sitemap.xml', (req: Request, res: Response) => {
     { loc: '/projets', priority: '0.9', changefreq: 'monthly' },
     { loc: '/medias', priority: '0.8', changefreq: 'weekly' },
     { loc: '/jeux-bibliques', priority: '0.8', changefreq: 'monthly' },
+    { loc: '/confidentialite', priority: '0.8', changefreq: 'yearly' },
+    { loc: '/conditions', priority: '0.8', changefreq: 'yearly' },
     { loc: '/contact', priority: '0.8', changefreq: 'yearly' }
   ];
 
@@ -2332,6 +2334,11 @@ Disallow: /api/
 Sitemap: ${baseUrl}/sitemap.xml`;
   res.header('Content-Type', 'text/plain; charset=utf-8');
   res.send(content);
+});
+
+app.get('/ads.txt', (req: Request, res: Response) => {
+  res.header('Content-Type', 'text/plain; charset=utf-8');
+  res.send('google.com, pub-7382968203880435, DIRECT, f08c47fec0942fa0\n');
 });
 
 // ==========================================

@@ -1,0 +1,3 @@
+# Fichier ads.txt officiel pour Église du Nazaréen de Damé (www.eglisedunazareendedame.org)
+# Référence éditeur Google AdSense : pub-7382968203880435
+google.com, pub-7382968203880435, DIRECT, f08c47fec0942fa0

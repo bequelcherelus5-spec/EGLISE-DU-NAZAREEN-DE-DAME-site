@@ -330,11 +330,37 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
         </div>
 
-        {/* Bottom Bar: Copyright, Language & Official Domain */}
-        <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-          <p>
-            © {new Date().getFullYear()} <strong className="text-slate-200">ÉGLISE DU NAZARÉEN DE DAMÉ</strong>. Tous droits réservés.
-          </p>
+        {/* Bottom Bar: Copyright, Legal Links, Language & Official Domain */}
+        <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2">
+            <p>
+              © {new Date().getFullYear()} <strong className="text-slate-200">ÉGLISE DU NAZARÉEN DE DAMÉ</strong>.
+            </p>
+            <span className="hidden sm:inline text-slate-700">•</span>
+            <button
+              onClick={() => onNavigate('/confidentialite')}
+              className="text-slate-400 hover:text-amber-400 transition underline underline-offset-2"
+            >
+              Politique de Confidentialité
+            </button>
+            <span className="text-slate-700">•</span>
+            <button
+              onClick={() => onNavigate('/conditions')}
+              className="text-slate-400 hover:text-amber-400 transition underline underline-offset-2"
+            >
+              Conditions d’Utilisation
+            </button>
+            <span className="text-slate-700">•</span>
+            <a
+              href="/ads.txt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-amber-400 transition font-mono text-[11px]"
+            >
+              ads.txt
+            </a>
+          </div>
+
           <div className="flex items-center space-x-4">
             <LanguageSelector compact />
             <a 

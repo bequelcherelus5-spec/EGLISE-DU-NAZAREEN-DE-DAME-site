@@ -157,7 +157,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
               </button>
 
               <button
-                onClick={() => onNavigate('/medias')}
+                onClick={() => onNavigate('/media')}
                 className="px-6 py-3.5 rounded-xl font-bold text-sm bg-slate-900/60 hover:bg-slate-900 text-slate-200 border border-slate-700 hover:border-amber-400 shadow-md transition flex items-center space-x-2"
               >
                 <Headphones className="w-4 h-4 text-amber-400" />

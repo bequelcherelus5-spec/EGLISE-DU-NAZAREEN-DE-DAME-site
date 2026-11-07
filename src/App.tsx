@@ -27,9 +27,12 @@ import { FAQ } from './pages/FAQ';
 import { DailyBibleReading } from './pages/DailyBibleReading';
 import { Testimonies } from './pages/Testimonies';
 import { Donations } from './pages/Donations';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { TermsOfService } from './pages/TermsOfService';
 import { isSecretariatSubdomain } from './utils/subdomain';
 import { ArrowUp, ShieldCheck, ExternalLink, Lock } from 'lucide-react';
 import { PWAInstallButton } from './components/PWAInstallButton';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState<string>(() => {
@@ -128,6 +131,15 @@ export default function App() {
         return <Contact onNavigate={navigateTo} />;
       case '/jeux-bibliques':
         return <BibleGames onNavigate={navigateTo} />;
+      case '/confidentialite':
+      case '/privacy':
+      case '/politique-de-confidentialite':
+        return <PrivacyPolicy onNavigate={navigateTo} />;
+      case '/conditions':
+      case '/terms':
+      case '/conditions-generales':
+      case '/mentions-legales':
+        return <TermsOfService onNavigate={navigateTo} />;
       case '/secretariat':
         if (isSubdomain) {
           return <Secretariat onNavigate={navigateTo} isSubdomain={true} />;
@@ -222,6 +234,9 @@ export default function App() {
 
         {/* Floating PWA Mobile Install Prompt */}
         <PWAInstallButton variant="floating" />
+
+        {/* Google AdSense & Cookies Consent Banner */}
+        <CookieConsentBanner onNavigate={navigateTo} />
 
         {/* Back to Top Floating Button */}
         {showScrollTop && (

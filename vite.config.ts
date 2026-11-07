@@ -104,7 +104,7 @@ export default defineConfig(({ mode }) => {
     assetsInclude: ['**/*.x-icon', '**/*.heic'],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname || '.', '.'),
       },
     },
     define: {
