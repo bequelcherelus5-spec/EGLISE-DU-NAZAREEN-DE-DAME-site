@@ -143,18 +143,18 @@ export const Contact: React.FC<ContactProps> = ({ onNavigate }) => {
       />
 
       {/* Header */}
-      <section className="bg-gradient-to-b from-[#071322] to-[#0b1b33] text-white py-16 px-4 border-b border-amber-500/20">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <Heart className="w-3.5 h-3.5 text-amber-400" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <Heart className="w-3.5 h-3.5 text-amber-800" />
             <span>Écoute, Prière &amp; Accueil Pastoral</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900">
             Nous Contacter &amp; Déposer une Prière
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Que vous traversiez une épreuve, désiriez un conseil spirituel ou souhaitiez contacter le secrétariat,
             l'Église du Nazaréen de Damé est là pour vous accompagner.
           </p>
@@ -263,18 +263,17 @@ export const Contact: React.FC<ContactProps> = ({ onNavigate }) => {
             </div>
 
             {/* Pastoral Office Hours */}
-            <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-amber-500/30 space-y-3">
-              <div className="flex items-center space-x-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
-                <Clock className="w-4 h-4" />
-                <span>Permanences Pastorales</span>
-              </div>
-              <h3 className="font-serif font-bold text-lg text-white">
+            <div className="bg-[#FAF7F2] text-stone-900 rounded-2xl p-6 sm:p-8 border border-stone-200/90 shadow-2xs space-y-3">
+              <p className="text-amber-900 text-xs font-serif font-bold uppercase tracking-wider">
+                Permanences Pastorales
+              </p>
+              <h3 className="font-serif font-bold text-lg text-stone-900">
                 Accueil Pastoral de Damé
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-stone-600 leading-relaxed">
                 Le Pasteur Bequel CHERELUS et le Conseil des Diacres reçoivent les fidèles et visiteurs :
               </p>
-              <ul className="text-xs text-slate-300 space-y-1.5 pt-1">
+              <ul className="text-xs text-stone-700 space-y-1.5 pt-1">
                 <li>• <strong>Mardi :</strong> 14h00 – 16h00 (Conseil &amp; Prière individuelle)</li>
                 <li>• <strong>Jeudi :</strong> 14h00 – 16h00 (Entretiens de baptême &amp; foyers)</li>
                 <li>• <strong>Dimanche :</strong> À l’issue du culte d’adoration</li>
@@ -616,20 +615,19 @@ export const Contact: React.FC<ContactProps> = ({ onNavigate }) => {
       </section>
 
       {/* GOOGLE MAPS SECTION WITH OFFICIAL LINK */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-10 shadow-2xl border border-amber-500/30 overflow-hidden">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-[#FAF7F2] text-stone-900 rounded-2xl p-6 sm:p-10 border border-stone-200/90 shadow-2xs overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7 space-y-4">
-              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-wider">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>Lokalizasyon GPS &amp; Google Maps</span>
-              </div>
+            <div className="lg:col-span-7 space-y-3.5">
+              <p className="text-xs font-serif font-bold uppercase tracking-wider text-amber-900">
+                Lokalizasyon GPS &amp; Google Maps
+              </p>
 
-              <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-white">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
                 Vizite Nou nan 3èm Seksyon Damé, Haïti
               </h2>
 
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
                 Legliz la sitiye nan kè 3ème Section Damé, nan Komin Môle-Saint-Nicolas (Département du Nord-Ouest). Klike sou bouton anba a pou louvri pwen GPS egzak la dirèkteman sou telefòn ou nan Google Maps.
               </p>
 
@@ -638,34 +636,34 @@ export const Contact: React.FC<ContactProps> = ({ onNavigate }) => {
                   href="https://share.google/9kpd149ZpzHWNxOXI"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3.5 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition flex items-center space-x-2 shadow-lg shadow-amber-500/20"
+                  className="px-6 py-2.5 rounded-lg text-xs font-serif font-bold bg-stone-900 text-white hover:bg-stone-800 transition flex items-center space-x-2 shadow-2xs"
                 >
-                  <MapPin className="w-4 h-4" />
+                  <MapPin className="w-4 h-4 text-amber-300" />
                   <span>Ouvri nan Google Maps (Itinerè GPS)</span>
                 </a>
 
                 <a
                   href="tel:+50948596089"
-                  className="px-5 py-3.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 transition border border-slate-700 flex items-center space-x-2"
+                  className="px-5 py-2.5 rounded-lg text-xs font-semibold bg-white text-stone-800 hover:bg-stone-50 transition border border-stone-300 flex items-center space-x-2 shadow-2xs"
                 >
-                  <Phone className="w-4 h-4 text-amber-400" />
+                  <Phone className="w-4 h-4 text-amber-700" />
                   <span>Gid nan Telefòn : +509 48596089</span>
                 </a>
               </div>
             </div>
 
-            <div className="lg:col-span-5 bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-3">
-              <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
+            <div className="lg:col-span-5 bg-white p-5 rounded-xl border border-stone-200 space-y-2.5 text-xs">
+              <span className="text-[11px] font-serif font-bold text-amber-900 uppercase tracking-wider block">
                 Itinerè &amp; Aksè
               </span>
-              <ul className="text-xs text-slate-300 space-y-2">
+              <ul className="text-stone-600 space-y-1.5 leading-relaxed">
                 <li>• <strong>Depi Mòl Sen Nikola :</strong> Pran wout prensipal ki mennen nan 3èm Seksyon Damé.</li>
                 <li>• <strong>Depi Bonbadopolis :</strong> Wout nasyonal la pase pa kafou Damé.</li>
                 <li>• <strong>Pòdpè / Jean-Rabel :</strong> Aksè pa wout Nòdwès la.</li>
               </ul>
-              <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 font-mono">
-                Lyen pataj Google Maps : <br />
-                <a href="https://share.google/9kpd149ZpzHWNxOXI" target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:underline">
+              <div className="pt-2 border-t border-stone-100 text-[11px] text-stone-500 font-mono">
+                Lyen Google Maps : <br />
+                <a href="https://share.google/9kpd149ZpzHWNxOXI" target="_blank" rel="noopener noreferrer" className="text-amber-800 hover:underline">
                   https://share.google/9kpd149ZpzHWNxOXI
                 </a>
               </div>

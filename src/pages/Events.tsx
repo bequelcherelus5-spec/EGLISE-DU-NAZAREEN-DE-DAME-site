@@ -73,18 +73,18 @@ END:VCALENDAR`;
       />
 
       {/* Header */}
-      <section className="bg-gradient-to-b from-[#071322] to-[#0b1b33] text-white py-16 px-4 border-b border-amber-500/20">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <CalendarIcon className="w-3.5 h-3.5" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <CalendarIcon className="w-3.5 h-3.5 text-amber-800" />
             <span>Calendrier Ecclésial Officiel</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900">
             Cultes, Réunions &amp; Événements
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Rejoignez-nous pour adorer Dieu en esprit et en vérité dans notre sanctuaire de la 3ème Section Damé.
             Ajoutez nos rendez-vous en un clic à votre calendrier personnel.
           </p>
@@ -141,12 +141,12 @@ END:VCALENDAR`;
               className="bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-200 flex flex-col justify-between hover:border-amber-400/60 transition"
             >
               <div>
-                <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
-                  <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
-                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <div className="p-4 bg-[#FAF7F2] text-stone-900 border-b border-stone-200/80 flex items-center justify-between">
+                  <span className="text-xs font-serif font-bold text-amber-900 uppercase tracking-wider flex items-center space-x-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-800" />
                     <span>{event.day}</span>
                   </span>
-                  <span className="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded font-mono font-bold border border-slate-700">
+                  <span className="text-[11px] bg-white text-stone-700 px-2.5 py-0.5 rounded font-mono font-medium border border-stone-200">
                     {event.time}
                   </span>
                 </div>
@@ -209,34 +209,33 @@ END:VCALENDAR`;
       </section>
 
       {/* Regular Services Summary Callout */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-slate-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl border border-amber-500/30">
-          <div className="text-center max-w-2xl mx-auto space-y-4">
-            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Accueil &amp; Bénédiction Pastorale</span>
-            </div>
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-10 text-stone-900 border border-stone-200/90 shadow-2xs">
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <p className="text-xs font-serif font-bold uppercase tracking-wider text-amber-900">
+              Accueil &amp; Bénédiction Pastorale
+            </p>
 
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-amber-300">
+            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
               Vous visitez Damé pour la première fois ?
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
               Toute notre équipe d'accueil et le Pasteur Bequel CHERELUS vous réservent une place d'honneur. Venez en famille, vous êtes bénis de l'Éternel !
             </p>
             <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
               <button
                 onClick={() => onNavigate('/contact')}
-                className="px-6 py-3 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 transition shadow-lg shadow-amber-400/20"
+                className="px-6 py-2.5 rounded-lg text-xs font-serif font-bold bg-stone-900 text-white hover:bg-stone-800 transition shadow-2xs"
               >
-                Nous contacter pour préparer votre venue
+                Préparer votre venue
               </button>
               <a
                 href={createGoogleCalendarUrl(OFFICIAL_SERVICES[0])}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-3 rounded-xl text-xs font-bold bg-slate-800 text-white hover:bg-slate-700 transition border border-slate-700 flex items-center space-x-2"
+                className="px-5 py-2.5 rounded-lg text-xs font-semibold bg-white text-stone-800 hover:bg-stone-50 transition border border-stone-300 flex items-center space-x-2 shadow-2xs"
               >
-                <CalendarPlus className="w-4 h-4 text-amber-400" />
+                <CalendarPlus className="w-4 h-4 text-amber-700" />
                 <span>Ajouter le Culte du Dimanche</span>
               </a>
             </div>

@@ -15,7 +15,9 @@ import {
   ShieldCheck,
   FileText,
   Heart,
-  HeartHandshake
+  HeartHandshake,
+  Facebook,
+  Youtube
 } from 'lucide-react';
 import { LanguageSelector } from './LanguageSelector';
 
@@ -88,286 +90,300 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   };
 
   return (
-    <footer className="bg-slate-950 text-white border-t-2 border-amber-500/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+    <footer className="bg-[#1C1917] text-stone-300 border-t border-stone-800 text-xs">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
           
-          {/* Column 1: Identity & Seal */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 p-0.5 shadow-lg flex-shrink-0">
-                <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center p-1 overflow-hidden">
-                  <img
-                    src="/images/eglise/sceau-officiel.svg"
-                    alt="Sceau Officiel"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+          {/* Column 1: Identity & Contact (3 cols) */}
+          <div className="lg:col-span-3 space-y-3">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-10 h-10 rounded-lg bg-stone-900 border border-stone-700 p-1 flex-shrink-0">
+                <img
+                  src="/images/eglise/sceau-officiel.svg"
+                  alt="Sceau Officiel"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
-                <h3 className="font-serif text-sm font-bold tracking-tight text-white leading-tight">
+                <h3 className="font-serif text-xs font-bold text-white leading-tight">
                   {OFFICIAL_CHURCH_INFO.name}
                 </h3>
-                <p className="text-[11px] text-amber-400 font-serif italic">
+                <p className="text-[10px] text-amber-400 font-serif italic">
                   « {OFFICIAL_CHURCH_INFO.motto} »
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Fondée en 1979 par le Rév. Bequel CHERELUS. Une communauté chrétienne fidèle consacrée à l'adoration, 
-              à la sainteté biblique et au service social holistique à Damé, Haïti.
+            <p className="text-[11px] text-stone-400 leading-snug">
+              Fondée en 1979 par le frère Saurel ALCINÉ, sous la direction du Pasteur Bequel CHERELUS. Communauté de foi, d'adoration et d'amour du prochain à Damé, Haïti.
             </p>
 
-            <div className="space-y-2 text-xs text-slate-300 pt-2">
-              <div className="flex items-start space-x-2">
-                <MapPin className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1 text-[11px] text-stone-400 pt-1">
+              <div className="flex items-start space-x-1.5">
+                <MapPin className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
                 <a 
                   href="https://share.google/9kpd149ZpzHWNxOXI" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="hover:text-amber-300 transition"
-                  title="Voir l'emplacement sur Google Maps"
+                  className="hover:text-amber-300 transition truncate"
+                  title="3ème Section Damé, Môle-Saint-Nicolas, Haïti"
                 >
-                  3ème Section Damé, Commune de Môle-Saint-Nicolas, Département du Nord-Ouest, Haïti (Google Maps ›)
+                  Damé, Môle-St-Nicolas, Haïti (Maps ›)
                 </a>
               </div>
-              <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <div className="flex items-center space-x-1.5">
+                <Phone className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                 <a href={`tel:${OFFICIAL_CHURCH_INFO.phone}`} className="hover:text-amber-300">
                   {OFFICIAL_CHURCH_INFO.phone}
                 </a>
               </div>
-              <div className="flex items-center space-x-2">
-                <Mail className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                <a href={`mailto:${OFFICIAL_CHURCH_INFO.email}`} className="hover:text-amber-300">
+              <div className="flex items-center space-x-1.5">
+                <Mail className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                <a href={`mailto:${OFFICIAL_CHURCH_INFO.email}`} className="hover:text-amber-300 truncate">
                   {OFFICIAL_CHURCH_INFO.email}
+                </a>
+              </div>
+              <div className="flex items-center space-x-3 pt-1 text-stone-400">
+                <a 
+                  href={OFFICIAL_CHURCH_INFO.social.facebook} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-amber-400 transition flex items-center space-x-1 text-[11px]"
+                  title="Page Facebook de l'Église"
+                >
+                  <Facebook className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Facebook</span>
+                </a>
+                <span className="text-stone-700">•</span>
+                <a 
+                  href={OFFICIAL_CHURCH_INFO.social.youtube} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-amber-400 transition flex items-center space-x-1 text-[11px]"
+                  title="Chaîne YouTube de l'Église"
+                >
+                  <Youtube className="w-3.5 h-3.5 text-amber-500" />
+                  <span>YouTube</span>
                 </a>
               </div>
             </div>
           </div>
 
-          {/* Column 2: Navigation Links */}
-          <div>
-            <h4 className="font-serif text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-amber-400 pl-2">
+          {/* Column 2: Navigation Links in compact 2-column grid (4 cols) */}
+          <div className="lg:col-span-4">
+            <h4 className="font-serif text-xs font-bold text-stone-200 uppercase tracking-widest mb-2.5">
               Pages Officielles
             </h4>
-            <ul className="space-y-2 text-xs">
-              <li>
-                <button onClick={() => onNavigate('/')} className="hover:text-amber-300 transition">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
+              <div>
+                <button onClick={() => onNavigate('/')} className="hover:text-amber-300 transition text-stone-400 block text-left">
                   Accueil
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/a-propos')} className="hover:text-amber-300 transition">
-                  Histoire, Mission &amp; Doctrine
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/a-propos')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Histoire &amp; Doctrine
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/ministeres')} className="hover:text-amber-300 transition">
-                  Les 7 Ministères d’Église
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/ministeres')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Les 7 Ministères
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/evenements')} className="hover:text-amber-300 transition">
-                  Cultes &amp; Calendrier des Réunions
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/evenements')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Cultes &amp; Agenda
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/faire-un-don')} className="hover:text-amber-300 transition flex items-center space-x-1.5 text-emerald-300 font-semibold">
-                  <HeartHandshake className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Dîmes &amp; Faire un Don (PayPal / Mobile)</span>
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/faire-un-don')} className="hover:text-amber-300 transition text-amber-400 font-medium block text-left">
+                  Dîmes &amp; Dons (PayPal)
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/projets')} className="hover:text-amber-300 transition">
-                  Projets &amp; Actions Sociales
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/projets')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Projets Sociaux
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/media')} className="hover:text-amber-300 transition">
-                  Media
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/media')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Médias &amp; Sermons
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/jeux-bibliques')} className="hover:text-amber-300 transition">
-                  Jeux Bibliques &amp; Mode Défi
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/priere')} className="hover:text-amber-300 transition text-stone-300 block text-left">
+                  Requêtes de Prière
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/priere')} className="hover:text-amber-300 transition flex items-center space-x-1 text-amber-300 font-semibold">
-                  <Heart className="w-3 h-3 text-amber-400" />
-                  <span>Requêtes de Prière &amp; Espas Sekrè</span>
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/jeux-bibliques')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Jeux Bibliques
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/temwayaj')} className="hover:text-amber-300 transition text-amber-200">
-                  Temwayaj Gras Bondye
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/temwayaj')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Temwayaj Gras
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/leson-biblik')} className="hover:text-amber-300 transition text-amber-200">
-                  Leson Lekòl Dimanch &amp; Resous
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/leson-biblik')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Lekòl Dimanch
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/nouvo-kwayan')} className="hover:text-amber-300 transition">
-                  Nouvo Kwayan (Disipila)
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/nouvo-kwayan')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Nouvo Kwayan
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/demann-dokiman')} className="hover:text-amber-300 transition">
-                  Demande de Documents Pastoraux
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/lekti-biblik')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Lekti Biblik
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/lekti-biblik')} className="hover:text-amber-300 transition">
-                  Lecture Biblique Quotidienne
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/demann-dokiman')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Demann Dokiman
                 </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('/contact')} className="hover:text-amber-300 transition">
-                  Contact &amp; Accueil Pastoral
+              </div>
+              <div>
+                <button onClick={() => onNavigate('/contact')} className="hover:text-amber-300 transition text-stone-400 block text-left">
+                  Contact &amp; Accueil
                 </button>
-              </li>
+              </div>
               {customPages.map((cp) => (
-                <li key={cp.slug}>
+                <div key={cp.slug}>
                   <button 
                     onClick={() => onNavigate(`/page/${cp.slug}`)} 
-                    className="hover:text-amber-300 transition flex items-center space-x-1 text-slate-300"
+                    className="hover:text-amber-300 transition text-stone-400 truncate block text-left"
                   >
-                    <span className="text-amber-400">›</span>
-                    <span>{cp.title}</span>
+                    › {cp.title}
                   </button>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
-          {/* Column 3: Worship Schedule */}
-          <div>
-            <h4 className="font-serif text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-amber-400 pl-2">
-              Horaires des Cultes
+          {/* Column 3: Worship Schedule (2 cols) */}
+          <div className="lg:col-span-2 space-y-2">
+            <h4 className="font-serif text-xs font-bold text-stone-200 uppercase tracking-widest mb-2.5">
+              Horaires
             </h4>
-            <div className="space-y-2.5 text-xs text-slate-300">
-              <div className="bg-slate-900/60 p-2.5 rounded border border-slate-800">
-                <p className="font-bold text-amber-400">Dimanche Matin</p>
-                <p className="text-slate-300">07h00 - 08h00 : École du Dimanche</p>
-                <p className="text-white font-medium">08h00 - 11h30 : Culte d'Adoration</p>
+            <div className="space-y-1.5 text-[11px] text-stone-300">
+              <div className="bg-stone-900/80 p-2 rounded border border-stone-800">
+                <p className="font-bold text-amber-400 text-[10px] uppercase tracking-wide">Dimanche</p>
+                <p className="text-stone-400">07h-08h: Lekòl Dimanch</p>
+                <p className="text-white font-medium">08h-11h30: Adorasyon</p>
               </div>
-              <div className="bg-slate-900/60 p-2.5 rounded border border-slate-800">
-                <p className="font-bold text-amber-400">Mardi &amp; Jeudi</p>
-                <p className="text-slate-300">Mardi 16h00 : Prière &amp; Intercession</p>
-                <p className="text-slate-300">Jeudi 16h00 : Étude Biblique</p>
-              </div>
-              <div className="bg-slate-900/60 p-2.5 rounded border border-slate-800">
-                <p className="font-bold text-amber-400">Samedi</p>
-                <p className="text-slate-300">15h00 : Jeunesse Nazaréenne (JNI)</p>
+              <div className="bg-stone-900/80 p-2 rounded border border-stone-800">
+                <p className="font-bold text-amber-400 text-[10px] uppercase tracking-wide">Semèn</p>
+                <p className="text-stone-400">Mar 16h: Priyè</p>
+                <p className="text-stone-400">Jedi 16h: Etid Biblik</p>
+                <p className="text-stone-400">Sam 15h: JNI (Jèn)</p>
               </div>
             </div>
           </div>
 
-          {/* Column 4: Newsletter System (Brevo) */}
-          <div>
-            <h4 className="font-serif text-sm font-bold text-white uppercase tracking-wider mb-2 border-l-2 border-amber-400 pl-2">
-              Newsletter Officielle
+          {/* Column 4: Newsletter System (3 cols) */}
+          <div className="lg:col-span-3">
+            <h4 className="font-serif text-xs font-bold text-stone-200 uppercase tracking-widest mb-1.5">
+              Newsletter
             </h4>
-            <p className="text-xs text-slate-400 mb-3 leading-relaxed">
-              Recevez les versets hebdomadaires, les annonces de cultes et les nouvelles de l'Église de Damé.
+            <p className="text-[11px] text-stone-400 mb-2 leading-tight">
+              Nouvel, vèsè ak anons Legliz Damé nan bwat imel ou.
             </p>
 
-            <form onSubmit={handleSubscribe} className="space-y-2">
+            <form onSubmit={handleSubscribe} className="space-y-1.5">
               <input
                 type="text"
-                placeholder="Votre prénom (optionnel)"
+                placeholder="Prénom (optionnel)"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                className="w-full px-2.5 py-1.5 text-xs rounded bg-stone-900 border border-stone-700 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500"
               />
-              <input
-                type="email"
-                required
-                placeholder="Votre adresse email *"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold rounded text-xs hover:brightness-110 transition disabled:opacity-50"
-              >
-                {loading ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <>
+              <div className="flex gap-1.5">
+                <input
+                  type="email"
+                  required
+                  placeholder="Votre email *"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="flex-1 min-w-0 px-2.5 py-1.5 text-xs rounded bg-stone-900 border border-stone-700 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500"
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded text-xs transition disabled:opacity-50 flex items-center justify-center shrink-0"
+                  title="S’abonner"
+                >
+                  {loading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
                     <Send className="w-3.5 h-3.5" />
-                    <span>S’abonner à la Newsletter</span>
-                  </>
-                )}
-              </button>
+                  )}
+                </button>
+              </div>
             </form>
 
             {status.type === 'success' && (
-              <div className="mt-2.5 p-2 rounded bg-emerald-950/60 border border-emerald-500/40 text-[11px] text-emerald-300 flex items-start space-x-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span>{status.message}</span>
+              <div className="mt-1.5 p-1.5 rounded bg-emerald-950/60 border border-emerald-600/40 text-[10px] text-emerald-300 flex items-center space-x-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                <span className="truncate">{status.message}</span>
               </div>
             )}
 
             {status.type === 'error' && (
-              <div className="mt-2.5 p-2 rounded bg-rose-950/60 border border-rose-500/40 text-[11px] text-rose-300 flex items-start space-x-1.5">
-                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
-                <span>{status.message}</span>
+              <div className="mt-1.5 p-1.5 rounded bg-rose-950/60 border border-rose-600/40 text-[10px] text-rose-300 flex items-center space-x-1">
+                <AlertCircle className="w-3 h-3 text-rose-400 flex-shrink-0" />
+                <span className="truncate">{status.message}</span>
               </div>
             )}
 
-            <div className="mt-3 flex items-center space-x-1 text-[11px] text-slate-500">
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
-              <span>Gestion sécurisée via l'API Brevo</span>
+            <div className="mt-2 flex items-center space-x-1 text-[10px] text-stone-500">
+              <ShieldCheck className="w-3 h-3 text-amber-500" />
+              <span>Brevo Lis #5 • Pwoteje</span>
             </div>
           </div>
 
         </div>
 
-        {/* Bottom Bar: Copyright, Legal Links, Language & Official Domain */}
-        <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2">
-            <p>
-              © {new Date().getFullYear()} <strong className="text-slate-200">ÉGLISE DU NAZARÉEN DE DAMÉ</strong>.
-            </p>
-            <span className="hidden sm:inline text-slate-700">•</span>
+        {/* Bottom Bar: Compact */}
+        <div className="mt-6 pt-4 border-t border-stone-800/80 flex flex-col md:flex-row items-center justify-between text-[11px] text-stone-400 gap-2">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1">
+            <span>
+              © {new Date().getFullYear()} <strong className="text-stone-300">ÉGLISE DU NAZARÉEN DE DAMÉ</strong>
+            </span>
+            <span className="text-stone-700">•</span>
             <button
               onClick={() => onNavigate('/confidentialite')}
-              className="text-slate-400 hover:text-amber-400 transition underline underline-offset-2"
+              className="text-stone-400 hover:text-amber-400 transition"
             >
-              Politique de Confidentialité
+              Confidentialité
             </button>
-            <span className="text-slate-700">•</span>
+            <span className="text-stone-700">•</span>
             <button
               onClick={() => onNavigate('/conditions')}
-              className="text-slate-400 hover:text-amber-400 transition underline underline-offset-2"
+              className="text-stone-400 hover:text-amber-400 transition"
             >
-              Conditions d’Utilisation
+              Conditions
             </button>
-            <span className="text-slate-700">•</span>
+            <span className="text-stone-700">•</span>
             <a
               href="/ads.txt"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-400 hover:text-amber-400 transition font-mono text-[11px]"
+              className="text-stone-400 hover:text-amber-400 transition font-mono"
             >
               ads.txt
             </a>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <LanguageSelector compact />
             <a 
               href="https://www.eglisedunazareendedame.org" 
-              className="text-amber-400 hover:underline font-mono"
+              className="text-amber-400 hover:underline font-mono text-[11px]"
             >
-              www.eglisedunazareendedame.org
+              eglisedunazareendedame.org
             </a>
           </div>
         </div>

@@ -106,19 +106,19 @@ export const BibleGames: React.FC<BibleGamesProps> = ({ onNavigate }) => {
       />
 
       {/* Header */}
-      <section className="bg-gradient-to-b from-[#071322] to-[#0b1b33] text-white py-16 px-4 border-b border-amber-500/20">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <Trophy className="w-3.5 h-3.5" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <Trophy className="w-3.5 h-3.5 text-amber-800" />
             <span>Édification Ludique &amp; Connaissance Biblique</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900">
             Jeux Bibliques &amp; Mode Défi
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-            « Ta parole est une lampe à mes pieds, et une lumière sur mon sentier. » (Psaume 119:105)
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            « Ta parole est une lampe à mes pieds, et une lumière sur mon sentier. » <span className="font-serif italic text-amber-900">(Psaume 119:105)</span>
           </p>
         </div>
       </section>
@@ -262,15 +262,15 @@ export const BibleGames: React.FC<BibleGamesProps> = ({ onNavigate }) => {
             </div>
 
             {/* Big Score Card */}
-            <div className="bg-slate-900 text-white rounded-2xl p-6 max-w-sm mx-auto border border-amber-500/30 space-y-2">
-              <span className="text-xs text-amber-400 font-bold uppercase tracking-wider">
+            <div className="bg-[#FAF7F2] text-stone-900 rounded-xl p-6 max-w-sm mx-auto border border-stone-200/90 shadow-2xs space-y-1.5">
+              <span className="text-xs text-amber-900 font-serif font-bold uppercase tracking-wider">
                 Votre Score Final
               </span>
-              <div className="font-serif text-4xl sm:text-5xl font-extrabold text-white">
+              <div className="font-serif text-4xl sm:text-5xl font-extrabold text-stone-900">
                 {score} / {questions.length}
               </div>
-              <p className="text-xs text-slate-300">
-                Taux de réussite : <strong className="text-amber-300">{Math.round((score / questions.length) * 100)}%</strong>
+              <p className="text-xs text-stone-600">
+                Taux de réussite : <strong className="text-amber-900">{Math.round((score / questions.length) * 100)}%</strong>
               </p>
             </div>
 

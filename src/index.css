@@ -3,30 +3,38 @@
 @layer base {
   html {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #faf8f5;
+    color: #1c1917;
+  }
+
+  body {
+    background-color: #faf8f5;
+    color: #1c1917;
   }
 
   h1, h2, h3, .font-serif {
-    font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+    font-family: 'Playfair Display', 'Cinzel', Georgia, serif;
+    letter-spacing: -0.01em;
   }
 }
 
-/* Custom smooth scrollbar */
+/* Custom refined scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #071322;
+  background: #f5f0e8;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e3a5f;
+  background: #d6cebe;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #d4af37;
+  background: #b89b58;
 }
 
 /* =========================================================

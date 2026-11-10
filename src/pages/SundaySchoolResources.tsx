@@ -75,19 +75,19 @@ export const SundaySchoolResources: React.FC<{ onNavigate: (path: string) => voi
       />
 
       {/* Header */}
-      <section className="bg-gradient-to-b from-[#071322] to-[#0b1b33] text-white py-16 px-4 border-b border-amber-500/20">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <GraduationCap className="w-3.5 h-3.5" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <GraduationCap className="w-3.5 h-3.5 text-amber-800" />
             <span>Edikasyon Kretyèn &amp; Fòmasyon Disip</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900">
             Leson Lekòl Dimanch &amp; Resous Biblik
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-            « Fòme timoun lan nan chemen li dwe swiv la; menm lè li vin gran li pap vire do ba li. » <span className="text-amber-400 italic font-serif">(Pwovèb 22:6)</span>
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            « Fòme timoun lan nan chemen li dwe swiv la; menm lè li vin gran li pap vire do ba li. » <span className="text-amber-900 italic font-serif">(Pwovèb 22:6)</span>
             <br />
             Resous pou tout fanmi an, monitè yo ak manm legliz la nan Damé.
           </p>
@@ -241,12 +241,11 @@ export const SundaySchoolResources: React.FC<{ onNavigate: (path: string) => voi
 
                 {/* Teacher Notes */}
                 {selectedLesson.teacherNotes && (
-                  <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-2 border border-amber-500/30">
-                    <div className="flex items-center space-x-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
-                      <GraduationCap className="w-4 h-4" />
-                      <span>Nòt Espesyal pou Monitè / Pwofesè a</span>
-                    </div>
-                    <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                  <div className="p-5 rounded-xl bg-[#FAF7F2] text-stone-900 space-y-1.5 border border-stone-200/90 shadow-2xs">
+                    <p className="text-amber-900 font-serif font-bold text-xs uppercase tracking-wider">
+                      Nòt pou Monitè / Pwofesè a
+                    </p>
+                    <p className="text-xs text-stone-700 leading-relaxed font-sans">
                       {selectedLesson.teacherNotes}
                     </p>
                   </div>

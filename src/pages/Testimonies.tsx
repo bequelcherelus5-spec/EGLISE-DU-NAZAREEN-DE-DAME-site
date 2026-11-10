@@ -146,37 +146,37 @@ export const Testimonies: React.FC<{ onNavigate: (path: string) => void }> = ({ 
       />
 
       {/* Header */}
-      <section className="bg-gradient-to-b from-[#071322] to-[#0b1b33] text-white py-16 px-4 border-b border-amber-500/20">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <Sparkles className="w-3.5 h-3.5" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <Sparkles className="w-3.5 h-3.5 text-amber-800" />
             <span>Rekonesans &amp; Bèl Zèv Bondye</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900">
             Temwayaj Gras Bondye (Mur des Témoignages)
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-            « Yo te venk li grasa san Ti Mouton an ak grasa pawòl temwayaj yo. » <span className="text-amber-400 italic font-serif">(Apokalips 12:11)</span>
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            « Yo te venk li grasa san Ti Mouton an ak grasa pawòl temwayaj yo. » <span className="text-amber-900 italic font-serif">(Apokalips 12:11)</span>
             <br />
             Lè Bondye fè yon mirak nan lavi w, pa kenbe l sekrè — pataje l pou fòtifye lafwa frè ak sè w yo!
           </p>
 
-          <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-2.5">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-6 py-3 rounded-xl font-bold text-xs bg-amber-500 text-slate-950 hover:bg-amber-400 transition shadow-lg shadow-amber-500/20 flex items-center space-x-2"
+              className="px-5 py-2.5 rounded-lg font-bold text-xs bg-amber-800 text-white hover:bg-amber-900 transition shadow-xs flex items-center space-x-2"
             >
-              <PlusCircle className="w-4 h-4" />
+              <PlusCircle className="w-3.5 h-3.5" />
               <span>Depoze Temwayaj Pa w la</span>
             </button>
 
             <button
               onClick={() => onNavigate('/priere')}
-              className="px-6 py-3 rounded-xl font-bold text-xs bg-slate-800 text-slate-200 hover:bg-slate-700 transition flex items-center space-x-2 border border-slate-700"
+              className="px-5 py-2.5 rounded-lg font-semibold text-xs bg-white text-stone-800 hover:bg-stone-50 transition flex items-center space-x-2 border border-stone-200 shadow-2xs"
             >
-              <Heart className="w-4 h-4 text-rose-400" />
+              <Heart className="w-3.5 h-3.5 text-rose-600" />
               <span>Espas Demann Priyè Sekrè</span>
             </button>
           </div>

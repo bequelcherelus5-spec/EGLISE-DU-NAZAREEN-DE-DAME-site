@@ -28,15 +28,15 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onNavigate }) =>
           <span>{isCreole ? 'Retounen sou Akèy' : 'Retour à l’accueil'}</span>
         </button>
 
-        <div className="bg-gradient-to-br from-[#071322] via-[#0b1b33] to-[#112442] text-white rounded-3xl p-8 sm:p-12 shadow-2xl border border-amber-500/30 space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-400/40">
-            <Church className="w-4 h-4 text-amber-400" />
+        <div className="bg-[#FAF8F5] text-stone-900 rounded-3xl p-8 sm:p-12 shadow-sm border border-stone-200 space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-stone-100 text-amber-900 text-xs font-bold border border-stone-200">
+            <Church className="w-4 h-4 text-amber-800" />
             <span>Église du Nazaréen de Damé • Fondée en 1979</span>
           </div>
-          <h1 className="font-serif text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h1 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 tracking-tight">
             {isCreole ? 'Kondisyon Jeneral Itilizasyon & Mansyon Legal' : 'Conditions Générales d’Utilisation & Mentions Légales'}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-stone-700 max-w-2xl leading-relaxed">
             {isCreole
               ? 'Règ ak prensip ki gouvène itilizasyon sit entènèt ofisyèl www.eglisedunazareendedame.org ak sèvis kominotè nou yo.'
               : 'Règles régissant la consultation et l’utilisation du site officiel www.eglisedunazareendedame.org.'}
@@ -94,7 +94,7 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onNavigate }) =>
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs space-y-1.5">
               <p><strong>Église du Nazaréen de Damé</strong></p>
               <p>3ème Section Damé, Commune de Môle-Saint-Nicolas, Nord-Ouest, Haïti</p>
-              <p>Email officiel : <a href="mailto:eglisedunazareendedame@gmail.com" className="text-amber-600 underline">eglisedunazareendedame@gmail.com</a></p>
+              <p>Email officiel : <a href="mailto:contact@eglisedunazareendedame.org" className="text-amber-600 underline">contact@eglisedunazareendedame.org</a></p>
               <p>Téléphone pastoral : <a href="tel:+50948596089" className="text-amber-600 underline">+509 48596089</a></p>
             </div>
           </section>

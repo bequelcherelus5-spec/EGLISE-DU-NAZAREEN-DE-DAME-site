@@ -115,31 +115,31 @@ export const DailyBibleReading: React.FC<{ onNavigate: (path: string) => void }>
         path="/lekti-biblik"
       />
 
-      <section className="bg-gradient-to-b from-[#071322] to-[#0b1b33] text-white py-16 px-4 border-b border-amber-500/20">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <Sun className="w-3.5 h-3.5" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <Sun className="w-3.5 h-3.5 text-amber-800" />
             <span>Medite Pawòl la Chak Jou</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900">
             Plan Lekti Biblik &amp; Vèsè Jounen an
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Nouriti espirityèl pou chak manm legliz la ak tout fanmi nan 3èm Seksyon Damé.
           </p>
 
           {/* Days buttons */}
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-2">
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-2">
             {DAILY_READINGS.map((r, idx) => (
               <button
                 key={r.day}
                 onClick={() => setSelectedDayIndex(idx)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   selectedDayIndex === idx
-                    ? 'bg-amber-500 text-slate-950 shadow-md'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    ? 'bg-amber-800 text-white shadow-xs font-bold'
+                    : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200'
                 }`}
               >
                 {r.day}
@@ -214,11 +214,11 @@ export const DailyBibleReading: React.FC<{ onNavigate: (path: string) => void }>
 
           {/* Méditation & Prière */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
-            <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-2 border border-amber-500/30">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block">
+            <div className="p-5 rounded-xl bg-[#FAF7F2] text-stone-900 space-y-1.5 border border-stone-200/90 shadow-2xs">
+              <span className="text-xs font-serif font-bold uppercase tracking-wider text-amber-900 block">
                 Refleksyon Espirityèl
               </span>
-              <p className="text-xs text-slate-300 leading-relaxed font-sans">
+              <p className="text-xs text-stone-700 leading-relaxed font-sans">
                 {activeReading.meditation}
               </p>
             </div>

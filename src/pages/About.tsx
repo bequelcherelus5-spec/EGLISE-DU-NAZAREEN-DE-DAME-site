@@ -40,18 +40,18 @@ export const About: React.FC<AboutProps> = ({ onNavigate }) => {
       />
 
       {/* Page Header */}
-      <section className="bg-gradient-to-b from-[#071322] to-[#0b1b33] text-white py-16 px-4 border-b border-amber-500/20">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <History className="w-3.5 h-3.5" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <History className="w-3.5 h-3.5 text-amber-800" />
             <span>Notre Identité &amp; Héritage</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900">
             Histoire, Mission &amp; Doctrine
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Fondée en 1979 dans la 3ème Section Damé, notre Église perpétue la sainte proclamation de l'Évangile et de la sainteté biblique au service du peuple haïtien.
           </p>
         </div>
@@ -61,57 +61,57 @@ export const About: React.FC<AboutProps> = ({ onNavigate }) => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-7 space-y-5">
-            <span className="text-xs font-bold text-amber-600 uppercase tracking-widest bg-amber-50 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold text-amber-800 uppercase tracking-widest bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
               Les Origines de Damé
             </span>
-            <h2 className="font-serif text-3xl font-extrabold text-slate-900">
+            <h2 className="font-serif text-3xl font-bold text-stone-900">
               Une foi semée en 1979 au cœur du Nord-Ouest
             </h2>
-            <p className="text-slate-700 leading-relaxed text-sm sm:text-base">
+            <p className="text-stone-700 leading-relaxed text-sm sm:text-base">
               L'histoire de l’<strong>Église du Nazaréen de Damé</strong> a débuté en <strong>1979</strong>, lorsqu'un serviteur dévoué et zélé pour le Royaume de Dieu, le frère <strong>Saurel ALCINÉ</strong>, animé par la conviction que la 3ème Section Damé (Commune de Môle-Saint-Nicolas) avait besoin de la lumière salvatrice de Jésus-Christ, a rassemblé les premiers fidèles pour la prière et la proclamation de la Parole.
             </p>
-            <p className="text-slate-700 leading-relaxed text-sm sm:text-base">
+            <p className="text-stone-700 leading-relaxed text-sm sm:text-base">
               Malgré les défis géographiques et matériels de la région, la petite assemblée a grandi dans la prière, la sainteté de vie et la solidarité chrétienne. De case de prière en sanctuaire permanent, le Seigneur a affermi Son œuvre d’année en année.
             </p>
-            <p className="text-slate-700 leading-relaxed text-sm sm:text-base">
+            <p className="text-stone-700 leading-relaxed text-sm sm:text-base">
               En <strong>2003</strong>, le Seigneur a appelé le <strong>Pasteur Bequel CHERELUS</strong> à assumer la charge pastorale principale de l'assemblée. Depuis plus de 23 ans, sous son ministère pastoral fidèle et visionnaire, l’Église a franchi des paliers majeurs : consolidation des sept ministères, implantation du grand projet d'encadrement des enfants avec Compassion International (CDEJ HA 0926) et rayonnement spirituel dans toute la presqu'île du Nord-Ouest.
             </p>
           </div>
 
           <div className="lg:col-span-5">
-            <div className="bg-slate-900 text-white rounded-3xl p-8 shadow-2xl border border-amber-500/30 space-y-6">
-              <h3 className="font-serif font-bold text-amber-300 text-xl border-b border-slate-800 pb-3">
+            <div className="bg-[#FAF8F5] text-stone-900 rounded-3xl p-8 shadow-sm border border-stone-200 space-y-6">
+              <h3 className="font-serif font-bold text-amber-900 text-xl border-b border-stone-200 pb-3">
                 Repères Chronologiques
               </h3>
 
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
-                  <div className="w-9 h-9 rounded-full bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xs flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-serif font-bold flex items-center justify-center text-xs flex-shrink-0">
                     1979
                   </div>
                   <div>
-                    <h4 className="font-bold text-white text-sm">Fondation de l'Église</h4>
-                    <p className="text-xs text-slate-400">Fondée par Saurel ALCINÉ à la 3ème Section Damé.</p>
+                    <h4 className="font-bold text-stone-900 text-sm">Fondation de l'Église</h4>
+                    <p className="text-xs text-stone-600">Fondée par Saurel ALCINÉ à la 3ème Section Damé.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-3">
-                  <div className="w-9 h-9 rounded-full bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xs flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-serif font-bold flex items-center justify-center text-xs flex-shrink-0">
                     2003
                   </div>
                   <div>
-                    <h4 className="font-bold text-white text-sm">Arrivée du Pasteur Bequel CHERELUS</h4>
-                    <p className="text-xs text-slate-400">Installation pastorale et impulsion pour le développement communautaire.</p>
+                    <h4 className="font-bold text-stone-900 text-sm">Arrivée du Pasteur Bequel CHERELUS</h4>
+                    <p className="text-xs text-stone-600">Installation pastorale et impulsion pour le développement communautaire.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-3">
-                  <div className="w-9 h-9 rounded-full bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xs flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-serif font-bold flex items-center justify-center text-xs flex-shrink-0">
                     2026
                   </div>
                   <div>
-                    <h4 className="font-bold text-white text-sm">Aujourd'hui &amp; Demain</h4>
-                    <p className="text-xs text-slate-400">Centre CDEJ HA 0926 actif, 7 ministères et rayonnement numérique officiel.</p>
+                    <h4 className="font-bold text-stone-900 text-sm">Aujourd'hui &amp; Demain</h4>
+                    <p className="text-xs text-stone-600">Centre CDEJ HA 0926 actif, 7 ministères et rayonnement numérique officiel.</p>
                   </div>
                 </div>
               </div>
@@ -121,54 +121,54 @@ export const About: React.FC<AboutProps> = ({ onNavigate }) => {
       </section>
 
       {/* Section 2: Mission & Vision */}
-      <section className="bg-slate-900 text-white py-16 border-y border-amber-500/20">
+      <section className="bg-[#F5F0E8] text-stone-900 py-16 border-y border-stone-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Mission */}
-            <div className="bg-slate-950/80 rounded-2xl p-8 border border-slate-800 space-y-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+            <div className="bg-white rounded-2xl p-8 border border-stone-200 space-y-4 shadow-sm">
+              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 flex items-center justify-center">
                 <Compass className="w-6 h-6" />
               </div>
-              <h2 className="font-serif text-2xl font-bold text-white">Notre Mission Divine</h2>
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <h2 className="font-serif text-2xl font-bold text-stone-900">Notre Mission Divine</h2>
+              <p className="text-stone-700 text-sm leading-relaxed">
                 Notre mission est d'obéir fidèlement à la Grande Commission de Jésus-Christ (Matthieu 28:19-20) en faisant des disciples semejants à Christ au sein de notre communauté de Damé et dans toutes les nations.
               </p>
-              <ul className="space-y-2 text-xs text-slate-300">
+              <ul className="space-y-2 text-xs text-stone-700">
                 <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-700 flex-shrink-0" />
                   <span>Proclamer l'Évangile pur du salut par grâce au moyen de la foi.</span>
                 </li>
                 <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-700 flex-shrink-0" />
                   <span>Enseigner et vivre l’entière sanctification dans la piété pratique.</span>
                 </li>
                 <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-700 flex-shrink-0" />
                   <span>Soutenir les orphelins, veuves et démunis par des œuvres d’amour concrètes.</span>
                 </li>
               </ul>
             </div>
 
             {/* Vision */}
-            <div className="bg-slate-950/80 rounded-2xl p-8 border border-slate-800 space-y-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+            <div className="bg-white rounded-2xl p-8 border border-stone-200 space-y-4 shadow-sm">
+              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 flex items-center justify-center">
                 <Eye className="w-6 h-6" />
               </div>
-              <h2 className="font-serif text-2xl font-bold text-white">Notre Vision Spirituelle</h2>
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <h2 className="font-serif text-2xl font-bold text-stone-900">Notre Vision Spirituelle</h2>
+              <p className="text-stone-700 text-sm leading-relaxed">
                 Être une Église modèle de sainteté, un phare spirituel et un centre de transformation sociale pour la 3ème Section Damé, la Commune de Môle-Saint-Nicolas et l’ensemble du Département du Nord-Ouest.
               </p>
-              <ul className="space-y-2 text-xs text-slate-300">
+              <ul className="space-y-2 text-xs text-stone-700">
                 <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-700 flex-shrink-0" />
                   <span>Une jeunesse consacrée, éduquée et prête pour le leadership d’avenir.</span>
                 </li>
                 <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-700 flex-shrink-0" />
                   <span>Des familles équilibrées, sanctifiées et marchant dans la crainte de Dieu.</span>
                 </li>
                 <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-700 flex-shrink-0" />
                   <span>Un partenariat d’impact pérenne avec Compassion International (CDEJ HA 0926).</span>
                 </li>
               </ul>
@@ -180,27 +180,27 @@ export const About: React.FC<AboutProps> = ({ onNavigate }) => {
       {/* Section 3: Doctrine & Articles de Foi */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
+          <span className="text-xs font-bold uppercase tracking-widest text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
             Doctrine &amp; Foi Biblique
           </span>
-          <h2 className="font-serif text-3xl font-extrabold text-slate-900">
+          <h2 className="font-serif text-3xl font-bold text-stone-900">
             Notre Doctrine et Articles de Foi
           </h2>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-stone-600">
             En tant que membre de l'Église du Nazaréen mondiale, notre théologie puise dans les Saintes Écritures et le mouvement de sainteté biblique.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {articlesOfFaith.map((item, idx) => (
-            <div key={idx} className="bg-white rounded-2xl p-6 shadow-md border border-slate-200 hover:border-amber-400 transition">
-              <span className="text-amber-500 font-serif font-black text-2xl">
+            <div key={idx} className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 hover:border-amber-700 transition">
+              <span className="text-amber-800 font-serif font-bold text-2xl">
                 0{idx + 1}
               </span>
-              <h3 className="font-serif font-bold text-slate-900 text-lg mt-1 mb-2">
+              <h3 className="font-serif font-bold text-stone-900 text-lg mt-1 mb-2">
                 {item.title}
               </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <p className="text-xs text-stone-600 leading-relaxed">
                 {item.desc}
               </p>
             </div>
@@ -208,14 +208,14 @@ export const About: React.FC<AboutProps> = ({ onNavigate }) => {
         </div>
 
         {/* Motto Callout */}
-        <div className="mt-12 bg-amber-50 border-2 border-amber-300 rounded-2xl p-6 text-center max-w-2xl mx-auto">
+        <div className="mt-12 bg-amber-50 border border-amber-300 rounded-2xl p-6 text-center max-w-2xl mx-auto">
           <p className="font-serif text-xl sm:text-2xl font-bold text-amber-900">
             « SAINTETÉ À L’ÉTERNEL »
           </p>
-          <p className="text-xs text-amber-800 mt-1 font-medium">
+          <p className="text-xs text-amber-800 mt-1 font-medium font-serif">
             (Exode 28:36 — Hébreux 12:14)
           </p>
-          <p className="text-xs text-amber-900 mt-2">
+          <p className="text-xs text-stone-700 mt-2 leading-relaxed">
             La sainteté n’est pas un fardeau légaliste, mais l’amour parfait versé dans nos cœurs par le Saint-Esprit, nous permettant de vivre victorieusement dans la pureté et la justice.
           </p>
         </div>
@@ -223,43 +223,43 @@ export const About: React.FC<AboutProps> = ({ onNavigate }) => {
 
       {/* Section 4: Direction Pastorale & Sceau Officiel */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-br from-slate-900 to-[#0b1b33] rounded-3xl p-8 sm:p-12 text-white shadow-2xl border border-amber-500/30">
+        <div className="bg-[#FAF8F5] rounded-3xl p-8 sm:p-12 text-stone-900 shadow-sm border border-stone-200">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-8 space-y-4">
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">
+              <span className="text-xs font-bold text-amber-800 uppercase tracking-widest">
                 Gouvernance Ecclésiale &amp; Sceau Légal
               </span>
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
                 La Direction Pastorale de Damé
               </h2>
-              <p className="text-sm text-slate-300 leading-relaxed">
+              <p className="text-sm text-stone-700 leading-relaxed">
                 L'Église du Nazaréen de Damé est administrée conformément au Manuel International de l'Église du Nazaréen. Elle est dirigée par :
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                  <h4 className="font-serif font-bold text-amber-300 text-base">Pasteur Bequel CHERELUS</h4>
-                  <p className="text-xs text-slate-300">Pasteur Titulaire &amp; Prédicateur en Chef</p>
-                  <p className="text-[11px] text-slate-400 mt-1">Conduit le troupeau, dispense les sacrements et assure l'autorité pastorale depuis 2003.</p>
+                <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
+                  <h4 className="font-serif font-bold text-stone-900 text-base">Pasteur Bequel CHERELUS</h4>
+                  <p className="text-xs text-amber-900 font-medium">Pasteur Titulaire &amp; Prédicateur en Chef</p>
+                  <p className="text-[11px] text-stone-600 mt-1">Conduit le troupeau, dispense les sacrements et assure l'autorité pastorale depuis 2003.</p>
                 </div>
 
-                <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                  <h4 className="font-serif font-bold text-amber-300 text-base">Conseil des Diacres &amp; Anciens</h4>
-                  <p className="text-xs text-slate-300">Administration et Secrétariat d'Église</p>
-                  <p className="text-[11px] text-slate-400 mt-1">Veille à la bonne gestion temporelle, aux finances, aux secours fraternels et à la discipline chrétienne.</p>
+                <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
+                  <h4 className="font-serif font-bold text-stone-900 text-base">Conseil des Diacres &amp; Anciens</h4>
+                  <p className="text-xs text-amber-900 font-medium">Administration et Secrétariat d'Église</p>
+                  <p className="text-[11px] text-stone-600 mt-1">Veille à la bonne gestion temporelle, aux finances, aux secours fraternels et à la discipline chrétienne.</p>
                 </div>
               </div>
 
-              <div className="pt-4 flex flex-wrap gap-4">
+              <div className="pt-4 flex flex-wrap gap-3">
                 <button
                   onClick={() => onNavigate('/ministeres')}
-                  className="px-5 py-2.5 rounded-lg text-xs font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 transition"
+                  className="px-5 py-2.5 rounded-lg text-xs font-bold bg-amber-800 text-white hover:bg-amber-900 shadow-sm transition"
                 >
                   Découvrir les Comités de Ministères
                 </button>
                 <button
                   onClick={() => onNavigate('/contact')}
-                  className="px-5 py-2.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 transition"
+                  className="px-5 py-2.5 rounded-lg text-xs font-semibold bg-white border border-stone-300 text-stone-800 hover:bg-stone-50 shadow-2xs transition"
                 >
                   Contacter le Pastorat
                 </button>
@@ -267,20 +267,18 @@ export const About: React.FC<AboutProps> = ({ onNavigate }) => {
             </div>
 
             {/* Official Seal Emblem Card */}
-            <div className="lg:col-span-4 flex flex-col items-center justify-center p-6 bg-slate-950/70 rounded-2xl border border-amber-500/20 text-center space-y-3">
-              <div className="w-36 h-36 rounded-full p-1 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 shadow-xl shadow-amber-500/20">
-                <div className="w-full h-full bg-black rounded-full p-1 flex items-center justify-center overflow-hidden">
-                  <img 
-                    src="/images/eglise/sceau-officiel.svg" 
-                    alt="Sceau Officiel de l’Église du Nazaréen de Damé" 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+            <div className="lg:col-span-4 flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-stone-200 text-center space-y-3 shadow-2xs">
+              <div className="w-32 h-32 rounded-full p-1 bg-white border border-stone-300 shadow-xs">
+                <img 
+                  src="/images/eglise/sceau-officiel.svg" 
+                  alt="Sceau Officiel de l’Église du Nazaréen de Damé" 
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
-                <h4 className="font-serif font-bold text-amber-300 text-sm">Sceau Officiel de l’Église</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">« Église du Nazaréen de Damé »</p>
-                <p className="text-[10px] text-amber-400/80 font-mono mt-1">« Sainteté à l’Éternel »</p>
+                <h4 className="font-serif font-bold text-stone-900 text-sm">Sceau Officiel de l’Église</h4>
+                <p className="text-[11px] text-stone-600 mt-0.5">« Église du Nazaréen de Damé »</p>
+                <p className="text-[10px] text-amber-800 font-mono mt-1 font-bold">« Sainteté à l’Éternel »</p>
               </div>
             </div>
           </div>

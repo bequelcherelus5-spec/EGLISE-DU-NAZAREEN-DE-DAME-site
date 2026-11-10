@@ -60,7 +60,7 @@ export function getResolvedBrevoSenderEmail(): string {
       }
     } catch {}
   }
-  return 'eglisedunazareendedame@gmail.com';
+  return 'contact@eglisedunazareendedame.org';
 }
 
 export function getResolvedBrevoListId(): string {
@@ -662,7 +662,7 @@ export const newsletterService = {
         activeKey = getResolvedBrevoApiKey();
       }
 
-      const finalSenderEmail = (payload.senderEmail || settings?.senderEmail || getResolvedBrevoSenderEmail() || 'eglisedunazareendedame@gmail.com').trim().toLowerCase();
+      const finalSenderEmail = (payload.senderEmail || settings?.senderEmail || getResolvedBrevoSenderEmail() || 'contact@eglisedunazareendedame.org').trim().toLowerCase();
       const finalSenderName = payload.senderName || settings?.senderName || 'Église du Nazaréen de Damé';
       const targetListId = parseInt(settings?.brevoListId || getResolvedBrevoListId() || '5', 10) || 5;
 

@@ -186,7 +186,7 @@ export const NewsletterManager: React.FC<NewsletterManagerProps> = ({
         if (res.error?.includes('401') || res.error?.includes('invalide')) {
           clearExplanation = 'Erreur Clé API Brevo : La clé API fournie est invalide ou expirée. Veuillez la vérifier dans l’onglet Configuration Brevo.';
         } else if (res.error?.includes('expéditeur') || res.error?.includes('non vérifié') || res.error?.includes('sender')) {
-          clearExplanation = `Erreur Expéditeur : L'adresse email d'envoi (${brevoConfig?.senderEmail || 'eglisedunazareendedame@gmail.com'}) n'a pas encore été vérifiée dans votre compte Brevo (Menu Expéditeurs & IP).`;
+          clearExplanation = `Erreur Expéditeur : L'adresse email d'envoi (${brevoConfig?.senderEmail || 'contact@eglisedunazareendedame.org'}) n'a pas encore été vérifiée dans votre compte Brevo (Menu Expéditeurs & IP).`;
         } else if (res.error?.includes('destinataire')) {
           clearExplanation = 'Erreur Destinataires : Aucun destinataire actif n’a pu être joint.';
         }

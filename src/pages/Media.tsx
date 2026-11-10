@@ -10,6 +10,7 @@ import {
   Download, 
   Maximize2, 
   Youtube, 
+  Facebook,
   ExternalLink, 
   Image as ImageIcon,
   Calendar,
@@ -128,27 +129,27 @@ export const Media: React.FC<MediaProps> = ({ onNavigate }) => {
         onError={() => setPlayingAudioId(null)}
       />
 
-      {/* Hero Banner Clean & Modern */}
-      <section className="bg-gradient-to-b from-[#071322] via-[#0b1b33] to-[#071322] text-white py-16 px-4 border-b border-amber-500/20">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <Tv className="w-3.5 h-3.5" />
+      {/* Hero Banner Clean & Pastoral */}
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <Tv className="w-3.5 h-3.5 text-amber-800" />
             <span>Médiathèque Spirituelle &amp; Prédications</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-black text-white tracking-tight">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900 tracking-tight">
             Media
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Vidéos des cultes, prédications audio édifiantes du Pasteur Bequel CHERELUS et souvenirs photographiques de la congrégation de Damé.
           </p>
 
           {/* Quick link to Secretariat for authorized leaders */}
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
             <button
               onClick={() => onNavigate('/secretariat')}
-              className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-amber-500/20"
+              className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition shadow-xs"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Publier un Média (Secrétariat)</span>
@@ -157,7 +158,7 @@ export const Media: React.FC<MediaProps> = ({ onNavigate }) => {
               href={OFFICIAL_CHURCH_INFO.social.youtube}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-lg"
+              className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-bold transition shadow-xs"
             >
               <Youtube className="w-4 h-4" />
               <span>Chaîne YouTube Officielle</span>
@@ -336,31 +337,40 @@ export const Media: React.FC<MediaProps> = ({ onNavigate }) => {
                 </div>
               </div>
 
-              {/* Official YouTube Channel CTA */}
-              <div className="flex flex-col sm:flex-row items-center justify-between p-6 rounded-2xl bg-slate-900 text-white gap-4">
+              {/* Official Social Channels CTA */}
+              <div className="flex flex-col sm:flex-row items-center justify-between p-6 rounded-2xl bg-[#FAF7F2] text-stone-900 border border-stone-200/90 shadow-2xs gap-4">
                 <div className="space-y-1 text-center sm:text-left">
-                  <p className="font-serif font-bold text-base text-amber-300">
-                    Abonnez-vous à notre Chaîne YouTube Officielle
+                  <p className="font-serif font-bold text-base text-stone-900">
+                    Suivez nos cultes en direct sur les Réseaux Sociaux
                   </p>
-                  <p className="text-xs text-slate-300">
-                    Retrouvez les diffusions en direct, les cantiques d’adoration et les interventions du Pasteur Bequel CHERELUS.
+                  <p className="text-xs text-stone-600">
+                    Retrouvez les diffusions en direct, prédications et louanges du Pasteur Bequel CHERELUS.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <a
+                    href={OFFICIAL_CHURCH_INFO.social.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-serif font-bold transition flex items-center space-x-1.5 shadow-2xs"
+                  >
+                    <Facebook className="w-4 h-4" />
+                    <span>Facebook</span>
+                  </a>
+                  <a
                     href={OFFICIAL_CHURCH_INFO.social.youtube}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center space-x-2 shadow-lg"
+                    className="px-4 py-2 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-serif font-bold transition flex items-center space-x-1.5 shadow-2xs"
                   >
                     <Youtube className="w-4 h-4" />
-                    <span>Visiter YouTube</span>
+                    <span>YouTube</span>
                   </a>
                   <button
                     onClick={() => onNavigate('/contact')}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition border border-slate-700"
+                    className="px-4 py-2 rounded-lg bg-white hover:bg-stone-50 text-stone-800 text-xs font-semibold transition border border-stone-300 shadow-2xs"
                   >
-                    <span>Contacter l’équipe média</span>
+                    <span>Contact</span>
                   </button>
                 </div>
               </div>

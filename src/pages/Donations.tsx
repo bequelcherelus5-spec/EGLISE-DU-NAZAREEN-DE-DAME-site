@@ -31,32 +31,32 @@ export const Donations: React.FC<DonationsProps> = ({ onNavigate }) => {
       />
 
       {/* Hero Header */}
-      <section className="relative bg-gradient-to-b from-[#071322] via-[#0b1b33] to-[#112442] text-white py-16 sm:py-24 px-4 overflow-hidden border-b border-amber-500/20">
-        <div className="max-w-5xl mx-auto text-center space-y-6 relative z-10">
-          <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-400/40 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <HeartHandshake className="w-4 h-4 text-amber-400" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-5xl mx-auto text-center space-y-4">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <HeartHandshake className="w-3.5 h-3.5 text-amber-800" />
             <span>Soutien Financier &amp; Bénédictions Spirituelles</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
+          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-tight">
             Dîmes, Offrandes &amp; Dons en Ligne
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
-            Participez fidèlement à l’avancement du Royaume de Dieu, au ministère pastoral et à l’encadrement des enfants vulnérables de Damé à travers notre projet officiel <strong className="text-amber-400">CDEJ HA 0926</strong>.
+          <p className="text-stone-700 text-base sm:text-lg max-w-3xl mx-auto leading-relaxed">
+            Participez fidèlement à l’avancement du Royaume de Dieu, au ministère pastoral et à l’encadrement des enfants vulnérables de Damé à travers notre projet officiel <strong className="text-amber-900">CDEJ HA 0926</strong>.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-slate-300 pt-2">
-            <span className="flex items-center space-x-1.5 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-700">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs font-medium text-stone-700 pt-2">
+            <span className="flex items-center space-x-1.5 bg-white px-3.5 py-1.5 rounded-lg border border-stone-200 shadow-2xs">
+              <ShieldCheck className="w-4 h-4 text-emerald-700" />
               <span>Module Officiel PayPal (USD)</span>
             </span>
-            <span className="flex items-center space-x-1.5 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-700">
-              <Lock className="w-4 h-4 text-amber-400" />
+            <span className="flex items-center space-x-1.5 bg-white px-3.5 py-1.5 rounded-lg border border-stone-200 shadow-2xs">
+              <Lock className="w-4 h-4 text-amber-800" />
               <span>Digicel MonCash Haïti</span>
             </span>
-            <span className="flex items-center space-x-1.5 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-700">
-              <CheckCircle2 className="w-4 h-4 text-amber-400" />
+            <span className="flex items-center space-x-1.5 bg-white px-3.5 py-1.5 rounded-lg border border-stone-200 shadow-2xs">
+              <CheckCircle2 className="w-4 h-4 text-amber-800" />
               <span>Transparence &amp; Intégrité Chrétienne</span>
             </span>
           </div>
@@ -88,28 +88,27 @@ export const Donations: React.FC<DonationsProps> = ({ onNavigate }) => {
           </div>
 
           {/* Card Impact CDEJ HA 0926 */}
-          <div className="p-8 rounded-3xl bg-slate-900 text-white border border-amber-500/30 shadow-xl space-y-4">
-            <div className="inline-flex items-center space-x-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-              <Users className="w-4 h-4" />
-              <span>Impact Concret à Damé</span>
-            </div>
-            <h3 className="font-serif text-2xl font-bold text-white">
+          <div className="p-6 sm:p-8 rounded-2xl bg-[#FAF7F2] text-stone-900 border border-stone-200/90 shadow-2xs space-y-4">
+            <p className="text-emerald-800 font-serif font-bold text-xs uppercase tracking-wider">
+              Impact Concret à Damé
+            </p>
+            <h3 className="font-serif text-2xl font-bold text-stone-900">
               Où va votre soutien ?
             </h3>
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-stone-700 leading-relaxed">
               Chaque contribution est affectée selon votre intention :
             </p>
-            <ul className="space-y-2 text-xs text-slate-300">
+            <ul className="space-y-2 text-xs text-stone-700">
               <li className="flex items-start space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                <span><strong>Culte &amp; Évangélisation :</strong> Frais de fonctionnement du sanctuaire, cellules de prière et diffusion radio.</span>
+                <CheckCircle2 className="w-4 h-4 text-amber-800 flex-shrink-0 mt-0.5" />
+                <span><strong>Culte &amp; Évangélisation :</strong> Frais de fonctionnement du sanctuaire, cellules de prière et diffusion.</span>
               </li>
               <li className="flex items-start space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span><strong>Enfance &amp; Éducation (CDEJ HA 0926) :</strong> Repas chauds, fournitures scolaires, soins médicaux des 265+ enfants.</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-800 flex-shrink-0 mt-0.5" />
+                <span><strong>Enfance &amp; Éducation (CDEJ HA 0926) :</strong> Repas chauds, fournitures scolaires, soins médicaux des +200 enfants parrainés.</span>
               </li>
               <li className="flex items-start space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-stone-700 flex-shrink-0 mt-0.5" />
                 <span><strong>Bâtiment &amp; Secours :</strong> Amélioration des infrastructures paroissiales et assistance aux veuves et orphelins de Damé.</span>
               </li>
             </ul>
@@ -117,7 +116,7 @@ export const Donations: React.FC<DonationsProps> = ({ onNavigate }) => {
             <div className="pt-2">
               <button
                 onClick={() => onNavigate('/projets')}
-                className="inline-flex items-center space-x-2 text-amber-300 hover:text-amber-200 text-xs font-bold"
+                className="inline-flex items-center space-x-2 text-stone-900 hover:text-amber-900 text-xs font-serif font-bold"
               >
                 <span>Consulter tous les projets officiels de l'Église ›</span>
               </button>

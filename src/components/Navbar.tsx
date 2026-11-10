@@ -140,18 +140,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full shadow-lg bg-slate-900 border-b border-amber-500/20">
+    <header className="sticky top-0 z-50 w-full shadow-xs bg-[#FAF8F5]/95 backdrop-blur-md border-b border-stone-200">
       {/* Conteneur principal de la barre d'en-tête (référencé pour la hauteur) */}
       <div ref={headerBarRef} className="w-full">
         {/* Top Bar: Official Contacts, Motto & Social (Épurée pour Android et petits écrans) */}
-        <div className="bg-[#071322] text-xs text-slate-300 py-1 px-3 sm:px-4 border-b border-slate-800">
+        <div className="bg-[#F4EFEA] text-xs text-stone-600 py-1 px-3 sm:px-4 border-b border-stone-200">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             {/* Devise officielle */}
             <div className="flex items-center space-x-2 min-w-0">
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30 truncate">
+              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold bg-amber-100 text-amber-900 border border-amber-300 truncate">
                 « Sainteté à l’Éternel »
               </span>
-              <span className="hidden md:inline text-slate-400 text-[11px] truncate">
+              <span className="hidden md:inline text-stone-500 text-[11px] truncate">
                 3ème Section Damé, Commune de Môle-Saint-Nicolas, Haïti
               </span>
             </div>
@@ -160,33 +160,33 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-end">
               <a 
                 href={`tel:${OFFICIAL_CHURCH_INFO.phone}`} 
-                className="inline-flex items-center space-x-1.5 text-[11px] sm:text-xs text-slate-300 hover:text-amber-400 transition"
+                className="inline-flex items-center space-x-1.5 text-[11px] sm:text-xs text-stone-700 hover:text-amber-800 transition"
                 title="Appeler l'Église"
               >
-                <Phone className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <Phone className="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
                 <span className="font-mono">{OFFICIAL_CHURCH_INFO.phone}</span>
               </a>
 
-              <span className="sm:hidden text-[10px] text-amber-400/90 font-medium">
+              <span className="sm:hidden text-[10px] text-amber-900 font-medium">
                 Damé, Haïti
               </span>
 
               <a 
                 href={`mailto:${OFFICIAL_CHURCH_INFO.email}`} 
-                className="hidden lg:inline-flex items-center space-x-1 text-xs text-slate-300 hover:text-amber-400 transition"
+                className="hidden lg:inline-flex items-center space-x-1 text-xs text-stone-700 hover:text-amber-800 transition"
                 title="Email officiel"
               >
-                <Mail className="w-3.5 h-3.5 text-amber-400" />
+                <Mail className="w-3.5 h-3.5 text-amber-700" />
                 <span>{OFFICIAL_CHURCH_INFO.email}</span>
               </a>
 
               {/* Réseaux Sociaux */}
-              <div className="hidden sm:flex items-center space-x-2 pl-2 border-l border-slate-800">
+              <div className="hidden sm:flex items-center space-x-2 pl-2 border-l border-stone-300">
                 <a 
                   href={OFFICIAL_CHURCH_INFO.social.youtube} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="text-slate-400 hover:text-red-500 transition p-0.5"
+                  className="text-stone-500 hover:text-red-600 transition p-0.5"
                   title="Chaîne YouTube Officielle"
                 >
                   <Youtube className="w-3.5 h-3.5" />
@@ -195,7 +195,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                   href={OFFICIAL_CHURCH_INFO.social.facebook} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="text-slate-400 hover:text-blue-500 transition p-0.5"
+                  className="text-stone-500 hover:text-blue-600 transition p-0.5"
                   title="Page Facebook Officielle"
                 >
                   <Facebook className="w-3.5 h-3.5" />
@@ -203,7 +203,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               </div>
 
               {/* Sélecteur de langue et bouton Installer App */}
-              <div className="hidden sm:flex items-center space-x-2 pl-2 border-l border-slate-800">
+              <div className="hidden sm:flex items-center space-x-2 pl-2 border-l border-stone-300">
                 <PWAInstallButton variant="nav" />
                 <LanguageSelector compact />
               </div>
@@ -219,8 +219,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               onClick={() => handleNav('/')}
               className="flex items-center space-x-2 sm:space-x-3 text-left focus:outline-none group min-w-0 flex-1 sm:flex-initial"
             >
-              <div className="relative w-8 h-8 min-[380px]:w-9 min-[380px]:h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex-shrink-0 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 rounded-full p-0.5 shadow-lg group-hover:scale-105 transition-transform">
-                <div className="w-full h-full bg-black rounded-full flex items-center justify-center p-0.5 overflow-hidden">
+              <div className="relative w-8 h-8 min-[380px]:w-9 min-[380px]:h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex-shrink-0 bg-stone-100 rounded-full p-0.5 border border-amber-300/60 shadow-xs group-hover:scale-105 transition-transform">
+                <div className="w-full h-full bg-white rounded-full flex items-center justify-center p-0.5 overflow-hidden">
                   <img 
                     src={churchSealImg} 
                     alt="Sceau Officiel Église du Nazaréen de Damé" 
@@ -232,10 +232,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 </div>
               </div>
               <div className="min-w-0 flex-1 flex flex-col justify-center">
-                <span className="block font-serif text-[11px] min-[360px]:text-xs sm:text-base lg:text-xl font-bold tracking-tight text-white group-hover:text-amber-300 transition leading-tight truncate">
+                <span className="block font-serif text-[11px] min-[360px]:text-xs sm:text-base lg:text-xl font-bold tracking-tight text-stone-900 group-hover:text-amber-800 transition leading-tight truncate">
                   ÉGLISE DU NAZARÉEN DE DAMÉ
                 </span>
-                <span className="block text-[8.5px] min-[360px]:text-[9.5px] sm:text-[11px] font-sans tracking-wider uppercase text-amber-400/90 font-medium leading-normal truncate mt-0.5">
+                <span className="block text-[8.5px] min-[360px]:text-[9.5px] sm:text-[11px] font-sans tracking-wider uppercase text-amber-900/80 font-semibold leading-normal truncate mt-0.5">
                   HAÏTI • FONDÉE EN 1979 <span className="hidden md:inline">• « SAINTETÉ À L’ÉTERNEL »</span>
                 </span>
               </div>
@@ -249,17 +249,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                   <button
                     key={link.path}
                     onClick={() => handleNav(link.path)}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
                       isActive 
-                        ? 'bg-amber-500/20 text-amber-300 border-b-2 border-amber-400 shadow-sm font-semibold' 
-                        : 'text-slate-200 hover:text-amber-300 hover:bg-slate-800/60'
+                        ? 'bg-amber-100/70 text-amber-900 font-bold border-b-2 border-amber-700' 
+                        : 'text-stone-700 hover:text-amber-900 hover:bg-stone-100'
                     }`}
                   >
                     {link.label}
                   </button>
                 );
               })}
-
               {/* Pages personnalisées dans le menu Desktop */}
               {customPages.length > 0 && (
                 customPages.length <= 2 ? (
@@ -269,14 +268,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                       <button
                         key={page.slug}
                         onClick={() => handleNav(`/page/${page.slug}`)}
-                        className={`px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center space-x-1 ${
+                        className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1 ${
                           isCurrent
-                            ? 'bg-amber-500/20 text-amber-300 border-b-2 border-amber-400 shadow-sm font-semibold'
-                            : 'text-slate-200 hover:text-amber-300 hover:bg-slate-800/60'
+                            ? 'bg-amber-100/80 text-amber-950 border-b-2 border-amber-700 font-bold'
+                            : 'text-stone-700 hover:text-amber-900 hover:bg-stone-100'
                         }`}
                         title={page.excerpt || page.title}
                       >
-                        <FileText className="w-3.5 h-3.5 text-amber-400" />
+                        <FileText className="w-3.5 h-3.5 text-amber-700" />
                         <span>{page.title}</span>
                       </button>
                     );
@@ -285,24 +284,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                   <div className="relative" ref={dropdownRef}>
                     <button
                       onClick={() => setPagesDropdownOpen(!pagesDropdownOpen)}
-                      className={`px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center space-x-1.5 ${
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 ${
                         currentPath.startsWith('/page/')
-                          ? 'bg-amber-500/20 text-amber-300 border-b-2 border-amber-400 shadow-sm font-semibold'
-                          : 'text-slate-200 hover:text-amber-300 hover:bg-slate-800/60'
+                          ? 'bg-amber-100/80 text-amber-950 border-b-2 border-amber-700 font-bold'
+                          : 'text-stone-700 hover:text-amber-900 hover:bg-stone-100'
                       }`}
                     >
-                      <FileText className="w-3.5 h-3.5 text-amber-400" />
+                      <FileText className="w-3.5 h-3.5 text-amber-700" />
                       <span>Pages</span>
-                      <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500/30 text-amber-300">
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
                         {customPages.length}
                       </span>
                       <ChevronDown className={`w-3.5 h-3.5 transition-transform ${pagesDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {pagesDropdownOpen && (
-                      <div className="absolute top-full right-0 mt-2 w-72 bg-slate-950 border border-slate-700/80 rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-1">
-                        <div className="px-3.5 py-1.5 border-b border-slate-800 mb-1">
-                          <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">
+                      <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-stone-200 rounded-xl shadow-lg py-2 z-50 animate-in fade-in slide-in-from-top-1">
+                        <div className="px-3.5 py-1.5 border-b border-stone-100 mb-1">
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-amber-900">
                             Pages Officielles Publiées
                           </span>
                         </div>
@@ -310,21 +309,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                           <button
                             key={page.slug}
                             onClick={() => handleNav(`/page/${page.slug}`)}
-                            className={`w-full text-left px-4 py-2.5 text-xs font-semibold flex items-center justify-between transition ${
+                            className={`w-full text-left px-4 py-2 text-xs font-medium flex items-center justify-between transition ${
                               currentPath === `/page/${page.slug}`
-                                ? 'bg-amber-500/20 text-amber-300 border-l-2 border-amber-400'
-                                : 'text-slate-200 hover:bg-slate-800 hover:text-amber-300'
+                                ? 'bg-amber-50 text-amber-950 font-bold border-l-2 border-amber-700'
+                                : 'text-stone-700 hover:bg-stone-50 hover:text-stone-900'
                             }`}
                           >
                             <div className="truncate pr-2">
                               <span className="block truncate">{page.title}</span>
                               {page.excerpt && (
-                                <span className="block text-[10px] text-slate-400 font-normal truncate">
+                                <span className="block text-[10px] text-stone-500 font-normal truncate">
                                   {page.excerpt}
                                 </span>
                               )}
                             </div>
-                            <ChevronRight className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                            <ChevronRight className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
                           </button>
                         ))}
                       </div>
@@ -343,8 +342,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 onClick={() => handleNav('/faire-un-don')}
                 className={`ml-3 inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition shadow-sm ${
                   currentPath.startsWith('/faire-un-don') || currentPath.startsWith('/don')
-                    ? 'bg-emerald-500 text-white font-extrabold shadow-emerald-500/25'
-                    : 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-white'
+                    ? 'bg-amber-700 text-white font-extrabold shadow-sm'
+                    : 'bg-amber-100/80 text-amber-900 border border-amber-300 hover:bg-amber-700 hover:text-white'
                 }`}
                 title="Soutenez l'Église et le projet CDEJ HA 0926"
               >
@@ -356,10 +355,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               {isSubdomain && (
                 <button
                   onClick={() => handleNav('/secretariat')}
-                  className={`ml-2 inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition shadow-sm ${
+                  className={`ml-2 inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
                     currentPath.startsWith('/secretariat')
-                      ? 'bg-amber-500 text-slate-950 font-bold'
-                      : 'bg-gradient-to-r from-amber-500/20 to-amber-600/30 text-amber-300 border border-amber-500/40 hover:bg-amber-500 hover:text-slate-950'
+                      ? 'bg-stone-900 text-white font-bold'
+                      : 'bg-stone-100 text-stone-800 border border-stone-200 hover:bg-stone-900 hover:text-white'
                   }`}
                 >
                   <Lock className="w-3.5 h-3.5" />
@@ -368,19 +367,19 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               )}
             </nav>
 
-            {/* Contrôles Mobiles : Sélecteur de langue compact + Bouton Hamburger (Épuré pour Android) */}
+            {/* Contrôles Mobiles : Sélecteur de langue compact + Bouton Hamburger */}
             <div className="flex xl:hidden items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
               <LanguageSelector compact />
 
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition focus:outline-none"
+                className="p-2 rounded-lg text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition focus:outline-none"
                 aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
               >
                 {mobileMenuOpen ? (
-                  <X className="w-6 h-6 text-amber-400" />
+                  <X className="w-6 h-6 text-stone-900" />
                 ) : (
-                  <Menu className="w-6 h-6 text-slate-200" />
+                  <Menu className="w-6 h-6 text-stone-800" />
                 )}
               </button>
             </div>
@@ -389,10 +388,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
       </div>
 
       {/* TIROIR MOBILE PLEIN ÉCRAN DÉFILABLE (FIX OVERFLOW & TOUCH SCROLL SUR ANDROID) */}
-      {/* Positionné sous l'en-tête (top: headerHeight), avec scroll autonome et blocage du fond */}
       {mobileMenuOpen && (
         <div 
-          className="xl:hidden fixed inset-x-0 bottom-0 z-50 bg-slate-950/98 backdrop-blur-md overflow-y-auto overscroll-contain px-4 pt-3 pb-32 shadow-2xl border-t border-slate-800 animate-in slide-in-from-top-2 duration-200"
+          className="xl:hidden fixed inset-x-0 bottom-0 z-50 bg-[#FAF8F5] overflow-y-auto overscroll-contain px-4 pt-3 pb-32 shadow-xl border-t border-stone-200 animate-in slide-in-from-top-2 duration-200"
           style={{ 
             top: `${headerHeight}px`,
             WebkitOverflowScrolling: 'touch',
@@ -400,25 +398,25 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           }}
         >
           {/* En-tête du menu mobile */}
-          <div className="py-2.5 border-b border-slate-800 mb-3 flex items-center justify-between">
+          <div className="py-2.5 border-b border-stone-200 mb-3 flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-wider text-amber-400 font-bold">
+              <p className="text-xs uppercase tracking-wider text-amber-900 font-bold font-serif">
                 Église du Nazaréen de Damé
               </p>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-stone-600">
                 Menu de Navigation Principal
               </p>
             </div>
             <button
               onClick={() => setMobileMenuOpen(false)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              className="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition"
               aria-label="Fermer le menu"
             >
-              <X className="w-5 h-5 text-amber-400" />
+              <X className="w-5 h-5 text-stone-700" />
             </button>
           </div>
 
-          {/* Liens de navigation principaux (Touch targets confortables) */}
+          {/* Liens de navigation principaux */}
           <div className="space-y-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
@@ -427,17 +425,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 <button
                   key={link.path}
                   onClick={() => handleNav(link.path)}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition ${
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-lg text-sm font-medium transition ${
                     isActive
-                      ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80 hover:text-amber-300 active:bg-slate-800'
+                      ? 'bg-amber-100/80 text-amber-950 font-bold border-l-4 border-amber-700'
+                      : 'text-stone-800 hover:bg-stone-100 hover:text-stone-950 active:bg-stone-200'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-slate-950' : 'text-amber-400'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-amber-800' : 'text-stone-500'}`} />
                     <span>{link.label}</span>
                   </div>
-                  <ChevronRight className={`w-4 h-4 ${isActive ? 'text-slate-950 opacity-90' : 'opacity-40'}`} />
+                  <ChevronRight className={`w-4 h-4 ${isActive ? 'text-amber-800 opacity-90' : 'opacity-40'}`} />
                 </button>
               );
             })}
@@ -445,8 +443,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
 
           {/* Section des Pages publiées */}
           {customPages.length > 0 && (
-            <div className="pt-3 pb-1 border-t border-slate-800/80 mt-2 space-y-1">
-              <div className="px-3.5 py-1.5 flex items-center space-x-1.5 text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+            <div className="pt-3 pb-1 border-t border-stone-200 mt-2 space-y-1">
+              <div className="px-3.5 py-1.5 flex items-center space-x-1.5 text-[11px] font-bold text-amber-900 uppercase tracking-wider">
                 <FileText className="w-3.5 h-3.5" />
                 <span>Pages Publiées ({customPages.length})</span>
               </div>
@@ -456,14 +454,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                   <button
                     key={page.slug}
                     onClick={() => handleNav(`/page/${page.slug}`)}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition ${
                       isActive
-                        ? 'bg-amber-500 text-slate-950 font-bold'
-                        : 'text-slate-200 hover:bg-slate-800/80 hover:text-amber-300 active:bg-slate-800'
+                        ? 'bg-amber-100/80 text-amber-950 font-bold border-l-4 border-amber-700'
+                        : 'text-stone-800 hover:bg-stone-100 hover:text-stone-950 active:bg-stone-200'
                     }`}
                   >
                     <div className="flex items-center space-x-3 truncate">
-                      <FileText className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-slate-950' : 'text-amber-400'}`} />
+                      <FileText className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-amber-800' : 'text-stone-500'}`} />
                       <span className="truncate">{page.title}</span>
                     </div>
                     <ChevronRight className="w-4 h-4 opacity-50 flex-shrink-0" />
@@ -474,53 +472,53 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           )}
 
           {/* Boutons d'Action Rapide dans le tiroir mobile */}
-          <div className="pt-4 mt-3 border-t border-slate-800/80 space-y-2.5">
+          <div className="pt-4 mt-3 border-t border-stone-200 space-y-2.5">
             <div className="flex justify-center pb-1">
               <PWAInstallButton variant="nav" />
             </div>
             <button
               onClick={() => handleNav('/faire-un-don')}
-              className="w-full flex items-center justify-center space-x-2 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-md hover:brightness-110 active:scale-[0.99] transition"
+              className="w-full flex items-center justify-center space-x-2 py-3 rounded-lg text-sm font-bold bg-amber-700 text-white shadow-sm hover:bg-amber-800 active:scale-[0.99] transition"
             >
-              <HeartHandshake className="w-4 h-4 text-emerald-200" />
+              <HeartHandshake className="w-4 h-4 text-amber-100" />
               <span>Dîmes &amp; Faire un Don (PayPal / Mobile)</span>
             </button>
           </div>
 
-            {/* Liens de contact et réseaux dans le menu */}
-            <div className="pt-2 text-center text-xs text-slate-400 space-y-2">
-              <div className="flex items-center justify-center space-x-4">
-                <a 
-                  href={`tel:${OFFICIAL_CHURCH_INFO.phone}`} 
-                  className="flex items-center space-x-1.5 hover:text-amber-400 py-1"
-                >
-                  <Phone className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{OFFICIAL_CHURCH_INFO.phone}</span>
-                </a>
-                <span>•</span>
-                <a 
-                  href={OFFICIAL_CHURCH_INFO.social.youtube} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="hover:text-red-400 py-1"
-                >
-                  YouTube
-                </a>
-                <span>•</span>
-                <a 
-                  href={OFFICIAL_CHURCH_INFO.social.facebook} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="hover:text-blue-400 py-1"
-                >
-                  Facebook
-                </a>
-              </div>
-              <p className="text-[11px] text-slate-500">
-                3ème Section Damé, Commune de Môle-Saint-Nicolas, Haïti
-              </p>
+          {/* Liens de contact et réseaux dans le menu */}
+          <div className="pt-3 text-center text-xs text-stone-500 space-y-2">
+            <div className="flex items-center justify-center space-x-4">
+              <a 
+                href={`tel:${OFFICIAL_CHURCH_INFO.phone}`} 
+                className="flex items-center space-x-1.5 hover:text-amber-800 py-1"
+              >
+                <Phone className="w-3.5 h-3.5 text-amber-700" />
+                <span>{OFFICIAL_CHURCH_INFO.phone}</span>
+              </a>
+              <span>•</span>
+              <a 
+                href={OFFICIAL_CHURCH_INFO.social.youtube} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-red-600 py-1"
+              >
+                YouTube
+              </a>
+              <span>•</span>
+              <a 
+                href={OFFICIAL_CHURCH_INFO.social.facebook} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-blue-600 py-1"
+              >
+                Facebook
+              </a>
             </div>
+            <p className="text-[11px] text-stone-500">
+              3ème Section Damé, Commune de Môle-Saint-Nicolas, Haïti
+            </p>
           </div>
+        </div>
       )}
     </header>
   );

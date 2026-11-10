@@ -83,38 +83,38 @@ export const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
       />
 
       {/* Hero Header */}
-      <section className="relative bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white py-16 sm:py-24 px-4 overflow-hidden">
-        <div className="max-w-5xl mx-auto text-center space-y-6 relative z-10">
-          <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-widest border border-amber-500/30">
-            <HeartHandshake className="w-4 h-4" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-5xl mx-auto text-center space-y-4">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 text-amber-900 text-xs font-bold uppercase tracking-widest border border-stone-200">
+            <HeartHandshake className="w-3.5 h-3.5 text-amber-800" />
             <span>Chantiers, Évangélisation &amp; Action Sociale</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
+          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-tight">
             Nos Projets
           </h1>
 
-          <p className="text-slate-300 text-sm sm:text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
+          <p className="text-stone-700 text-sm sm:text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
             Découvrez nos projets concrets et soutenez le développement spirituel, matériel et social de l’Église du Nazaréen de Damé et de la communauté.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
             <button
               onClick={() => onNavigate('/faire-un-don')}
-              className="px-5 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-400 hover:to-emerald-500 shadow-lg shadow-emerald-500/20 transition flex items-center space-x-2"
+              className="px-5 py-2.5 rounded-lg font-bold text-xs bg-emerald-700 text-white hover:bg-emerald-800 shadow-xs transition flex items-center space-x-2"
             >
               <HeartHandshake className="w-4 h-4" />
               <span>Faire un Don / Soutenir les Projets (PayPal)</span>
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-slate-300 pt-2">
-            <span className="flex items-center space-x-1.5 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-              <MapPin className="w-3.5 h-3.5 text-amber-400" />
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs font-medium text-stone-600 pt-1">
+            <span className="flex items-center space-x-1.5 bg-white px-3.5 py-1.5 rounded-lg border border-stone-200 shadow-2xs">
+              <MapPin className="w-3.5 h-3.5 text-amber-800" />
               <span>3ème Section Damé, Môle-Saint-Nicolas</span>
             </span>
-            <span className="flex items-center space-x-1.5 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+            <span className="flex items-center space-x-1.5 bg-white px-3.5 py-1.5 rounded-lg border border-stone-200 shadow-2xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
               <span>Gestion Responsable &amp; Transparente</span>
             </span>
           </div>

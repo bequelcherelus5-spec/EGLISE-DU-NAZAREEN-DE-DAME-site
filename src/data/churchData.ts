@@ -8,7 +8,7 @@ export const OFFICIAL_CHURCH_INFO: ChurchInfo = {
   seniorPastor: 'Bequel CHERELUS',
   pastorSince: 2003,
   phone: '+509 48596089',
-  email: 'eglisedunazareendedame@gmail.com',
+  email: 'contact@eglisedunazareendedame.org',
   website: 'www.eglisedunazareendedame.org',
   canonicalUrl: 'https://www.eglisedunazareendedame.org',
   address: {
@@ -20,7 +20,7 @@ export const OFFICIAL_CHURCH_INFO: ChurchInfo = {
   },
   social: {
     youtube: 'https://youtube.com/@eglisedunazareendame',
-    facebook: 'https://www.facebook.com/profile.php?id=61586834645549'
+    facebook: 'https://www.facebook.com/share/1Ctz8QzJ1f/'
   },
   googleMapsUrl: 'https://share.google/9kpd149ZpzHWNxOXI'
 };
@@ -426,7 +426,7 @@ export const INITIAL_MEMBERS: MemberRecord[] = [
     fullName: 'Bequel CHERELUS',
     gender: 'M',
     phone: '+509 48596089',
-    email: 'eglisedunazareendedame@gmail.com',
+    email: 'contact@eglisedunazareendedame.org',
     address: 'Presbytère de Damé, Môle-Saint-Nicolas',
     ministryAffiliation: 'Pasteur Titulaire',
     status: 'actif',

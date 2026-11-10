@@ -66,29 +66,29 @@ export const FAQ: React.FC<{ onNavigate: (path: string) => void }> = ({ onNaviga
         path="/faq"
       />
 
-      <section className="bg-gradient-to-b from-[#071322] to-[#0b1b33] text-white py-16 px-4 border-b border-amber-500/20">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <HelpCircle className="w-3.5 h-3.5" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <HelpCircle className="w-3.5 h-3.5 text-amber-800" />
             <span>Foi &amp; Pratique Ecclésiale</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900">
             Foire Aux Questions (FAQ)
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Tout ce que vous devez savoir sur la doctrine nazaréenne, nos cultes, les sacrements et la vie communautaire à Damé.
           </p>
 
-          <div className="max-w-md mx-auto relative pt-4">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-7" />
+          <div className="max-w-md mx-auto relative pt-2">
+            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-5" />
             <input
               type="text"
               placeholder="Rechercher une question (baptême, membre, culte...)"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white text-slate-900 text-xs border border-amber-500/40 focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-md"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white text-stone-900 text-xs border border-stone-200 focus:outline-none focus:border-amber-700 shadow-2xs"
             />
           </div>
 
@@ -176,22 +176,27 @@ export const FAQ: React.FC<{ onNavigate: (path: string) => void }> = ({ onNaviga
         )}
 
         {/* Contact pastoral callout */}
-        <div className="mt-12 bg-slate-900 text-white p-8 rounded-3xl border border-amber-500/30 text-center space-y-4">
-          <h3 className="font-serif font-bold text-xl text-amber-300">
+        <div className="mt-12 bg-[#FAF7F2] text-stone-900 p-6 sm:p-8 rounded-2xl border border-stone-200/90 shadow-2xs text-center space-y-3">
+          <p className="text-xs font-serif font-bold uppercase tracking-wider text-amber-900">
+            Accompagnement Spirituel
+          </p>
+          <h3 className="font-serif font-bold text-xl text-stone-900">
             Vous avez une question personnelle ?
           </h3>
-          <p className="text-xs text-slate-300 max-w-lg mx-auto">
+          <p className="text-xs text-stone-600 max-w-lg mx-auto leading-relaxed">
             Le Pasteur Bequel CHERELUS et l'équipe pastorale sont toujours à votre écoute pour vous accompagner spirituellement.
           </p>
-          <a
-            href="https://wa.me/50948596089"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center space-x-2 px-6 py-3 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/20"
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>Poser une Question au Pasteur sur WhatsApp</span>
-          </a>
+          <div className="pt-2">
+            <a
+              href="https://wa.me/50948596089"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-2 px-6 py-2.5 rounded-lg text-xs font-serif font-bold bg-stone-900 text-white hover:bg-stone-800 transition shadow-2xs"
+            >
+              <MessageSquare className="w-4 h-4 text-emerald-400" />
+              <span>Contacter le Pasteur sur WhatsApp</span>
+            </a>
+          </div>
         </div>
       </section>
     </div>

@@ -57,7 +57,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
   // ----------------------------------------------------
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [loginEmail, setLoginEmail] = useState('eglisedunazareendedame@gmail.com');
+  const [loginEmail, setLoginEmail] = useState('contact@eglisedunazareendedame.org');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginSubmitting, setLoginSubmitting] = useState(false);
@@ -161,7 +161,7 @@ export const Secretariat: React.FC<SecretariatProps> = ({ onNavigate, isSubdomai
   // ----------------------------------------------------
   const [brevoSettings, setBrevoSettings] = useState<BrevoConfigView | null>(null);
   const [brevoApiKeyInput, setBrevoApiKeyInput] = useState(localStorage.getItem('dame_brevo_api_key') || '');
-  const [brevoSenderEmail, setBrevoSenderEmail] = useState(localStorage.getItem('dame_brevo_sender_email') || 'eglisedunazareendedame@gmail.com');
+  const [brevoSenderEmail, setBrevoSenderEmail] = useState(localStorage.getItem('dame_brevo_sender_email') || 'contact@eglisedunazareendedame.org');
   const [brevoSenderName, setBrevoSenderName] = useState(localStorage.getItem('dame_brevo_sender_name') || 'Église du Nazaréen de Damé');
   const [brevoListId, setBrevoListId] = useState(localStorage.getItem('dame_brevo_list_id') || '5');
   const [brevoTesting, setBrevoTesting] = useState(false);

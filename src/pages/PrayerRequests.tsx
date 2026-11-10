@@ -186,60 +186,56 @@ export const PrayerRequests: React.FC<PrayerRequestsProps> = ({ onNavigate }) =>
       />
 
       {/* Hero Header */}
-      <section className="bg-gradient-to-b from-[#071322] via-[#0b1b33] to-[#071322] text-white py-16 px-4 border-b border-amber-500/20 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-
-        <div className="max-w-4xl mx-auto text-center space-y-4 relative z-10">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <Lock className="w-3.5 h-3.5" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200 relative">
+        <div className="max-w-4xl mx-auto text-center space-y-3 relative z-10">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <Lock className="w-3.5 h-3.5 text-amber-800" />
             <span>Espas Lapriyè Sekrè &amp; Entècesyon Pastorale</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900 tracking-tight">
             Requêtes de Prière &amp; Espas Priyè Sekrè
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-            « Lapriyè moun k’ap mache dwat devan Bondye gen anpil pouvwa lè l’ap lapriyè. » <span className="text-amber-400 font-serif italic">(Jak 5:16)</span>
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            « Lapriyè moun k’ap mache dwat devan Bondye gen anpil pouvwa lè l’ap lapriyè. » <span className="text-amber-900 font-serif italic">(Jak 5:16)</span>
             <br />
             Konfye fado ou yo nan tout sekirite ak konfidansyèlite bay Pasteur Bequel CHERELUS ak ekip lapriyè legliz la.
           </p>
 
           {/* Navigation Tabs */}
-          <div className="pt-6 flex flex-wrap items-center justify-center gap-2">
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-2">
             <button
               onClick={() => setActiveTab('form')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-2 ${
                 activeTab === 'form'
-                  ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
+                  ? 'bg-amber-800 text-white shadow-xs font-bold'
+                  : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200'
               }`}
             >
-              <Lock className="w-4 h-4" />
+              <Lock className="w-3.5 h-3.5 text-amber-200" />
               <span>Voye yon Demann Priyè Sekrè</span>
             </button>
-
             <button
               onClick={() => setActiveTab('wall')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-2 ${
                 activeTab === 'wall'
-                  ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
+                  ? 'bg-amber-800 text-white shadow-xs font-bold'
+                  : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200'
               }`}
             >
-              <Users className="w-4 h-4" />
+              <Users className="w-3.5 h-3.5 text-stone-600" />
               <span>Mi Lapriyè Kominotè ({publicPrayers.length})</span>
             </button>
-
             <button
               onClick={() => setActiveTab('whatsapp')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-2 ${
                 activeTab === 'whatsapp'
-                  ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 font-bold'
-                  : 'bg-slate-800 text-emerald-400 hover:bg-slate-700 border border-slate-700'
+                  ? 'bg-emerald-700 text-white shadow-xs font-bold'
+                  : 'bg-white text-emerald-800 hover:bg-emerald-50 border border-emerald-200'
               }`}
             >
-              <MessageSquare className="w-4 h-4" />
+              <MessageSquare className="w-3.5 h-3.5" />
               <span>Liy WhatsApp Pasteur Bequel</span>
             </button>
           </div>
@@ -253,27 +249,27 @@ export const PrayerRequests: React.FC<PrayerRequestsProps> = ({ onNavigate }) =>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Sidebar Informations de Confidentialité */}
             <div className="lg:col-span-4 space-y-6">
-              <div className="bg-slate-900 rounded-3xl p-6 text-white border border-amber-500/30 shadow-xl space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h3 className="font-serif font-bold text-lg text-amber-300">
-                  Garanti 100% Konfidansyèl
-                </h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Lè ou chwazi opsyon <strong>« Sekrè Pastoral »</strong>, se sèlman Pasteur Bequel CHERELUS ak ekip entècesyon ofisyèl la ki gen aksè a entansyon ou a. Anyen pa pibliye sou entènèt.
+              <div className="bg-[#FAF7F2] rounded-2xl p-6 text-stone-900 border border-stone-200/90 shadow-2xs space-y-3.5">
+                <p className="text-amber-900 text-xs font-serif font-bold uppercase tracking-wider">
+                  Konfidansyalite Garanti
                 </p>
-                <div className="pt-2 border-t border-slate-800 space-y-2 text-xs text-slate-400">
+                <h3 className="font-serif font-bold text-lg text-stone-900">
+                  Sekrè Pastoral 100%
+                </h3>
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  Lè ou chwazi opsyon <strong>« Sekrè Pastoral »</strong>, se sèlman Pasteur Bequel CHERELUS ak ekip entècesyon ofisyèl la ki gen aksè a entansyon ou a. Anyen pa janm pibliye sou entènèt.
+                </p>
+                <div className="pt-2 border-t border-stone-200 space-y-2 text-xs text-stone-700">
                   <div className="flex items-center space-x-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-800 flex-shrink-0" />
                     <span>Lapriyè chak madi nan reyinyon entècesyon</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-800 flex-shrink-0" />
                     <span>Posibilite pou rete totalman anonim</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-800 flex-shrink-0" />
                     <span>Swivi pastoral sou demann ou</span>
                   </div>
                 </div>
@@ -662,29 +658,25 @@ export const PrayerRequests: React.FC<PrayerRequestsProps> = ({ onNavigate }) =>
 
         {/* TAB 3: CONTACT DIRECT WHATSAPP AVEC LE PASTEUR */}
         {activeTab === 'whatsapp' && (
-          <div className="bg-slate-900 text-white rounded-3xl p-8 sm:p-12 border border-amber-500/30 shadow-2xl max-w-2xl mx-auto space-y-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 mx-auto">
-              <MessageSquare className="w-8 h-8" />
-            </div>
-
+          <div className="bg-[#FAF7F2] text-stone-900 rounded-2xl p-6 sm:p-10 border border-stone-200/90 shadow-2xs max-w-2xl mx-auto space-y-5 text-center">
             <div className="space-y-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+              <p className="text-xs font-serif font-bold uppercase tracking-wider text-emerald-800">
                 Liy Priyè Dirèk &amp; Konsèy Pastoral
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-white">
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900">
                 Priye Dirèkteman sou WhatsApp ak Pasteur Bequel CHERELUS
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-lg mx-auto leading-relaxed">
+              <p className="text-xs sm:text-sm text-stone-600 max-w-lg mx-auto leading-relaxed">
                 Si ou nan yon sitiyasyon ijan oswa ou bezwen yon priyè vokal dirèk ak konsèy pastoral, Pasteur Bequel CHERELUS disponib pou koute w ak renmen Kris la.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-2">
-              <div className="flex items-center justify-center space-x-2 text-amber-400 font-bold">
-                <Phone className="w-4 h-4" />
+            <div className="p-4 rounded-xl bg-white border border-stone-200 text-xs space-y-1.5">
+              <div className="flex items-center justify-center space-x-2 text-stone-900 font-bold font-mono">
+                <Phone className="w-4 h-4 text-emerald-700" />
                 <span>Telefòn &amp; WhatsApp : +509 48596089</span>
               </div>
-              <p className="text-slate-400 text-[11px]">
+              <p className="text-stone-500 text-[11px]">
                 Église du Nazaréen de Damé – 3ème Section Damé, Commune de Môle-Saint-Nicolas, Haïti
               </p>
             </div>
@@ -694,17 +686,17 @@ export const PrayerRequests: React.FC<PrayerRequestsProps> = ({ onNavigate }) =>
                 href={`https://wa.me/50948596089?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-lg text-xs font-serif font-bold bg-stone-900 text-white hover:bg-stone-800 transition shadow-2xs flex items-center justify-center space-x-2"
               >
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-4 h-4 text-emerald-400" />
                 <span>Louvri WhatsApp Pou Priye Kounye a</span>
               </a>
 
               <a
                 href="tel:+50948596089"
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-slate-800 text-white hover:bg-slate-700 transition border border-slate-700 flex items-center justify-center space-x-2"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-lg text-xs font-semibold bg-white text-stone-800 hover:bg-stone-50 transition border border-stone-300 flex items-center justify-center space-x-2 shadow-2xs"
               >
-                <Phone className="w-4 h-4 text-amber-400" />
+                <Phone className="w-4 h-4 text-amber-700" />
                 <span>Rele pa Telefòn</span>
               </a>
             </div>

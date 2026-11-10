@@ -116,7 +116,7 @@ export const authService = {
         AUTH_USER_KEY,
         JSON.stringify({
           name: 'Secrétariat Damé',
-          email: inputEmail || 'eglisedunazareendedame@gmail.com',
+          email: inputEmail || 'contact@eglisedunazareendedame.org',
           role: 'admin',
         })
       );
@@ -185,7 +185,7 @@ export const authService = {
               JSON.stringify(
                 data.user || {
                   name: 'Direction Pastorale',
-                  email: inputEmail || 'eglisedunazareendedame@gmail.com',
+                  email: inputEmail || 'contact@eglisedunazareendedame.org',
                   role: 'admin',
                 }
               )

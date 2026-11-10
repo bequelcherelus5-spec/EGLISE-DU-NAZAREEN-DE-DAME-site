@@ -89,19 +89,19 @@ export const Discipleship: React.FC<{ onNavigate: (path: string) => void }> = ({
       />
 
       {/* Header */}
-      <section className="bg-gradient-to-b from-[#071322] to-[#0b1b33] text-white py-16 px-4 border-b border-amber-500/20">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-rose-500/10 border border-rose-400/30 text-rose-300 text-xs font-bold uppercase tracking-widest">
-            <Heart className="w-3.5 h-3.5 text-rose-400" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <Heart className="w-3.5 h-3.5 text-rose-600" />
             <span>Nouvo Nesans nan Kris la</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900">
             Mwen Chwazi Jezi Jodi a
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-            « Si yon moun nan Kris la, li se yon nouvo kreyati. Tout ansyen bagay fin pase, men tout bagay vin tounen nouvo ! » <span className="text-amber-400 italic font-serif">(2 Korentyen 5:17)</span>
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            « Si yon moun nan Kris la, li se yon nouvo kreyati. Tout ansyen bagay fin pase, men tout bagay vin tounen nouvo ! » <span className="text-amber-900 italic font-serif">(2 Korentyen 5:17)</span>
             <br />
             Nou kontan akeyi w nan gran fanmi Bondye a nan Damé.
           </p>

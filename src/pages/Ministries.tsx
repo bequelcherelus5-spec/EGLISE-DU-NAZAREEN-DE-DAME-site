@@ -63,18 +63,18 @@ export const Ministries: React.FC<MinistriesProps> = ({ onNavigate }) => {
       />
 
       {/* Header */}
-      <section className="bg-gradient-to-b from-[#071322] to-[#0b1b33] text-white py-16 px-4 border-b border-amber-500/20">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
-            <Users className="w-3.5 h-3.5" />
+      <section className="bg-[#F7F4EE] text-stone-900 py-12 sm:py-16 px-4 border-b border-stone-200">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-amber-900 text-xs font-bold uppercase tracking-widest">
+            <Users className="w-3.5 h-3.5 text-amber-800" />
             <span>Service &amp; Vocation Chrétienne</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900">
             Les Ministères &amp; la Rotation des Dimanches
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-stone-700 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Une organisation officielle consacrant chaque dimanche du mois à un ministère dédié, et le 5ème dimanche à la famille chrétienne.
           </p>
         </div>
@@ -179,20 +179,20 @@ export const Ministries: React.FC<MinistriesProps> = ({ onNavigate }) => {
               {active.description}
             </p>
 
-            <div className="bg-amber-50/80 border-l-4 border-amber-500 p-4 rounded-r-xl text-xs sm:text-sm text-slate-800 italic font-serif">
+            <div className="bg-[#FAF7F2] border border-stone-200 p-4 rounded-xl text-xs sm:text-sm text-stone-800 italic font-serif">
               {active.verse}
             </div>
 
-            <div className="pt-2 flex flex-wrap gap-4">
+            <div className="pt-2 flex flex-wrap gap-3">
               <button
                 onClick={() => {
                   setJoinForm(prev => ({ ...prev, ministry: active.name }));
                   setJoinModalOpen(true);
                 }}
-                className="px-6 py-3 rounded-xl text-xs font-bold bg-slate-900 text-amber-300 hover:bg-slate-800 transition flex items-center space-x-2"
+                className="px-6 py-2.5 rounded-lg text-xs font-serif font-bold bg-stone-900 text-white hover:bg-stone-800 transition flex items-center space-x-2 shadow-2xs"
               >
                 <span>Rejoindre ou Soutenir ce Ministère</span>
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 text-amber-300" />
               </button>
 
               <button
@@ -236,22 +236,22 @@ export const Ministries: React.FC<MinistriesProps> = ({ onNavigate }) => {
                 setSelectedMinistry(m.slug);
                 window.scrollTo({ top: 380, behavior: 'smooth' });
               }}
-              className={`p-6 rounded-2xl cursor-pointer transition-all border ${
+              className={`p-5 rounded-xl cursor-pointer transition-all border ${
                 selectedMinistry === m.slug
-                  ? 'bg-slate-900 text-white border-amber-400 shadow-xl scale-[1.02]'
-                  : 'bg-white text-slate-800 border-slate-200 hover:border-amber-400/50 shadow-sm'
+                  ? 'bg-[#FAF7F2] text-stone-900 border-amber-800/80 shadow-2xs ring-1 ring-amber-800/30'
+                  : 'bg-white text-stone-800 border-stone-200 hover:border-stone-300 shadow-2xs'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
-                <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
-                  selectedMinistry === m.slug ? 'bg-amber-500 text-slate-950' : 'bg-slate-100 text-slate-600'
+                <span className={`text-[11px] font-mono font-medium px-2 py-0.5 rounded ${
+                  selectedMinistry === m.slug ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-600'
                 }`}>
                   {m.schedule}
                 </span>
               </div>
               <h4 className="font-serif font-bold text-base mt-2">{m.name}</h4>
-              <p className={`text-xs mt-2 leading-relaxed ${
-                selectedMinistry === m.slug ? 'text-slate-300' : 'text-slate-600'
+              <p className={`text-xs mt-1.5 leading-relaxed ${
+                selectedMinistry === m.slug ? 'text-stone-700' : 'text-stone-600'
               }`}>
                 {m.shortDescription}
               </p>

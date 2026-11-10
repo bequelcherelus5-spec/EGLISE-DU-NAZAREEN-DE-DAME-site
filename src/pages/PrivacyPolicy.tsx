@@ -30,20 +30,20 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onNavigate }) => {
         </button>
 
         {/* Header Hero */}
-        <div className="bg-gradient-to-br from-[#071322] via-[#0b1b33] to-[#112442] text-white rounded-3xl p-8 sm:p-12 shadow-2xl border border-amber-500/30 space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-400/40">
-            <ShieldCheck className="w-4 h-4 text-amber-400" />
+        <div className="bg-[#FAF8F5] text-stone-900 rounded-3xl p-8 sm:p-12 shadow-sm border border-stone-200 space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-stone-100 text-amber-900 text-xs font-bold border border-stone-200">
+            <ShieldCheck className="w-4 h-4 text-amber-800" />
             <span>{isCreole ? 'Pwoteksyon Done & Konfòmite Google' : 'Protection des Données & Conformité Google'}</span>
           </div>
-          <h1 className="font-serif text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h1 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 tracking-tight">
             {isCreole ? 'Règleman sou Vi Prive & Jesyon Cookie' : 'Politique de Confidentialité & Cookies'}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-stone-700 max-w-2xl leading-relaxed">
             {isCreole
               ? 'Legliz Nazaréen de Damé pran angajman pou pwoteje enfòmasyon pèsonèl ou lè w ap itilize sit ofisyèl nou an (www.eglisedunazareendedame.org).'
               : 'L’Église du Nazaréen de Damé s’engage à protéger la vie privée des fidèles et des visiteurs de son site officiel (www.eglisedunazareendedame.org).'}
           </p>
-          <p className="text-2xs text-amber-400/80 font-mono">
+          <p className="text-2xs text-stone-500 font-mono">
             {isCreole ? 'Dènye mizajou : 7 Novanm 2026' : 'Dernière mise à jour : 7 Novembre 2026'} • Réf. Éditeur AdSense : pub-7382968203880435
           </p>
         </div>
@@ -148,7 +148,7 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onNavigate }) => {
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                <span><strong>Email :</strong> eglisedunazareendedame@gmail.com</span>
+                <span><strong>Email :</strong> contact@eglisedunazareendedame.org</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-amber-600 flex-shrink-0" />
